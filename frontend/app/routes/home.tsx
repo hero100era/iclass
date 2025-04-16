@@ -1,0 +1,22 @@
+import { Form } from "react-router";
+import type { Route } from "./+types/home";
+import { Welcome } from "../welcome/welcome";
+import { Button } from "~/components/ui/button";
+
+export function meta({ }: Route.MetaArgs) {
+  return [
+    { title: "New React Router App" },
+    { name: "description", content: "Welcome to React Router!" },
+  ];
+}
+
+export default function Home() {
+  return (
+    <>
+      <Welcome />
+      <Form method="post" action="/logout" className="flex items-center justify-center pt-16 pb-4">
+        <Button variant="outline">Logout</Button>
+      </Form>
+    </>
+  );
+}
