@@ -1,10 +1,8 @@
-import { getSession, generateJWTClaims } from "./sessions";
-import { encrypt } from "./jwt";
+import { getSession } from "./sessions";
 
 async function ApiGET(request:Request, url="") {
     const session = await getSession(request.headers.get('Cookie'));
-    const { email, role, category } = generateJWTClaims(session);
-    const token = await encrypt({ email, role, category });
+    const token = session.get('token');
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -16,8 +14,7 @@ async function ApiGET(request:Request, url="") {
 
 async function ApiPOST(request:Request, url="", data={}) {
     const session = await getSession(request.headers.get('Cookie'));
-    const { email, role, category } = generateJWTClaims(session);
-    const token = await encrypt({ email, role, category });
+    const token = session.get('token');
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -32,8 +29,7 @@ async function ApiPOST(request:Request, url="", data={}) {
 
 async function ApiPATCH(request:Request, url="", data={}) {
     const session = await getSession(request.headers.get('Cookie'));
-    const { email, role, category } = generateJWTClaims(session);
-    const token = await encrypt({ email, role, category });
+    const token = session.get('token');
     const response = await fetch(url, {
         method: 'PATCH',
         headers: {
@@ -48,8 +44,7 @@ async function ApiPATCH(request:Request, url="", data={}) {
 
 async function ApiDELETE(request:Request, url="") {
     const session = await getSession(request.headers.get('Cookie'));
-    const { email, role, category } = generateJWTClaims(session);
-    const token = await encrypt({ email, role, category });
+    const token = session.get('token');
     const response = await fetch(url, {
         method: 'DELETE',
         headers: {
@@ -60,6 +55,5 @@ async function ApiDELETE(request:Request, url="") {
     });
     return response;
 }
-
 
 export {ApiGET, ApiPOST, ApiPATCH, ApiDELETE};

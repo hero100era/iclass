@@ -1,18 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { getSession, generateJWTClaims } from './sessions';
 
 interface AuthConfig {
     jwt: {
         expiresIn: number;
         algorithm: 'HS256';
-    };
-    cookie: {
-        name: string;
-        options: {
-            httpOnly: boolean;
-            sameSite: 'lax' | 'strict' | 'none';
-            path: string;
-        };
     };
 }
 
@@ -25,17 +16,9 @@ interface UserPayload {
 
 const AUTH_CONFIG: AuthConfig = {
     jwt: {
-        expiresIn: 60 * 10 * 1000, 
+        expiresIn: 60 * 60 * 1000, // 1 hour in seconds
         algorithm: 'HS256',
     },
-    cookie: {
-        name: 'session',
-        options: {
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
-        }
-    }
 };
 
 async function encrypt(payload: UserPayload): Promise<string> {

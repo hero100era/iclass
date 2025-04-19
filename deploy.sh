@@ -95,8 +95,8 @@ echo "DATABASE_URL_EXTERNAL=$DATABASE_URL_EXTERNAL" >> "$APP_DIR/.env"
 echo "SECRET_KEY=$SECRET_KEY" >> "$APP_DIR/.env"
 echo "NEXT_PUBLIC_SAFE_KEY=$NEXT_PUBLIC_SAFE_KEY" >> "$APP_DIR/.env"
 
-# Also load the variables to the current environment.
-source $APP_DIR/.env
+# Also load the variables to the current shell environment.
+export $(grep -vE '^#|^$' $APP_DIR/.env | xargs)
 
 #Create the postgrerst.conf file inside the backend directory(backend/postgrest.conf)
 echo "db-uri=$DATABASE_URL_EXTERNAL" > "$BACKEND_DIR/postgrest.conf"

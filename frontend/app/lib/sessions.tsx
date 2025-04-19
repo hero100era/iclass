@@ -1,10 +1,7 @@
 import { createCookieSessionStorage } from "react-router";
-import type { Session } from 'react-router';
 
 export type SessionData = {
-  email: string;
-  role: string;
-  category: string;
+  token: string;
 };
 
 type SessionFlashData = {
@@ -34,15 +31,4 @@ const { getSession, commitSession, destroySession } =
     }
   );
 
-  function generateJWTClaims(session: Session) {
-    const email = session.get('email');
-    const role = session.get('role');
-    const category = session.get('category');
-    return {
-        email,
-        role,
-        category,
-    };
-}
-
-export { getSession, commitSession, destroySession, generateJWTClaims };
+export { getSession, commitSession, destroySession };

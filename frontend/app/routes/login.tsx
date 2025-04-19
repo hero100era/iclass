@@ -7,6 +7,7 @@ import {
 
 import { LoginForm } from "~/components/login-form";
 import type { Route } from "./+types/login";
+import { encrypt } from "~/lib/jwt";
 
 export async function action({
   request,
@@ -23,16 +24,14 @@ export async function action({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, pass: password }),
   });
-  const data = await res.json();
 
-  if (!data || data.error) {
-    // Redirect back to the login page with errors.
+  const data = await res.json();
+  if (!res.ok || !data ) {
     return { error: "Invalid email or password or user does not exists." };
   }
-
-  session.set("email", email);
-  session.set("role", data.role);
-  session.set("category", data.category);
+  const { role, category } = data;
+  const token = await encrypt({ email, role, category });
+  session.set("token", token);
 
   // Login succeeded, send them to the home page.
   return redirect("/", {

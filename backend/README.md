@@ -9,6 +9,6 @@ Install the PostgREST, details please refer to [PostgREST Docs](https://postgres
 Then run the server via:
 
 ```bash
-cd server
+cd backend
 postgrest postgrest.conf
 ```

@@ -77,13 +77,6 @@ END;
 $$
 LANGUAGE plpgsql;
 
-DROP TYPE IF EXISTS auth.jwt_token;
-
-CREATE TYPE auth.jwt_token AS (
-  token text,
-  exp integer
-);
-
 -- the below should be on your exposed schema
 CREATE SCHEMA IF NOT EXISTS api AUTHORIZATION admingrp;
 
@@ -115,6 +108,12 @@ GRANT EXECUTE ON FUNCTION api.user_profile TO anonymous;
 CREATE EXTENSION IF NOT EXISTS pgjwt WITH SCHEMA auth;
 
 -- below is the function to generate the jwt token
+DROP TYPE IF EXISTS auth.jwt_token;
+CREATE TYPE auth.jwt_token AS (
+  token text,
+  exp integer
+);
+
 CREATE OR REPLACE FUNCTION api.login(email text, pass text)
   RETURNS auth.jwt_token
   AS $$
