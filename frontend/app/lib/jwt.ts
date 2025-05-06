@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import {getEnvOrDie } from './env.server';
 
 interface AuthConfig {
     jwt: {
@@ -29,7 +30,8 @@ async function encrypt(payload: UserPayload): Promise<string> {
         if (!process.env.SECRET_KEY) {
             throw new Error('SECRET_KEY environment variable is not set');
         }
-        const key = new TextEncoder().encode(process.env.SECRET_KEY);
+        const secretKey = getEnvOrDie('SECRET_KEY');
+        const key = new TextEncoder().encode(secretKey);
         return await new SignJWT({ ...payload, exp })
             .setProtectedHeader({ alg: AUTH_CONFIG.jwt.algorithm, typ: 'JWT' })
             .setIssuedAt()

@@ -49,6 +49,8 @@ export default function Todos({ loaderData }: Route.ComponentProps) {
                         <TableHead className="border border-gray-300">
                             Task
                         </TableHead>
+                        <TableHead className="border border-gray-300">
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -75,6 +77,6 @@ export default function Todos({ loaderData }: Route.ComponentProps) {
 function DeleteTodo({ pk }: { pk: number }) {
     const fetcher = useFetcher();
     return( <fetcher.Form method="post" action={`${pk}/delete`}>
-        <Button type="submit" variant="outline">Delete</Button>
+        <Button type="submit" variant="secondary">Delete</Button>
     </fetcher.Form>);
 }
