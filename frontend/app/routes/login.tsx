@@ -26,6 +26,7 @@ export async function action({
   });
 
   const data = await res.json();
+  console.log("Login response:", data);
   if (!res.ok || !data ) {
     return { error: "Invalid email or password or user does not exists." };
   }

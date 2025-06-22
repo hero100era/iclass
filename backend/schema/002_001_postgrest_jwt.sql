@@ -58,6 +58,7 @@ CREATE TRIGGER encrypt_pass
 
 CREATE OR REPLACE FUNCTION auth.user_profile(email text, pass text)
   RETURNS TABLE(
+    id integer,
     ROLE varchar,
     category varchar
   )
