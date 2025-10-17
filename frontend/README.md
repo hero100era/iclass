@@ -21,7 +21,6 @@ A modern, production-ready template for building full-stack React applications u
 Install the dependencies:
 
 ```bash
-cd frontend
 npm install
 ```
 
@@ -50,10 +49,10 @@ npm run build
 To build and run using Docker:
 
 ```bash
-docker build -t frontend .
+docker build -t my-app .
 
 # Run the container
-docker run -p 3000:3000 frontend
+docker run -p 3000:3000 my-app
 ```
 
 The containerized application can be deployed to any platform that supports Docker, including:
