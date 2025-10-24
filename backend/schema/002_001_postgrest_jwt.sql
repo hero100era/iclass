@@ -172,4 +172,3 @@ LANGUAGE plpgsql
 SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION api.login TO anonymous;
-

@@ -17,4 +17,3 @@ CREATE TABLE IF NOT EXISTS customers(
   display_name varchar(256) NOT NULL,
   company_id integer REFERENCES company(pk)
 );
-

@@ -555,4 +555,3 @@ CREATE OR REPLACE TRIGGER update_findings_updated_at_trigger
   BEFORE UPDATE ON finding_comments
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-

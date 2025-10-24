@@ -1,14 +1,17 @@
 import {
   isRouteErrorResponse,
+  redirect,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { getSession, commitSession } from "./lib/sessions.server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { decrypt, encrypt } from "./lib/jwt.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -21,6 +24,61 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
+];
+
+export const loggingMiddleware = async (
+  {
+    request,
+  }: {
+    request: Request;
+  },
+  next: any,
+) => {
+  const requestId = crypto.randomUUID();
+
+  console.log(`[${requestId}] ${request.method} ${request.url}`);
+
+  const start = performance.now();
+  const response = await next();
+  const duration = performance.now() - start;
+
+  console.log(`[${requestId}] Response ${response.status} (${duration}ms)`);
+
+  return response;
+};
+
+async function updateSessionMiddleware(
+  {
+    request,
+  }: {
+    request: Request;
+  },
+  next: any,
+) {
+  const pathname = new URL(request.url).pathname;
+  const session = await getSession(request.headers.get("Cookie"));
+  const token = session.get("token");
+  const publicRoutes = ["/login", "/signup"];
+  const isPublicRoute = publicRoutes.includes(pathname);
+  if (!isPublicRoute && !token) {
+    return redirect("/login");
+  }
+  let response = await next();
+  const payload = await decrypt(token);
+  if (payload && payload.exp && payload.iat) {
+    // if less than 60 seconds then update the session with a new token.
+    if (payload.exp - payload.iat <= 60) {
+      const new_token = await encrypt(payload);
+      session.set("token", new_token);
+      response.headers.set("Set-Cookie", await commitSession(session));
+    }
+  }
+  return response;
+}
+
+export const middleware: Route.MiddlewareFunction[] = [
+  updateSessionMiddleware,
+  loggingMiddleware,
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

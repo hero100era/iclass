@@ -95,8 +95,8 @@ CREATE OR REPLACE FUNCTION create_audit_partition(year int)
   AS $$
 BEGIN
   EXECUTE format('
-    CREATE TABLE IF NOT EXISTS table_data_changes_%s 
-    PARTITION OF table_data_changes 
+    CREATE TABLE IF NOT EXISTS table_data_changes_%s
+    PARTITION OF table_data_changes
     FOR VALUES FROM (%L) TO (%L);
   ', year, year || '-01-01 00:00:00',(year + 1) || '-01-01 00:00:00');
 END;

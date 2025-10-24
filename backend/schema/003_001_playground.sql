@@ -18,4 +18,3 @@ GRANT ALL ON todos TO admingrp;
 INSERT INTO todos(task)
   VALUES ('finish tutorial 0'),
 ('pat self on back');
-

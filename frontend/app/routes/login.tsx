@@ -1,39 +1,39 @@
-import { GalleryVerticalEnd } from "lucide-react";
+import { z } from "zod";
 import { redirect } from "react-router";
-import {
-  getSession,
-  commitSession,
-} from "~/lib/sessions";
+import { getSession, commitSession } from "~/lib/sessions.server";
+import { encrypt } from "~/lib/jwt.server";
+import { ApiPOST } from "~/lib/api";
+import { LoginFormSchema } from "~/definitions/auth_scheme";
+import type { Route } from "./+types/signup";
 
-import { LoginForm } from "~/components/login-form";
-import type { Route } from "./+types/login";
-import { encrypt } from "~/lib/jwt";
-
-export async function action({
-  request,
-}: Route.ActionArgs) {
-  const session = await getSession(
-    request.headers.get("Cookie")
-  );
-  const form = await request.formData();
-  const email = form.get("email") as string;
-  const password = form.get("password") as string;
-
-  const res = await fetch(`${process.env.API_URL}/rpc/user_profile`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, pass: password }),
-  });
-
-  const data = await res.json();
-  if (!res.ok || !data ) {
-    return { error: "Invalid email or password or user does not exists." };
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const form = Object.fromEntries(formData);
+  const result = LoginFormSchema.safeParse({ ...form });
+  if (!result.success) {
+    return { errors: z.flattenError(result.error) };
   }
-  const { role, category } = data;
-  const token = await encrypt({ email, role, category });
+  const { email, password } = result.data;
+  const host = import.meta.env.API_URL || "http://localhost:2000";
+  const pgrst_query_str = `${host}/rpc/user_profile`;
+  const response = await ApiPOST(request, pgrst_query_str, {
+    email,
+    pass: password,
+  });
+  if (!response.ok) {
+    return {
+      errors: {
+        formErrors: [
+          "Failed to login, invalid email/password or user does not exists.",
+        ],
+      },
+    };
+  }
+  const data = await response.json();
+  const { id, role, category } = data;
+  const token = await encrypt({ id, role, email, category });
+  const session = await getSession(request.headers.get("Cookie"));
   session.set("token", token);
-
-  // Login succeeded, send them to the home page.
   return redirect("/", {
     headers: {
       "Set-Cookie": await commitSession(session),
@@ -41,20 +41,14 @@ export async function action({
   });
 }
 
-export default function LoginPage({ actionData }: Route.ComponentProps) {
-  const { error } = actionData || {};
+export default function Login() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="#" className="flex items-center gap-2 self-center font-medium">
-          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-4" />
-          </div>
-          RINA S.P.A.
-        </a>
-        <LoginForm />
-        <p className="text-red-700 text-center">{error}</p>
-      </div>
-    </div>
-  )
+    <form method="POST">
+      <label htmlFor="email">Email:</label>
+      <input type="email" id="email" name="email" required />
+      <label htmlFor="password">Password:</label>
+      <input type="password" id="password" name="password" required />
+      <button type="submit">Login</button>
+    </form>
+  );
 }
