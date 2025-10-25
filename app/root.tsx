@@ -1,0 +1,133 @@
+import {
+  isRouteErrorResponse,
+  redirect,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "react-router";
+import { getSession, commitSession } from "./lib/sessions.server";
+
+import type { Route } from "./+types/root";
+import "./app.css";
+import { decrypt, encrypt } from "./lib/jwt.server";
+
+export const links: Route.LinksFunction = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+  },
+];
+
+export const loggingMiddleware = async (
+  {
+    request,
+  }: {
+    request: Request;
+  },
+  next: any,
+) => {
+  const requestId = crypto.randomUUID();
+
+  console.log(`[${requestId}] ${request.method} ${request.url}`);
+
+  const start = performance.now();
+  const response = await next();
+  const duration = performance.now() - start;
+
+  console.log(`[${requestId}] Response ${response.status} (${duration}ms)`);
+
+  return response;
+};
+
+async function updateSessionMiddleware(
+  {
+    request,
+  }: {
+    request: Request;
+  },
+  next: any,
+) {
+  const pathname = new URL(request.url).pathname;
+  const session = await getSession(request.headers.get("Cookie"));
+  const token = session.get("token");
+  const publicRoutes = ["/login", "/signup"];
+  const isPublicRoute = publicRoutes.includes(pathname);
+  if (!isPublicRoute && !token) {
+    return redirect("/login");
+  }
+  let response = await next();
+  const payload = await decrypt(token);
+  if (payload && payload.exp && payload.iat) {
+    // if less than 60 seconds then update the session with a new token.
+    if (payload.exp - payload.iat <= 60) {
+      const new_token = await encrypt(payload);
+      session.set("token", new_token);
+      response.headers.set("Set-Cookie", await commitSession(session));
+    }
+  }
+  return response;
+}
+
+export const middleware: Route.MiddlewareFunction[] = [
+  loggingMiddleware,
+  updateSessionMiddleware,
+];
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+export default function App() {
+  return <Outlet />;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  let message = "Oops!";
+  let details = "An unexpected error occurred.";
+  let stack: string | undefined;
+
+  if (isRouteErrorResponse(error)) {
+    message = error.status === 404 ? "404" : "Error";
+    details =
+      error.status === 404
+        ? "The requested page could not be found."
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error && error instanceof Error) {
+    details = error.message;
+    stack = error.stack;
+  }
+
+  return (
+    <main className="pt-16 p-4 container mx-auto">
+      <h1>{message}</h1>
+      <p>{details}</p>
+      {stack && (
+        <pre className="w-full p-4 overflow-x-auto">
+          <code>{stack}</code>
+        </pre>
+      )}
+    </main>
+  );
+}
