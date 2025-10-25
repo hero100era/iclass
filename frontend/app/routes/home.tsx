@@ -18,7 +18,9 @@ export default function Home() {
         action="/logout"
         className="flex items-center justify-center pt-16 pb-4"
       >
-        <button type="submit">Logout</button>
+        <button type="submit" className="bg-sky-500 hover:bg-sky-700">
+          Logout
+        </button>
       </Form>
     </>
   );

@@ -77,8 +77,8 @@ async function updateSessionMiddleware(
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
-  updateSessionMiddleware,
   loggingMiddleware,
+  updateSessionMiddleware,
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,5 @@
 import { createCookieSessionStorage } from "react-router";
 import { getEnvOrDie } from "./env";
-import { get } from "node:https";
 
 type SessionData = {
   token: string;
