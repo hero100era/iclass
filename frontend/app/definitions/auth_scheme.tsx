@@ -31,6 +31,23 @@ export type FormState =
     }
   | undefined;
 
-export type SessionPayload = {
-  token: string;
+export const oAuthProviders = ["github", "discord"] as const;
+export type OAuthProvider = (typeof oAuthProviders)[number];
+
+export const userRoles = ["admin", "user"] as const;
+export type UserRole = (typeof userRoles)[number];
+
+export type Cookies = {
+  set: (
+    key: string,
+    value: string,
+    options: {
+      secure?: boolean;
+      httpOnly?: boolean;
+      sameSite?: "strict" | "lax";
+      expires?: number;
+    },
+  ) => void;
+  get: (key: string) => { name: string; value: string } | undefined;
+  delete: (key: string) => void;
 };

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { redirect } from "react-router";
-import { getSession, commitSession } from "~/lib/sessions.server";
-import { encrypt } from "~/lib/jwt.server";
-import { ApiPOST } from "~/lib/api";
+import { redirect, Link } from "react-router";
+import { getSession, commitSession } from "~/.server/lib/sessions";
+import { encrypt } from "~/.server/lib/jwt";
+import { ApiPOST } from "~/.server/lib/api";
 import { LoginFormSchema } from "~/definitions/auth_scheme";
-import type { Route } from "./+types/signup";
+import type { Route } from "./+types/login";
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -14,7 +14,7 @@ export async function action({ request }: Route.ActionArgs) {
     return { errors: z.flattenError(result.error) };
   }
   const { email, password } = result.data;
-  const host = import.meta.env.API_URL || "http://localhost:2000";
+  const host = process.env.API_URL || "http://localhost:2000";
   const pgrst_query_str = `${host}/rpc/user_profile`;
   const response = await ApiPOST(request, pgrst_query_str, {
     email,
@@ -43,12 +43,15 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function Login() {
   return (
-    <form method="POST">
-      <label htmlFor="email">Email:</label>
-      <input type="email" id="email" name="email" required />
-      <label htmlFor="password">Password:</label>
-      <input type="password" id="password" name="password" required />
-      <button type="submit">Login</button>
-    </form>
+    <>
+      <form method="POST">
+        <label htmlFor="email">Email:</label>
+        <input type="email" id="email" name="email" required />
+        <label htmlFor="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+        <button type="submit">Login</button>
+      </form>
+      <Link to="oauth/github">Github</Link>
+    </>
   );
 }

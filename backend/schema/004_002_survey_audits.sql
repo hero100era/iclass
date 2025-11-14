@@ -1,4 +1,4 @@
-search_path TO 'iclass';
+SET search_path TO 'iclass, public';
 
 CREATE TYPE job_status_enum AS ENUM(
   'ST',

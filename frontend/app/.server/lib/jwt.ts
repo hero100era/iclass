@@ -5,7 +5,7 @@ import { getEnvOrDie } from "./env";
 export async function encrypt(payload: JWTPayload) {
   const secret = getEnvOrDie("SECRET");
   const key = new TextEncoder().encode(secret);
-  const expires = Math.floor(Date.now() / 1000) + 3600; // current time + 1 hour
+  const expires = Math.floor(Date.now() / 1000) + 900; // current time + 15 minutes
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -21,7 +21,7 @@ export async function decrypt(token: string | undefined = "") {
       algorithms: ["HS256"],
     });
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

@@ -1,5 +1,5 @@
 function dieForEnv(key: string): never {
-  throw new Error(`environment variable ${key} must be set.`);
+  throw new Error(`environment variable ${key} must be set in .env file.`);
 }
 
 function getEnvOrDie(key: string) {

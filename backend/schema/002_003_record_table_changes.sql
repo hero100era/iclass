@@ -1,4 +1,4 @@
-SET search_path TO 'iclass';
+SET search_path TO 'iclass, public';
 
 CREATE TABLE IF NOT EXISTS table_data_changes(
   pk bigserial,

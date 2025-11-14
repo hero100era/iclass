@@ -1,4 +1,4 @@
-SET search_path TO 'iclass';
+SET search_path TO 'iclass, public';
 
 CREATE TYPE administration_types_enum AS ENUM(
   'C',

@@ -1,4 +1,4 @@
-import { getSession } from "./sessions.server";
+import { getSession } from "./sessions";
 
 async function ApiGET(request: Request, url = "") {
   const session = await getSession(request.headers.get("Cookie"));

@@ -1,4 +1,4 @@
-SET search_path TO 'auth';
+SET search_path TO 'auth, public';
 
 CREATE TABLE IF NOT EXISTS auth.users(
   pk serial PRIMARY KEY,
@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION auth.user_profile(email text, pass text)
 BEGIN
   RETURN query
   SELECT
-    u.pk AS id,
+    u.pk as id,
     u.role,
     u.category
   FROM
@@ -119,7 +119,7 @@ CREATE OR REPLACE FUNCTION api.login(email text, pass text)
   RETURNS auth.jwt_token
   AS $$
 DECLARE
-  users_record record;
+  user_record record;
   result auth.jwt_token;
   jwt_secret text;
   jwt_expire_seconds integer;
@@ -130,8 +130,8 @@ BEGIN
   SELECT
     *
   FROM
-    auth.user_profile(email, pass) INTO users_record;
-  IF users_record IS NULL THEN
+    auth.user_profile(email, pass) INTO user_record;
+  IF user_record IS NULL THEN
     RAISE invalid_password
     USING message = 'invalid users or password';
   END IF;
@@ -140,9 +140,9 @@ BEGIN
       exp
     FROM (
       SELECT
-        users_record.role AS role,
+        user_record.role AS role,
         email,
-        users_record.category AS category,
+        user_record.category AS category,
         extract(epoch FROM now())::integer + jwt_expire_seconds AS exp) r INTO result;
     RETURN result;
 END;

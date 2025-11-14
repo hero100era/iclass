@@ -2,7 +2,9 @@ import { createCookieSessionStorage } from "react-router";
 import { getEnvOrDie } from "./env";
 
 type SessionData = {
-  token: string;
+  token?: string;
+  oAuthState?: string;
+  codeVerifier?: string;
 };
 
 type SessionFlashData = {

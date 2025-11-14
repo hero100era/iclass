@@ -1,4 +1,4 @@
-SET search_path TO 'api';
+SET search_path TO 'api, public';
 
 CREATE TABLE IF NOT EXISTS todos(
   pk serial PRIMARY KEY,
