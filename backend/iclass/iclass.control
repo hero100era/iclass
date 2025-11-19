@@ -1,0 +1,6 @@
+default_version = '0.0.1'
+comment = 'Extension to define iclass'
+relocatable = false
+superuser = false
+requires = 'plpgsql'
+schema = 'iclass'

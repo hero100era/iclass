@@ -1,6 +1,4 @@
-SET search_path TO 'iclass, public';
-
-CREATE TYPE administration_types_enum AS ENUM(
+CREATE TYPE iclass.administration_types_enum AS ENUM(
   'C',
   'N',
   'O',
@@ -8,12 +6,12 @@ CREATE TYPE administration_types_enum AS ENUM(
   'U'
 );
 
-CREATE TABLE IF NOT EXISTS administration_types(
-  code administration_types_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.administration_types(
+  code iclass.administration_types_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO administration_types(code, name)
+INSERT INTO iclass.administration_types(code, name)
   VALUES ('C', 'Civilian'),
 ('N', 'Naval'),
 ('O', 'Other'),
@@ -22,73 +20,73 @@ INSERT INTO administration_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE class_status_enum AS ENUM(
+CREATE TYPE iclass.class_status_enum AS ENUM(
   'V',
   'S',
   'W'
 );
 
-CREATE TABLE class_status(
-  code class_status_enum PRIMARY KEY,
+CREATE TABLE iclass.class_status(
+  code iclass.class_status_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO class_status(code, name)
+INSERT INTO iclass.class_status(code, name)
   VALUES ('V', 'Valid'),
 ('S', 'Suspended'),
 ('W', 'Withdrawn')
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE ship_status_enum AS ENUM(
+CREATE TYPE iclass.ship_status_enum AS ENUM(
   'E',
   'L',
   'P'
 );
 
-CREATE TABLE IF NOT EXISTS ship_status(
-  code ship_status_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.ship_status(
+  code iclass.ship_status_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO ship_status(code, name)
+INSERT INTO iclass.ship_status(code, name)
   VALUES ('E', 'In Service'),
 ('L', 'Laid Up'),
 ('P', 'Withdrawn')
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE certificate_status_enum AS ENUM(
+CREATE TYPE iclass.certificate_status_enum AS ENUM(
   'V',
   'S',
   'W'
 );
 
-CREATE TABLE IF NOT EXISTS certificate_status(
-  code certificate_status_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.certificate_status(
+  code iclass.certificate_status_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO certificate_status(code, name)
+INSERT INTO iclass.certificate_status(code, name)
   VALUES ('V', 'Valid'),
 ('S', 'Suspended'),
 ('W', 'Withdrawn')
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE certificate_validity_types_enum AS ENUM(
+CREATE TYPE iclass.certificate_validity_types_enum AS ENUM(
   'F',
   'I',
   'S',
   'C'
 );
 
-CREATE TABLE IF NOT EXISTS certificates_validity_type(
-  code certificate_validity_types_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.certificates_validity_type(
+  code iclass.certificate_validity_types_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO certificates_validity_types(code, name)
+INSERT INTO iclass.certificates_validity_types(code, name)
   VALUES ('F', 'Full Term'),
 ('I', 'Interim'),
 ('S', 'Short Term'),
@@ -96,25 +94,25 @@ INSERT INTO certificates_validity_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE certificate_categories_enum AS ENUM(
+CREATE TYPE iclass.certificate_categories_enum AS ENUM(
   'IC',
   'C',
   'SoC'
 );
 
-CREATE TABLE IF NOT EXISTS certificate_categories(
-  code certificate_categories_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.certificate_categories(
+  code iclass.certificate_categories_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO certificate_categories(code, name)
+INSERT INTO iclass.certificate_categories(code, name)
   VALUES ('IC', 'International Certificates'),
 ('C', 'Conditional'),
 ('SoC', 'Statement of Compliance')
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE certificate_internal_categories_enum AS ENUM(
+CREATE TYPE iclass.certificate_internal_categories_enum AS ENUM(
   'CL',
   'ST',
   'SI',
@@ -122,13 +120,13 @@ CREATE TYPE certificate_internal_categories_enum AS ENUM(
   'SoC'
 );
 
-CREATE TABLE IF NOT EXISTS certificate_internal_categories(
-  code certificate_categories_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.certificate_internal_categories(
+  code iclass.certificate_internal_categories_enum PRIMARY KEY,
   name varchar(100) NOT NULL,
   description text
 );
 
-INSERT INTO certificate_internal_categories(code, name, description)
+INSERT INTO iclass.certificate_internal_categories(code, name, description)
   VALUES ('CL', 'Classification', 'Certificates of classification issued by the classification society'),
 ('ST', 'Standard', 'Certificates of conformity to particular requirements issued on the authority of the ships''s flag administration'),
 ('SI', 'Statement for Issue', 'Statement issued by RO for the purpose of the issue of the actual certificates by the flag administration'),
@@ -137,19 +135,19 @@ INSERT INTO certificate_internal_categories(code, name, description)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE survey_audit_status_enum AS ENUM(
+CREATE TYPE iclass.survey_audit_status_enum AS ENUM(
   'D',
   'O',
   'P',
   'B'
 );
 
-CREATE TABLE IF NOT EXISTS survey_audit_status(
-  code survey_audit_status_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.survey_audit_status(
+  code iclass.survey_audit_status_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO survey_audit_status(code, name)
+INSERT INTO iclass.survey_audit_status(code, name)
   VALUES ('D', 'Within Due Date'),
 ('O', 'Overdue'),
 ('P', 'Partial'),
@@ -157,7 +155,7 @@ INSERT INTO survey_audit_status(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE comment_types_enum AS ENUM(
+CREATE TYPE iclass.comment_types_enum AS ENUM(
   'M',
   'C',
   'S',
@@ -166,12 +164,12 @@ CREATE TYPE comment_types_enum AS ENUM(
   'O'
 );
 
-CREATE TABLE IF NOT EXISTS comment_types(
-  code comment_types_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.comment_types(
+  code iclass.comment_types_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO comment_types(code, name)
+INSERT INTO iclass.comment_types(code, name)
   VALUES ('M', 'Memorandum'),
 ('C', 'Condition of Class'),
 ('S', 'Statutory Condition'),
@@ -181,18 +179,18 @@ INSERT INTO comment_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE comment_status_enum AS ENUM(
+CREATE TYPE iclass.comment_status_enum AS ENUM(
   'A',
   'P',
   'O'
 );
 
-CREATE TABLE IF NOT EXISTS comment_status(
-  code comment_status_enum PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS iclass.comment_status(
+  code iclass.comment_status_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO comment_status(code, name)
+INSERT INTO iclass.comment_status(code, name)
   VALUES ('A', 'Active'),
 ('P', 'Postponed'),
 ('O', 'Overdue')
@@ -200,13 +198,13 @@ ON CONFLICT
   DO NOTHING;
 
 -- Create enum for certificates applicability
-CREATE TYPE certificates_applicability_enum AS ENUM(
+CREATE TYPE iclass.certificates_applicability_enum AS ENUM(
   'Vessel',
   'Companies'
 );
 
 -- Create function to update updated_at column
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE OR REPLACE FUNCTION iclass.update_updated_at_column()
   RETURNS TRIGGER
   AS $$
 BEGIN
@@ -217,12 +215,12 @@ $$
 LANGUAGE 'plpgsql';
 
 -- Create table for Classification Societies reference
-CREATE TABLE IF NOT EXISTS classification_societies(
+CREATE TABLE IF NOT EXISTS iclass.classification_societies(
   code varchar(20) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO classification_societies(code, name)
+INSERT INTO iclass.classification_societies(code, name)
   VALUES ('ABS', 'American Bureau of Shipsping'),
 ('BV', 'Bureau Veritas'),
 ('CCS', 'China Classification Society'),
@@ -238,7 +236,7 @@ INSERT INTO classification_societies(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE vessel_types_iacs_enum AS ENUM(
+CREATE TYPE iclass.vessel_types_iacs_enum AS ENUM(
   'BC',
   'CT',
   'GC',
@@ -250,12 +248,12 @@ CREATE TYPE vessel_types_iacs_enum AS ENUM(
 );
 
 -- Create table for vessel types reference
-CREATE TABLE IF NOT EXISTS vessel_types_iacs(
+CREATE TABLE IF NOT EXISTS iclass.vessel_types_iacs(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO vessel_types_iacs(code, name)
+INSERT INTO iclass.vessel_types_iacs(code, name)
   VALUES ('BC', 'Bulk carrier (all combinations OB, OBO,OO)'),
 ('CT', 'Chemical tanker'),
 ('GC', 'General cargo vessel (including ro-ro cargo, container, reefer, HSC cargo)'),
@@ -267,7 +265,7 @@ INSERT INTO vessel_types_iacs(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE vessel_types_mms_enum AS ENUM(
+CREATE TYPE iclass.vessel_types_mms_enum AS ENUM(
   'BC',
   'CH',
   'CT',
@@ -281,12 +279,12 @@ CREATE TYPE vessel_types_mms_enum AS ENUM(
 );
 
 -- Create table for MMS vessel types reference
-CREATE TABLE IF NOT EXISTS vessel_types_mms(
+CREATE TABLE IF NOT EXISTS iclass.vessel_types_mms(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO vessel_types_mms(code, name)
+INSERT INTO iclass.vessel_types_mms(code, name)
   VALUES ('BC', 'Bulk carrier'),
 ('CH', 'Cargo high speed craft'),
 ('CT', 'Chemical tanker'),
@@ -301,7 +299,7 @@ ON CONFLICT
   DO NOTHING;
 
 -- Create table for Survey/Audit Codes
-CREATE TABLE IF NOT EXISTS survey_audit_codes(
+CREATE TABLE IF NOT EXISTS iclass.survey_audit_codes(
   code varchar(10) PRIMARY KEY,
   description varchar(100) NOT NULL,
   is_statutory boolean NOT NULL,
@@ -310,7 +308,7 @@ CREATE TABLE IF NOT EXISTS survey_audit_codes(
   is_mandatory boolean NOT NULL DEFAULT TRUE
 );
 
-INSERT INTO survey_audit_codes(code, description, is_statutory, is_audit, is_doc, is_mandatory)
+INSERT INTO iclass.survey_audit_codes(code, description, is_statutory, is_audit, is_doc, is_mandatory)
   VALUES ('AFS', 'Anti-Fouling System', TRUE, FALSE, FALSE, TRUE),
 ('BWM', 'Ballast Water Management', TRUE, FALSE, FALSE, TRUE),
 ('CL', 'Classification', FALSE, FALSE, FALSE, TRUE),
@@ -358,7 +356,7 @@ INSERT INTO survey_audit_codes(code, description, is_statutory, is_audit, is_doc
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE survey_audit_types_enum AS ENUM(
+CREATE TYPE iclass.survey_audit_types_enum AS ENUM(
   'A',
   'F',
   'I',
@@ -370,13 +368,13 @@ CREATE TYPE survey_audit_types_enum AS ENUM(
 );
 
 -- Create table for Survey/Audit Types
-CREATE TABLE IF NOT EXISTS survey_audit_types(
+CREATE TABLE IF NOT EXISTS iclass.survey_audit_types(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL,
   is_scheduled boolean NOT NULL
 );
 
-INSERT INTO survey_audit_types(code, name, is_scheduled)
+INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
   VALUES ('A', 'Annual', TRUE),
 ('F', 'Final', FALSE),
 ('I', 'Initial', FALSE),
@@ -389,7 +387,7 @@ ON CONFLICT
   DO NOTHING;
 
 -- Create table for companies
-CREATE TABLE IF NOT EXISTS companies(
+CREATE TABLE IF NOT EXISTS iclass.companies(
   pk serial PRIMARY KEY,
   imo_number varchar(7),
   name varchar(80) NOT NULL,
@@ -407,16 +405,16 @@ CREATE TABLE IF NOT EXISTS companies(
 );
 
 -- Create table for ships
-CREATE TABLE IF NOT EXISTS ships(
+CREATE TABLE IF NOT EXISTS iclass.ships(
   pk serial PRIMARY KEY,
   name varchar(40) NOT NULL,
   build_date date,
   keel_laid_date date,
   class_entry_date date,
   imo_number varchar(7),
-  administration_types administration_types_enum NOT NULL,
+  administration_types iclass.administration_types_enum NOT NULL,
   administration_country char(3),
-  classed_by varchar(20) REFERENCES classification_societies(code),
+  classed_by varchar(20) REFERENCES iclass.classification_societies(code),
   class_number varchar(8),
   port_of_registry varchar(50),
   date_of_registry date,
@@ -430,9 +428,9 @@ CREATE TABLE IF NOT EXISTS ships(
   class_notation varchar(500),
   gross_tons DECIMAL(9, 2),
   deadweight integer,
-  registered_owner_id integer REFERENCES companies(pk),
-  ism_shipsowner_id integer REFERENCES companies(pk),
-  mlc_shipsowner_id integer REFERENCES companies(pk),
+  registered_owner_id integer REFERENCES iclass.companies(pk),
+  ism_shipsowner_id integer REFERENCES iclass.companies(pk),
+  mlc_shipsowner_id integer REFERENCES iclass.companies(pk),
   previous_names varchar(400),
   mmsi_number varchar(10),
   main_class varchar(30),
@@ -446,25 +444,25 @@ CREATE TABLE IF NOT EXISTS ships(
   moulded_depth DECIMAL(9, 2),
   moulded_breadth DECIMAL(9, 2),
   moulded_draft DECIMAL(9, 2),
-  dual_class varchar(20) REFERENCES classification_societies(code),
+  dual_class varchar(20) REFERENCES iclass.classification_societies(code),
   singal_letter varchar(10),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create table for certificates
-CREATE TABLE IF NOT EXISTS certificates(
+CREATE TABLE IF NOT EXISTS iclass.certificates(
   pk serial PRIMARY KEY,
   certificates_id varchar(20) UNIQUE NOT NULL,
   ships_id integer REFERENCES ships(pk),
-  companies_id integer REFERENCES companies(pk),
+  companies_id integer REFERENCES iclass.companies(pk),
   status certificate_status_enum NOT NULL,
   remark varchar(2) NOT NULL,
-  issued_by varchar(20) REFERENCES classification_societies(code) NOT NULL,
-  code varchar(10) REFERENCES survey_audit_codes(code) NOT NULL,
-  validity_type certificate_validity_types_enum NOT NULL,
-  category certificate_categories_enum NOT NULL,
-  internal_category certificate_internal_categories_enum NOT NULL,
+  issued_by varchar(20) REFERENCES iclass.classification_societies(code) NOT NULL,
+  code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
+  validity_type iclass.certificate_validity_types_enum NOT NULL,
+  category iclass.certificate_categories_enum NOT NULL,
+  internal_category iclass.certificate_internal_categories_enum NOT NULL,
   description varchar(120),
   issue_date date NOT NULL,
   expiry_date date,
@@ -477,17 +475,17 @@ CREATE TABLE IF NOT EXISTS certificates(
 );
 
 -- Create table for survey/audit
-CREATE TABLE IF NOT EXISTS survey_audits(
+CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   pk serial PRIMARY KEY,
-  certificates_id integer REFERENCES certificates(pk),
-  code varchar(10) REFERENCES survey_audit_codes(code) NOT NULL,
-  type survey_audit_types_enum,
+  certificates_id integer REFERENCES iclass.certificates(pk),
+  code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
+  type iclass.survey_audit_types_enum,
   description varchar(120) NOT NULL,
   last_held_date date NOT NULL,
   place_held varchar(50) NOT NULL,
   next_due_date date,
   postponement_date date,
-  status survey_audit_status_enum NOT NULL,
+  status iclass.survey_audit_status_enum NOT NULL,
   range_from_date date,
   range_to_date date,
   fee DECIMAL(9, 2),
@@ -496,17 +494,17 @@ CREATE TABLE IF NOT EXISTS survey_audits(
 );
 
 -- Create table for Findings/Comments
-CREATE TABLE IF NOT EXISTS finding_comments(
+CREATE TABLE IF NOT EXISTS iclass.finding_comments(
   pk serial PRIMARY KEY,
-  ships_id integer REFERENCES ships(pk),
-  companies_id integer REFERENCES companies(pk),
-  comment_types comment_types_enum NOT NULL,
+  ships_id integer REFERENCES iclass.ships(pk),
+  companies_id integer REFERENCES iclass.companies(pk),
+  comment_types iclass.comment_types_enum NOT NULL,
   certificates varchar(500),
   date_issued date NOT NULL,
   place_issued varchar(50),
   due_date date,
   expiry_survey_audits varchar(500),
-  status comment_status_enum,
+  status iclass.comment_status_enum,
   postponed_due_date date,
   postponed_expiry_survey_audits text,
   mms_reference varchar(20),
@@ -516,42 +514,42 @@ CREATE TABLE IF NOT EXISTS finding_comments(
 );
 
 -- Create indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_ships_imo ON ships(imo_number);
+CREATE INDEX IF NOT EXISTS iclass.idx_ships_imo ON iclass.ships(imo_number);
 
-CREATE INDEX IF NOT EXISTS idx_ships_class_number ON ships(class_number);
+CREATE INDEX IF NOT EXISTS iclass.idx_ships_class_number ON iclass.ships(class_number);
 
-CREATE INDEX IF NOT EXISTS idx_certificates_ships_id ON certificates(ships_id);
+CREATE INDEX IF NOT EXISTS iclass.idx_certificates_ships_id ON iclass.certificates(ships_id);
 
-CREATE INDEX IF NOT EXISTS idx_certificates_companies_id ON certificates(companies_id);
+CREATE INDEX IF NOT EXISTS iclass.idx_certificates_companies_id ON certificates(companies_id);
 
-CREATE INDEX IF NOT EXISTS idx_survey_audits_certificates_id ON survey_audits(certificates_id);
+CREATE INDEX IF NOT EXISTS iclass.idx_survey_audits_certificates_id ON survey_audits(certificates_id);
 
-CREATE INDEX IF NOT EXISTS idx_finding_ships_id ON finding_comments(ships_id);
+CREATE INDEX IF NOT EXISTS iclass.idx_finding_ships_id ON finding_comments(ships_id);
 
-CREATE INDEX IF NOT EXISTS idx_finding_companies_id ON finding_comments(companies_id);
+CREATE INDEX IF NOT EXISTS iclass.idx_finding_companies_id ON finding_comments(companies_id);
 
 -- Create updated_at triggers for all tables
-CREATE OR REPLACE TRIGGER update_ships_updated_at
+CREATE OR REPLACE TRIGGER iclass.update_ships_updated_at
   BEFORE UPDATE ON ships
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION iclass.update_updated_at_column();
 
-CREATE OR REPLACE TRIGGER update_companies_updated_at_trigger
+CREATE OR REPLACE TRIGGER iclass.update_companies_updated_at_trigger
   BEFORE UPDATE ON companies
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION iclass.update_updated_at_column();
 
-CREATE OR REPLACE TRIGGER update_certificates_updated_at_trigger
+CREATE OR REPLACE TRIGGER iclass.update_certificates_updated_at_trigger
   BEFORE UPDATE ON certificates
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION iclass.update_updated_at_column();
 
-CREATE OR REPLACE TRIGGER update_survey_updated_at_trigger
-  BEFORE UPDATE ON survey_audits
+CREATE OR REPLACE TRIGGER iclass.update_survey_updated_at_trigger
+  BEFORE UPDATE ON iclass.survey_audits
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION iclass.update_updated_at_column();
 
-CREATE OR REPLACE TRIGGER update_findings_updated_at_trigger
-  BEFORE UPDATE ON finding_comments
+CREATE OR REPLACE TRIGGER iclass.update_findings_updated_at_trigger
+  BEFORE UPDATE ON iclass.finding_comments
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION iclass.update_updated_at_column();

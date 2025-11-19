@@ -1,0 +1,7 @@
+DROP DATABASE IF EXISTS mydb;
+CREATE DATABASE mydb WITH OWNER postgres;
+
+GRANT CREATE ON DATABASE mydb TO admingrp;
+
+\c mydb
+SET ROLE admingrp;

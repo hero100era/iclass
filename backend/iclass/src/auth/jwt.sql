@@ -1,6 +1,5 @@
-SET search_path TO 'auth, public';
-
-CREATE TABLE IF NOT EXISTS auth.users(
+DROP TABLE IF EXISTS auth.users;
+CREATE TABLE auth.users(
   pk serial PRIMARY KEY,
   email text CHECK (email ~* '^.+@.+\..+$') UNIQUE NOT NULL,
   pass varchar(512) NOT NULL,
@@ -31,7 +30,6 @@ $$
 LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS ensure_users_role_exists ON auth.users;
-
 CREATE CONSTRAINT TRIGGER ensure_users_role_exists
   AFTER INSERT OR UPDATE ON auth.users FOR EACH ROW
   EXECUTE PROCEDURE auth.check_role_exists();
@@ -51,7 +49,6 @@ $$
 LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS encrypt_pass ON auth.users;
-
 CREATE TRIGGER encrypt_pass
   BEFORE INSERT OR UPDATE ON auth.users FOR EACH ROW
   EXECUTE PROCEDURE auth.encrypt_pass();
@@ -106,69 +103,69 @@ GRANT EXECUTE ON FUNCTION api.user_profile TO anonymous;
 
 -- below is not needed if we don't use postgres to manage the jwt tokens.
 -- First ensure the pgjwt extension is available and installed
-CREATE EXTENSION IF NOT EXISTS pgjwt WITH SCHEMA auth;
+-- CREATE EXTENSION IF NOT EXISTS pgjwt WITH SCHEMA auth;
 
--- below is the function to generate the jwt token
-DROP TYPE IF EXISTS auth.jwt_token;
-CREATE TYPE auth.jwt_token AS (
-  token text,
-  exp integer
-);
+-- -- below is the function to generate the jwt token
+-- DROP TYPE IF EXISTS auth.jwt_token;
+-- CREATE TYPE auth.jwt_token AS (
+--   token text,
+--   exp integer
+-- );
 
-CREATE OR REPLACE FUNCTION api.login(email text, pass text)
-  RETURNS auth.jwt_token
-  AS $$
-DECLARE
-  user_record record;
-  result auth.jwt_token;
-  jwt_secret text;
-  jwt_expire_seconds integer;
-BEGIN
-  -- check email and password
-  jwt_secret := current_setting('app.settings.jwt_secret', TRUE);
-  jwt_expire_seconds := current_setting('app.settings.jwt_expire_seconds', TRUE)::integer;
-  SELECT
-    *
-  FROM
-    auth.user_profile(email, pass) INTO user_record;
-  IF user_record IS NULL THEN
-    RAISE invalid_password
-    USING message = 'invalid users or password';
-  END IF;
-    SELECT
-      sign(row_to_json(r), jwt_secret) AS token,
-      exp
-    FROM (
-      SELECT
-        user_record.role AS role,
-        email,
-        user_record.category AS category,
-        extract(epoch FROM now())::integer + jwt_expire_seconds AS exp) r INTO result;
-    RETURN result;
-END;
-$$
-LANGUAGE plpgsql
-SECURITY DEFINER;
+-- CREATE OR REPLACE FUNCTION api.login(email text, pass text)
+--   RETURNS auth.jwt_token
+--   AS $$
+-- DECLARE
+--   user_record record;
+--   result auth.jwt_token;
+--   jwt_secret text;
+--   jwt_expire_seconds integer;
+-- BEGIN
+--   -- check email and password
+--   jwt_secret := current_setting('app.settings.jwt_secret', TRUE);
+--   jwt_expire_seconds := current_setting('app.settings.jwt_expire_seconds', TRUE)::integer;
+--   SELECT
+--     *
+--   FROM
+--     auth.user_profile(email, pass) INTO user_record;
+--   IF user_record IS NULL THEN
+--     RAISE invalid_password
+--     USING message = 'invalid users or password';
+--   END IF;
+--     SELECT
+--       sign(row_to_json(r), jwt_secret) AS token,
+--       exp
+--     FROM (
+--       SELECT
+--         user_record.role AS role,
+--         email,
+--         user_record.category AS category,
+--         extract(epoch FROM now())::integer + jwt_expire_seconds AS exp) r INTO result;
+--     RETURN result;
+-- END;
+-- $$
+-- LANGUAGE plpgsql
+-- SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION api.verify_token(token text)
-  RETURNS TABLE(
-    header json,
-    payload json,
-    valid boolean
-  )
-  AS $$
-DECLARE
-  jwt_secret text;
-BEGIN
-  jwt_secret := current_setting('app.settings.jwt_secret', TRUE);
-  RETURN query
-  SELECT
-    *
-  FROM
-    verify(token, jwt_secret);
-END;
-$$
-LANGUAGE plpgsql
-SECURITY DEFINER;
+-- CREATE OR REPLACE FUNCTION api.verify_token(token text)
+--   RETURNS TABLE(
+--     header json,
+--     payload json,
+--     valid boolean
+--   )
+--   AS $$
+-- DECLARE
+--   jwt_secret text;
+-- BEGIN
+--   jwt_secret := current_setting('app.settings.jwt_secret', TRUE);
+--   RETURN query
+--   SELECT
+--     *
+--   FROM
+--     verify(token, jwt_secret);
+-- END;
+-- $$
+-- LANGUAGE plpgsql
+-- SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION api.login TO anonymous;
+-- GRANT EXECUTE ON FUNCTION api.login TO anonymous;

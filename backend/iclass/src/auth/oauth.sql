@@ -1,10 +1,5 @@
--- OAuth Authentication Tables
--- This schema adds OAuth provider support to the existing auth.users table
-
-SET search_path TO 'auth, public';
-
 -- Table to store OAuth provider accounts linked to users
-CREATE TABLE IF NOT EXISTS oauth_accounts (
+CREATE TABLE IF NOT EXISTS auth.oauth_accounts (
   pk serial PRIMARY KEY,
   user_id integer NOT NULL REFERENCES auth.users(pk) ON DELETE CASCADE,
   provider varchar(50) NOT NULL, -- 'github', 'discord', etc.
