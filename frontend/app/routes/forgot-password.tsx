@@ -145,14 +145,17 @@ export default function ForgotPassword() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
               required
             />
-            {/* {actionData?.errors?.email && (
-                            <p className="text-red-500 text-xs mt-1">{actionData.errors.email[0]}</p>
-                        )} */}
           </div>
 
-          {/* {actionData?.errors?.formError && (
-                        <p className="text-red-500 text-sm text-center">{actionData.errors.formError[0]}</p>
-                    )} */}
+          {actionData?.errors && (
+            <p className="text-red-500 text-sm text-center">
+              {actionData.errors.map((error, index) => (
+                <p key={index} className="text-red-500 text-xs mt-1">
+                  {error}
+                </p>
+              ))}
+            </p>
+          )}
 
           <button
             type="submit"
