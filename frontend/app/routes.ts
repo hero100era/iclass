@@ -6,6 +6,6 @@ export default [
   route("login/oauth/:provider", "routes/oauth.tsx"),
   route("oauth/callback/:provider", "routes/oauth_callback.tsx"),
   route("logout", "routes/logout.tsx"),
-  route("login/forgot-password", "routes/forgot-password.tsx"),
-  route("login/reset-password", "routes/reset-password.tsx"),
+  route("forgot-password", "routes/forgot-password.tsx"),
+  route("reset-password", "routes/reset-password.tsx"),
 ] satisfies RouteConfig;
