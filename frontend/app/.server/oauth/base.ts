@@ -111,7 +111,6 @@ export class OAuthClient<T> {
     const result = this.userInfo.schema.safeParse(rawData);
     if (!result.success) throw new InvalidUserError(result.error);
     const data = this.userInfo.parser(result.data);
-    console.log(data);
     return data;
   }
 

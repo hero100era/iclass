@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS auth.oauth_accounts (
 );
 
 -- Index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_id ON oauth_accounts(user_id);
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider ON oauth_accounts(provider);
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider_user_id ON oauth_accounts(provider, provider_user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_id ON auth.oauth_accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider ON auth.oauth_accounts(provider);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider_user_id ON auth.oauth_accounts(provider, provider_user_id);
 
 -- Trigger to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION auth.update_oauth_accounts_updated_at()
@@ -58,15 +58,15 @@ BEGIN
   -- Start a transaction to ensure atomicity
   BEGIN
     -- Try to find existing oauth_account
-    SELECT user_id INTO v_user_id
-    FROM auth.oauth_accounts
-    WHERE provider = provider
-      AND provider_user_id = provider_user_id;
+    SELECT ao.user_id INTO v_user_id
+    FROM auth.oauth_accounts ao
+    WHERE ao.provider = oauth_login.provider
+      AND ao.provider_user_id = oauth_login.provider_user_id;
 
     IF FOUND THEN
       -- OAuth account exists, get user info
-      SELECT pk, role, category INTO v_user_record
-      FROM auth.users
+      SELECT au.pk, au.role, au.category INTO v_user_record
+      FROM auth.users au
       WHERE pk = v_user_id;
 
       IF NOT FOUND THEN
@@ -75,9 +75,9 @@ BEGIN
     ELSE
       -- No oauth_account found, check if email exists
       IF email IS NOT NULL THEN
-        SELECT pk INTO v_user_id
-        FROM auth.users
-        WHERE email = email;
+        SELECT au.pk INTO v_user_id
+        FROM auth.users au
+        WHERE au.email = oauth_login.email;
 
         IF FOUND THEN
           -- Email exists, link this OAuth account to the existing user
@@ -102,17 +102,17 @@ BEGIN
             category
           ) VALUES (
             email,
-            encode(gen_random_bytes(32), 'hex'), -- Random password hash
-            'user', -- Default role, change as needed
+            encode(auth.gen_random_bytes(32), 'hex'), -- Random password hash
+            'authenticator', -- Default role, change as needed
             'default' -- Default category, change as needed
           )
           RETURNING pk INTO v_user_id;
 
           -- Update display_name in employees or customers table if exists
           -- Note: This assumes the user might be an employee, adjust as needed
-          UPDATE employees
-          SET display_name = name
-          WHERE pk = v_user_id;
+          -- UPDATE auth.employees
+          -- SET display_name = name
+          -- WHERE pk = v_user_id;
 
           -- Insert oauth_account
           INSERT INTO auth.oauth_accounts (
@@ -129,9 +129,9 @@ BEGIN
         END IF;
 
         -- Get the final user record
-        SELECT pk, role, category INTO v_user_record
-        FROM auth.users
-        WHERE pk = v_user_id;
+        SELECT au.pk, au.role, au.category INTO v_user_record
+        FROM auth.users au
+        WHERE au.pk = v_user_id;
       ELSE
         -- No email provided and no existing oauth_account
         RAISE EXCEPTION 'Cannot create account without email address';
@@ -214,7 +214,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION auth.get_oauth_accounts TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.get_oauth_accounts TO authenticator;
 
 -- Additional utility function: Unlink an OAuth account
 CREATE OR REPLACE FUNCTION auth.unlink_oauth_account(
@@ -234,4 +234,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION auth.unlink_oauth_account TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.unlink_oauth_account TO authenticator;
