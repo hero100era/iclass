@@ -1,1 +1,1 @@
-"iclass" Schema (Private): Contains the raw tables, foreign keys, indexes and triggers. PostgREST cannot see this.
+"iclass" Schema (Private): This only contains tables and enums/domains that are needed for those tables. No functions, triggers, RLS, views. The code for the data layer is written through migrations and will be managed by dbmate and version contoled by git.
