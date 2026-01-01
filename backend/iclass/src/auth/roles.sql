@@ -1,5 +1,5 @@
 -- create group role for developers and database admins;
-CREATE ROLE authenticator NOINHERIT LOGIN PASSWORD 'supersecret';
+CREATE ROLE authenticator NOINHERIT LOGIN; -- PASSWORD will be set via environment variable
 
 CREATE ROLE anonymous NOINHERIT NOLOGIN;
 

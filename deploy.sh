@@ -6,9 +6,12 @@ POSTGRES_USER="authenticator"
 POSTGRES_SUPER_PASSWORD=$(openssl rand -base64 12)  # Generate a random 12-character password
 POSTGRES_PASSWORD=$(openssl rand -base64 12)  # Generate a random 12-character password
 POSTGRES_DB="mydb"
-#SECRET_KEY=$(openssl rand -base64 32) # for the demo app
-SECRET_KEY="Gra5tMn1La4KVMGgHHiOMq1Ir17WSAh0LHbz/AAl9n4="
-NEXT_PUBLIC_SAFE_KEY="XXrOYg7U+HOvS6ivt+/d1C4OzZdIb3SdhRedKFE9gBs=" # for the demo app
+# If SECRET_KEY is not set, generate a random one
+if [ -z "$SECRET_KEY" ]; then
+    SECRET_KEY=$(openssl rand -base64 32)
+fi
+# NEXT_PUBLIC_SAFE_KEY=$(openssl rand -base64 32) # for the demo app
+# Note: In a real production environment, secrets should be managed by a vault or environment manager.
 DOMAIN_NAME="hero100era.us.kg" # replace with your own
 EMAIL="eros.wang@gmail.com" # replace with your own
 

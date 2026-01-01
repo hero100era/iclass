@@ -117,7 +117,8 @@ CREATE TYPE iclass.certificate_internal_categories_enum AS ENUM(
   'ST',
   'SI',
   'DoC',
-  'SoC'
+  'SoC',
+  'OT'
 );
 
 CREATE TABLE IF NOT EXISTS iclass.certificate_internal_categories(
@@ -131,7 +132,8 @@ INSERT INTO iclass.certificate_internal_categories(code, name, description)
 ('ST', 'Standard', 'Certificates of conformity to particular requirements issued on the authority of the ships''s flag administration'),
 ('SI', 'Statement for Issue', 'Statement issued by RO for the purpose of the issue of the actual certificates by the flag administration'),
 ('Doc', 'Document of Compliance', 'certificates stating that the ships complies with particular requirements even though they are not applicable to the vessel'),
-('SoC', 'Statement of Compliance', 'statement issued by RO not on behalf of the flag administration')
+('SoC', 'Statement of Compliance', 'statement issued by RO not on behalf of the flag administration'),
+('OT', 'Other', 'Other certificates')
 ON CONFLICT
   DO NOTHING;
 
@@ -312,9 +314,9 @@ INSERT INTO iclass.survey_audit_codes(code, description, is_statutory, is_audit,
 ('ILO133', 'ILO133 - Crew Accommodation', TRUE, FALSE, FALSE, FALSE),
 ('ILO152', 'ILO152 - Cargo Gear', TRUE, FALSE, FALSE, FALSE),
 ('INF', 'Fitness for the Carriage of INF Cargo', TRUE, FALSE, FALSE, TRUE),
-('DOC', 'Safety Management - Companies', TRUE, FALSE, FALSE, TRUE),
+('DOC', 'Safety Management - Company', TRUE, FALSE, FALSE, TRUE),
 ('SMC', 'Safety Management - Vessel', TRUE, FALSE, TRUE, TRUE),
-('ISPS', 'Ships and Port Facility Security', TRUE, FALSE, FALSE, TRUE),
+('ISPS', 'Ships and Port Facility Security', TRUE, FALSE, FALSE, TRUE),   
 ('ISO9001', 'Quality management systems', TRUE, FALSE, TRUE, FALSE),
 ('ISO14001', 'Environmental management systems', FALSE, FALSE, TRUE, FALSE),
 ('ISO45001', 'Occupational health and safety management system', FALSE, TRUE, TRUE, FALSE),
@@ -338,10 +340,18 @@ INSERT INTO iclass.survey_audit_codes(code, description, is_statutory, is_audit,
 ('PSS', 'Passenger Ships Safety', TRUE, FALSE, FALSE, TRUE),
 ('SPS', 'Special Purpose Ships Safety', TRUE, FALSE, FALSE, TRUE),
 ('TM', 'Tonnage', TRUE, FALSE, FALSE, TRUE),
-('B', 'Inspection of the outside of the ships''s bottom (dry)', TRUE, FALSE, FALSE, TRUE),
-('W', 'Inspection of the outside of the ships''s bottom (iws)', TRUE, FALSE, FALSE, TRUE),
-('Tx', 'Tailshaft (x to enable to code several tailshafts T1, T2, etc)', FALSE, FALSE, FALSE, TRUE),
-('Box', 'Boiler (x to enable to code several boilers Bo1, Bo2, etc)', FALSE, FALSE, FALSE, TRUE),
+('B', "Inspection of the outside of the ship's bottom (dry)", TRUE, FALSE, FALSE, TRUE),
+('W', "Inspection of the outside of the ship's bottom (iws)", TRUE, FALSE, FALSE, TRUE),
+('T1', 'Tailshaft No.1', FALSE, FALSE, FALSE, TRUE),
+('T2', 'Tailshaft No.2', FALSE, FALSE, FALSE, TRUE),
+('T3', 'Tailshaft No.3', FALSE, FALSE, FALSE, TRUE),
+('T4', 'Tailshaft No.4', FALSE, FALSE, FALSE, TRUE),
+('Bo1', 'Boiler No.1', FALSE, FALSE, FALSE, TRUE),
+('Bo2', 'Boiler No.2', FALSE, FALSE, FALSE, TRUE),
+('Bo3', 'Boiler No.3', FALSE, FALSE, FALSE, TRUE),
+('Bo4', 'Boiler No.4', FALSE, FALSE, FALSE, TRUE),
+('Bo5', 'Boiler No.5', FALSE, FALSE, FALSE, TRUE),
+('Bo6', 'Boiler No.6', FALSE, FALSE, FALSE, TRUE),
 ('BOT', 'Bottom survey', TRUE, FALSE, FALSE, TRUE)
 ON CONFLICT
   DO NOTHING;
@@ -375,3 +385,55 @@ INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
 ('R', 'Renewal', TRUE)
 ON CONFLICT
   DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS iclass.flags(
+  code varchar(3) PRIMARY KEY,
+  name varchar(20) NOT NULL,
+  fullname varchar(20) NOT NULL,
+  email varchar(50),
+  tel varchar(30),
+  fax varchar(30),
+  contact varchar(100),
+  hssc boolean
+);
+
+CREATE TABLE iclass.ship_comp_templates (
+  pk serial PRIMARY KEY,
+  code varchar(10),
+  name varchar(50),
+  properties json,
+)
+
+CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
+  pk serial PRIMARY KEY,
+  category varchar(5),
+  code varchar(10),
+  content varchar(1000),
+  description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS iclass.certificate_templates (
+  code varchar(10) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  version varchar(20) NOT NULL,
+  survey_audit_code iclass.survey_audit_codes,
+  category iclass.certificate_internal_categories_enum,
+  template_rml varchar(255),
+  template_html varchar(255),8.version varchar(20) NOT NULL,                   
+  description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS iclass.report_templates (
+  code varchar(10) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  version varchar(20) NOT NULL,
+  template_rml varchar(255),
+  template_html varchar(255),
+  description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);

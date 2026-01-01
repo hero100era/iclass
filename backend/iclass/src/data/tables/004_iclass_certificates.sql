@@ -1,3 +1,4 @@
+
 CREATE TABLE IF NOT EXISTS iclass.certificates(
   pk serial PRIMARY KEY,
   certificate_id varchar(20) UNIQUE NOT NULL,

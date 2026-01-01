@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS iclass.finding_comments(
   ships_id integer REFERENCES iclass.ships(pk),
   companies_id integer REFERENCES iclass.companies(pk),
   comment_type iclass.comment_types_enum NOT NULL,
+  priviate boolean,
   certificates varchar(500),
   date_issued date NOT NULL,
   place_issued varchar(50),

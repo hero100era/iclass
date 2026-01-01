@@ -16,3 +16,15 @@ CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+CREATE TABLE IF NOT EXISTS iclass.survey_audit_items_lines(
+  pk serial PRIMARY KEY,
+  survey_audit_item_id integer REFERENCES iclass.survey_audit_items(pk),
+  result varchar(1000),
+  particulars jsonb,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+

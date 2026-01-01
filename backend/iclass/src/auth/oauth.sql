@@ -153,8 +153,8 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to anonymous (for PostgREST access)
-GRANT EXECUTE ON FUNCTION auth.oauth_login TO anonymous;
+-- Grant execute permission to admingrp (only frontend should call this)
+-- GRANT EXECUTE ON FUNCTION auth.oauth_login TO admingrp;
 
 -- Create a wrapper function in the api schema for cleaner API access
 CREATE OR REPLACE FUNCTION api.oauth_login(
@@ -188,8 +188,8 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to anonymous
-GRANT EXECUTE ON FUNCTION api.oauth_login TO anonymous;
+-- Grant execute permission to admingrp
+GRANT EXECUTE ON FUNCTION api.oauth_login TO admingrp;
 
 -- Additional utility function: Get OAuth accounts for a user
 CREATE OR REPLACE FUNCTION auth.get_oauth_accounts(p_user_id integer)
@@ -214,7 +214,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION auth.get_oauth_accounts TO authenticator;
+-- GRANT EXECUTE ON FUNCTION auth.get_oauth_accounts TO authenticator;
 
 -- Additional utility function: Unlink an OAuth account
 CREATE OR REPLACE FUNCTION auth.unlink_oauth_account(
@@ -234,4 +234,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION auth.unlink_oauth_account TO authenticator;
+-- GRANT EXECUTE ON FUNCTION auth.unlink_oauth_account TO authenticator;

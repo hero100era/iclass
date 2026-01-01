@@ -15,7 +15,7 @@ endif
 all: src/$(EXTENSION)--$(EXTVERSION).sql
 
 # Assemble all .sql files under src/data into the extension SQL file in src/data
-DATA_SQL := $(wildcard src/data/types/*.sql src/data/tables/*.sql src/data/fks/*.sql src/data/indexes/*.sql)
+DATA_SQL := $(wildcard src/data/*.sql src/data/tables/*.sql)
 
 src/$(EXTENSION)--$(EXTVERSION).sql: $(DATA_SQL)
 	cat $^ > $@

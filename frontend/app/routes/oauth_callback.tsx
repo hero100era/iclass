@@ -2,7 +2,6 @@ import { redirect } from "react-router";
 import { type OAuthProvider } from "~/definitions/auth_scheme";
 import { getSession, commitSession } from "~/.server/lib/sessions";
 import { getOAuthClient } from "~/.server/oauth/base";
-import { ApiPOST } from "~/.server/lib/api";
 import { encrypt } from "~/.server/lib/jwt";
 import type { Route } from "./+types/oauth";
 
@@ -23,14 +22,26 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   try {
     const user = await oAuthClient.fetchUser(code, state, session);
 
-    // Call backend to ensure user exists / create if necessary.
+    // 1. Generate a privileged token to access the protected RPC
+    // 'admingrp' is the role we granted execute permission to.
+    const adminToken = await encrypt({ role: "admingrp" });
+
+    // 2. Call backend to ensure user exists / create if necessary.
     const host = import.meta.env.API_URL || "http://localhost:2000";
     const rpcUrl = `${host}/rpc/oauth_login`;
-    const resp = await ApiPOST(request, rpcUrl, {
-      provider,
-      provider_user_id: user.id,
-      email: user.email,
-      name: user.name,
+    const resp = await fetch(rpcUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        provider,
+        provider_user_id: user.id,
+        email: user.email,
+        name: user.name,
+      }),
     });
 
     if (!resp.ok) {
