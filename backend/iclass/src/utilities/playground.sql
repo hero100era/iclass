@@ -1,3 +1,5 @@
+SET search_path TO 'api, public';
+
 CREATE TABLE IF NOT EXISTS api.todos(
   pk serial PRIMARY KEY,
   done boolean NOT NULL DEFAULT FALSE,
@@ -16,3 +18,6 @@ GRANT ALL ON api.todos TO admingrp;
 INSERT INTO api.todos(task)
   VALUES ('finish tutorial 0'),
 ('pat self on back');
+
+
+SET search_path TO "$user", public;

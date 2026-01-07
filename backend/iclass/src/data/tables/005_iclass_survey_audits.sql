@@ -1,7 +1,7 @@
 -- Create table for survey/audit
 CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   pk serial PRIMARY KEY,
-  certificate_id integer REFERENCES iclass.certificates(pk),
+  certificate_id integer REFERENCES iclass.certificates(pk) ON DELETE CASCADE,
   code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
   type iclass.survey_audit_types_enum,
   description varchar(120) NOT NULL,
@@ -17,14 +17,4 @@ CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
-CREATE TABLE IF NOT EXISTS iclass.survey_audit_items_lines(
-  pk serial PRIMARY KEY,
-  survey_audit_item_id integer REFERENCES iclass.survey_audit_items(pk),
-  result varchar(1000),
-  particulars jsonb,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
-);
 

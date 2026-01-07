@@ -86,3 +86,6 @@ PARTITION BY RANGE (created_at);
 CREATE TABLE IF NOT EXISTS iclass.ms_jobs_default PARTITION OF iclass.ms_jobs DEFAULT;
 
 -- CREATE TABLE ms_jobss_2025 PARTITION OF ms_jobss FOR VALUES FROM ('2025-01-01 00:00:00') TO ('2026-01-01 00:00:00');
+
+--at the end of the file, set back the default search_path.
+SET search_path TO "$user", public;

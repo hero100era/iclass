@@ -340,8 +340,8 @@ INSERT INTO iclass.survey_audit_codes(code, description, is_statutory, is_audit,
 ('PSS', 'Passenger Ships Safety', TRUE, FALSE, FALSE, TRUE),
 ('SPS', 'Special Purpose Ships Safety', TRUE, FALSE, FALSE, TRUE),
 ('TM', 'Tonnage', TRUE, FALSE, FALSE, TRUE),
-('B', "Inspection of the outside of the ship's bottom (dry)", TRUE, FALSE, FALSE, TRUE),
-('W', "Inspection of the outside of the ship's bottom (iws)", TRUE, FALSE, FALSE, TRUE),
+('B', 'Inspection of the outside of the ship''s bottom (dry)', TRUE, FALSE, FALSE, TRUE),
+('W', 'Inspection of the outside of the ship''s bottom (iws)', TRUE, FALSE, FALSE, TRUE),
 ('T1', 'Tailshaft No.1', FALSE, FALSE, FALSE, TRUE),
 ('T2', 'Tailshaft No.2', FALSE, FALSE, FALSE, TRUE),
 ('T3', 'Tailshaft No.3', FALSE, FALSE, FALSE, TRUE),
@@ -389,25 +389,22 @@ ON CONFLICT
 CREATE TABLE IF NOT EXISTS iclass.flags(
   code varchar(3) PRIMARY KEY,
   name varchar(20) NOT NULL,
-  fullname varchar(20) NOT NULL,
+  fullname varchar(100) NOT NULL,
   email varchar(50),
   tel varchar(30),
   fax varchar(30),
   contact varchar(100),
+  contract_file varchar(128),
+  contract_start date,
+  contract_end date,
   hssc boolean
 );
 
-CREATE TABLE iclass.ship_comp_templates (
-  pk serial PRIMARY KEY,
-  code varchar(10),
-  name varchar(50),
-  properties json,
-)
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
   pk serial PRIMARY KEY,
   category varchar(5),
-  code varchar(10),
+  code varchar(10) UNIQUE,
   content varchar(1000),
   description text,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -418,10 +415,10 @@ CREATE TABLE IF NOT EXISTS iclass.certificate_templates (
   code varchar(10) PRIMARY KEY,
   name varchar(100) NOT NULL,
   version varchar(20) NOT NULL,
-  survey_audit_code iclass.survey_audit_codes,
+  survey_audit_code varchar(10) REFERENCES iclass.survey_audit_codes(code),
   category iclass.certificate_internal_categories_enum,
-  template_rml varchar(255),
-  template_html varchar(255),8.version varchar(20) NOT NULL,                   
+  file_path_rml varchar(255),
+  file_path_html varchar(255),             
   description text,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
@@ -431,9 +428,17 @@ CREATE TABLE IF NOT EXISTS iclass.report_templates (
   code varchar(10) PRIMARY KEY,
   name varchar(100) NOT NULL,
   version varchar(20) NOT NULL,
-  template_rml varchar(255),
-  template_html varchar(255),
+  file_path_rml varchar(255),
+  file_path_html varchar(255),
   description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS iclass.ship_comp_templates (
+  code varchar(10) PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  properties json,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

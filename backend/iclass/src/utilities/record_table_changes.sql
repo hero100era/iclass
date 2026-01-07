@@ -106,3 +106,5 @@ LANGUAGE plpgsql;
 -- Create current and next year partitions
 -- SELECT create_audit_partition(EXTRACT(YEAR FROM CURRENT_DATE)::int);
 -- SELECT create_audit_partition(EXTRACT(YEAR FROM CURRENT_DATE)::int + 1);
+
+SET search_path TO "$user", public;

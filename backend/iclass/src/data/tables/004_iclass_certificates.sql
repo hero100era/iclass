@@ -1,10 +1,10 @@
-
 CREATE TABLE IF NOT EXISTS iclass.certificates(
   pk serial PRIMARY KEY,
-  certificate_id varchar(20) UNIQUE NOT NULL,
-  ship_id integer REFERENCES ships(pk),
-  company_id integer REFERENCES iclass.companies(pk),
-  status certificate_status_enum NOT NULL,
+  certificate_id varchar(20) NOT NULL,
+  version integer NOT NULL,
+  ship_id integer REFERENCES iclass.ships(pk) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.companies(pk) ON DELETE CASCADE,
+  status iclass.certificate_status_enum NOT NULL,
   remark varchar(2) NOT NULL,
   issued_by varchar(20) REFERENCES iclass.classification_societies(code) NOT NULL,
   code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS iclass.certificates(
   doc_administration char(3),
   extended_date date,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (certificate_id, version)
 );

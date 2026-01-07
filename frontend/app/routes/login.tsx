@@ -29,7 +29,7 @@ export async function action({ request }: Route.ActionArgs) {
     };
   }
   const { id, role, category } = data;
-  const token = await encrypt({ id, role, email, category });
+  const token = await encrypt({ id, role, category });
   const session = await getSession(request.headers.get("Cookie"));
   session.set("token", token);
   return redirect("/", {

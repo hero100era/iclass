@@ -15,7 +15,7 @@ SELECT has_column('auth', 'users', 'pass', 'Column auth.users.pass should exist'
 -- 4. Test password encryption trigger
 -- We need to insert a user and check if the password is encrypted (not equal to the input)
 INSERT INTO auth.users (email, pass, role, category) 
-VALUES ('test@example.com', 'mypassword', 'employee', 'internal');
+VALUES ('test@example.com', 'mypassword', 'employees', 'internal');
 
 SELECT isnt(
     (SELECT pass FROM auth.users WHERE email = 'test@example.com'),
