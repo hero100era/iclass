@@ -27,7 +27,7 @@ ON CONFLICT
   DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS iclass.surveys(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   description varchar(255),
   status job_status_enum NOT NULL,
   start_date date NOT NULL,
@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS iclass.surveys(
   created_by varchar(100) NOT NULL,
   created_at timestamp NOT NULL,
   location varchar(100) NOT NULL,
-  ship_id integer REFERENCES ships(pk),
-  surveyor_id integer REFERENCES iclass.employees(pk),
-  reviewer_id integer REFERENCES iclass.employees(pk),
+  ship_id integer REFERENCES ships(id),
+  surveyor_id integer REFERENCES iclass.employees(id),
+  reviewer_id integer REFERENCES iclass.employees(id),
   statement varchar(255),
   draft varchar(255),
   comments text
@@ -48,17 +48,17 @@ CREATE TABLE IF NOT EXISTS surveys_default PARTITION OF surveys DEFAULT;
 
 -- CREATE TABLE surveys_2025 PARTITION OF surveys FOR VALUES FROM ('2025-01-01 00:00:00') TO ('2026-01-01 00:00:00');
 CREATE TABLE IF NOT EXISTS iclass.audits(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   description varchar(255),
   status job_status_enum NOT NULL,
   start_date date NOT NULL,
   end_date date NOT NULL,
   created_by varchar(100) NOT NULL,
   created_date timestamp NOT NULL,
-  ship_id integer REFERENCES ships(pk),
-  company_id integer REFERENCES iclass.companies(pk),
-  auditor_id integer REFERENCES iclass.employees(pk),
-  reviewer_id integer REFERENCES iclass.employees(pk),
+  ship_id integer REFERENCES ships(id),
+  company_id integer REFERENCES iclass.companies(id),
+  auditor_id integer REFERENCES iclass.employees(id),
+  reviewer_id integer REFERENCES iclass.employees(id),
   statement varchar(255),
   draft varchar(255),
   comments text,
@@ -70,16 +70,16 @@ CREATE TABLE IF NOT EXISTS iclass.audits_default PARTITION OF iclass.audits DEFA
 
 -- CREATE TABLE auditss_2025 PARTITION OF auditss FOR VALUES FROM ('2025-01-01 00:00:00') TO ('2026-01-01 00:00:00');
 CREATE TABLE IF NOT EXISTS iclass.ms_jobs(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   description varchar(255),
   status job_status_enum NOT NULL,
   start_date date NOT NULL,
   end_date date NOT NULL,
   created_by varchar(100) NOT NULL,
   created_at timestamp NOT NULL,
-  operator_id integer REFERENCES iclass.employees(pk),
-  ship_id integer REFERENCES iclass.ships(pk),
-  company_id integer REFERENCES iclass.companies(pk)
+  operator_id integer REFERENCES iclass.employees(id),
+  ship_id integer REFERENCES iclass.ships(id),
+  company_id integer REFERENCES iclass.companies(id)
 )
 PARTITION BY RANGE (created_at);
 

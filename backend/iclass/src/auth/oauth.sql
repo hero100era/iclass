@@ -1,7 +1,7 @@
 -- Table to store OAuth provider accounts linked to users
 CREATE TABLE IF NOT EXISTS auth.oauth_accounts (
-  pk serial PRIMARY KEY,
-  user_id integer NOT NULL REFERENCES auth.users(pk) ON DELETE CASCADE,
+  id serial PRIMARY KEY,
+  user_id integer NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   provider varchar(50) NOT NULL, -- 'github', 'discord', etc.
   provider_user_id varchar(255) NOT NULL, -- Unique ID from the provider
   provider_username varchar(255), -- Username from the provider (e.g., GitHub login, Discord username)
@@ -65,9 +65,9 @@ BEGIN
 
     IF FOUND THEN
       -- OAuth account exists, get user info
-      SELECT au.pk, au.role, au.category INTO v_user_record
+      SELECT au.id, au.role, au.category INTO v_user_record
       FROM auth.users au
-      WHERE pk = v_user_id;
+      WHERE id = v_user_id;
 
       IF NOT FOUND THEN
         RAISE EXCEPTION 'OAuth account exists but user not found';
@@ -75,7 +75,7 @@ BEGIN
     ELSE
       -- No oauth_account found, check if email exists
       IF email IS NOT NULL THEN
-        SELECT au.pk INTO v_user_id
+        SELECT au.id INTO v_user_id
         FROM auth.users au
         WHERE au.email = oauth_login.email;
 
@@ -106,13 +106,13 @@ BEGIN
             'authenticator', -- Default role, change as needed
             'default' -- Default category, change as needed
           )
-          RETURNING pk INTO v_user_id;
+          RETURNING id INTO v_user_id;
 
           -- Update display_name in employees or customers table if exists
           -- Note: This assumes the user might be an employee, adjust as needed
           -- UPDATE auth.employees
           -- SET display_name = name
-          -- WHERE pk = v_user_id;
+          -- WHERE id = v_user_id;
 
           -- Insert oauth_account
           INSERT INTO auth.oauth_accounts (
@@ -129,9 +129,9 @@ BEGIN
         END IF;
 
         -- Get the final user record
-        SELECT au.pk, au.role, au.category INTO v_user_record
+        SELECT au.id, au.role, au.category INTO v_user_record
         FROM auth.users au
-        WHERE au.pk = v_user_id;
+        WHERE au.id = v_user_id;
       ELSE
         -- No email provided and no existing oauth_account
         RAISE EXCEPTION 'Cannot create account without email address';
@@ -141,7 +141,7 @@ BEGIN
     -- Return user information
     RETURN QUERY
     SELECT
-      v_user_record.pk AS id,
+      v_user_record.id AS id,
       v_user_record.role,
       v_user_record.category;
 

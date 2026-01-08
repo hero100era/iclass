@@ -8,7 +8,7 @@ SELECT has_schema('auth', 'Schema auth should exist');
 SELECT has_table('auth', 'users', 'Table auth.users should exist');
 
 -- 3. Check columns in auth.users
-SELECT has_column('auth', 'users', 'pk', 'Column auth.users.pk should exist');
+SELECT has_column('auth', 'users', 'id', 'Column auth.users.id should exist');
 SELECT has_column('auth', 'users', 'email', 'Column auth.users.email should exist');
 SELECT has_column('auth', 'users', 'pass', 'Column auth.users.pass should exist');
 
@@ -26,7 +26,7 @@ SELECT isnt(
 -- 5. Test auth.user_profile function
 SELECT results_eq(
     'SELECT id, role, category FROM auth.user_profile(''test@example.com'', ''mypassword'')',
-    'SELECT pk, role, category FROM auth.users WHERE email = ''test@example.com''',
+    'SELECT id, role, category FROM auth.users WHERE email = ''test@example.com''',
     'auth.user_profile should return correct user data for valid credentials'
 );
 

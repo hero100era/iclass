@@ -1,5 +1,5 @@
 -- Helper functions for RLS
-CREATE OR REPLACE FUNCTION iclass.get_auth_user_pk() RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION iclass.get_auth_user_id() RETURNS integer AS $$
 BEGIN
   RETURN (current_setting('request.jwt.claims', true)::json->>'id')::integer;
 EXCEPTION
@@ -8,9 +8,9 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql STABLE;
 
-CREATE OR REPLACE FUNCTION iclass.get_current_company_pk() RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION iclass.get_current_company_id() RETURNS integer AS $$
 BEGIN
-  RETURN (SELECT company_id FROM iclass.customers WHERE pk = iclass.get_auth_user_pk());
+  RETURN (SELECT company_id FROM iclass.customers WHERE id = iclass.get_auth_user_id());
 EXCEPTION
   WHEN OTHERS THEN
     RETURN NULL;
@@ -19,7 +19,7 @@ $$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION iclass.get_current_flag_code() RETURNS varchar(3) AS $$
 BEGIN
-  RETURN (SELECT flag_code FROM iclass.flag_staff WHERE pk = iclass.get_auth_user_pk());
+  RETURN (SELECT flag_code FROM iclass.flag_staff WHERE id = iclass.get_auth_user_id());
 EXCEPTION
   WHEN OTHERS THEN
     RETURN NULL;
@@ -49,52 +49,52 @@ CREATE POLICY employee_full_access ON iclass.customers FOR ALL TO employees USIN
 -- 2. Customers Policies (Scoped Access)
 -- Companies: only their own
 CREATE POLICY customer_read_own_company ON iclass.companies FOR SELECT TO customers
-  USING (pk = iclass.get_current_company_pk());
+  USING (id = iclass.get_current_company_id());
 
 -- Ships: where they are the owner (registered, ISM, or MLC)
 CREATE POLICY customer_read_own_ships ON iclass.ships FOR SELECT TO customers
   USING (
-    registered_owner_id = iclass.get_current_company_pk() OR
-    ism_owner_id = iclass.get_current_company_pk() OR
-    mlc_owner_id = iclass.get_current_company_pk()
+    registered_owner_id = iclass.get_current_company_id() OR
+    ism_owner_id = iclass.get_current_company_id() OR
+    mlc_owner_id = iclass.get_current_company_id()
   );
 
 -- Certificates: for their ships or their company directly
 CREATE POLICY customer_read_own_certificates ON iclass.certificates FOR SELECT TO customers
   USING (
-    company_id = iclass.get_current_company_pk() OR
-    ship_id IN (SELECT pk FROM iclass.ships WHERE 
-      registered_owner_id = iclass.get_current_company_pk() OR
-      ism_owner_id = iclass.get_current_company_pk() OR
-      mlc_owner_id = iclass.get_current_company_pk())
+    company_id = iclass.get_current_company_id() OR
+    ship_id IN (SELECT id FROM iclass.ships WHERE 
+      registered_owner_id = iclass.get_current_company_id() OR
+      ism_owner_id = iclass.get_current_company_id() OR
+      mlc_owner_id = iclass.get_current_company_id())
   );
 
 -- Survey Audits: for their ships
 CREATE POLICY customer_read_own_survey_audits ON iclass.survey_audits FOR SELECT TO customers
   USING (
-    certificate_id IN (SELECT pk FROM iclass.certificates WHERE 
-      company_id = iclass.get_current_company_pk() OR
-      ship_id IN (SELECT pk FROM iclass.ships WHERE 
-        registered_owner_id = iclass.get_current_company_pk() OR
-        ism_owner_id = iclass.get_current_company_pk() OR
-        mlc_owner_id = iclass.get_current_company_pk()))
+    certificate_id IN (SELECT id FROM iclass.certificates WHERE 
+      company_id = iclass.get_current_company_id() OR
+      ship_id IN (SELECT id FROM iclass.ships WHERE 
+        registered_owner_id = iclass.get_current_company_id() OR
+        ism_owner_id = iclass.get_current_company_id() OR
+        mlc_owner_id = iclass.get_current_company_id()))
   );
 
 -- Finding Comments: for their ships or company
 CREATE POLICY customer_read_own_findings ON iclass.finding_comments FOR SELECT TO customers
   USING (
-    ((companies_id = iclass.get_current_company_pk()) OR
-    (ships_id IN (SELECT pk FROM iclass.ships WHERE 
-      registered_owner_id = iclass.get_current_company_pk() OR
-      ism_owner_id = iclass.get_current_company_pk() OR
-      mlc_owner_id = iclass.get_current_company_pk())))
+    ((companies_id = iclass.get_current_company_id()) OR
+    (ships_id IN (SELECT id FROM iclass.ships WHERE 
+      registered_owner_id = iclass.get_current_company_id() OR
+      ism_owner_id = iclass.get_current_company_id() OR
+      mlc_owner_id = iclass.get_current_company_id())))
     AND (priviate IS NOT TRUE)
   ); 
 -- Customers shouldn't see private comments
 
 -- Customers: only their own profile
 CREATE POLICY customer_read_own_profile ON iclass.customers FOR SELECT TO customers
-  USING (pk = iclass.get_auth_user_pk());
+  USING (id = iclass.get_auth_user_id());
 
 -- 3. Administrations Policies (Scoped Access)
 -- Flags: only their own
@@ -103,7 +103,7 @@ CREATE POLICY administration_read_own_flag ON iclass.flags FOR SELECT TO adminis
 
 -- Flag Staff: only their own profile
 CREATE POLICY administration_read_own_profile ON iclass.flag_staff FOR SELECT TO administrations
-  USING (pk = iclass.get_auth_user_pk());
+  USING (id = iclass.get_auth_user_id());
 
 -- Ships: only those under their flag
 CREATE POLICY administration_read_own_ships ON iclass.ships FOR SELECT TO administrations
@@ -111,15 +111,15 @@ CREATE POLICY administration_read_own_ships ON iclass.ships FOR SELECT TO admini
 
 -- Certificates: for ships under their flag
 CREATE POLICY administration_read_own_certificates ON iclass.certificates FOR SELECT TO administrations
-  USING (ship_id IN (SELECT pk FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
+  USING (ship_id IN (SELECT id FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
 
 -- Survey Audits: for ships under their flag
 CREATE POLICY administration_read_own_survey_audits ON iclass.survey_audits FOR SELECT TO administrations
-  USING (certificate_id IN (SELECT pk FROM iclass.certificates WHERE 
-    ship_id IN (SELECT pk FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code())));
+  USING (certificate_id IN (SELECT id FROM iclass.certificates WHERE 
+    ship_id IN (SELECT id FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code())));
 
 -- Finding Comments: for ships under their flag
 CREATE POLICY administration_read_own_findings ON iclass.finding_comments FOR SELECT TO administrations
-  USING (ships_id IN (SELECT pk FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
+  USING (ships_id IN (SELECT id FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
 
 -- 4. Anonymous/Default Policies (Denied by default because RLS is enabled)

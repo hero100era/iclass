@@ -1,6 +1,6 @@
 -- Create table for ships
 CREATE TABLE IF NOT EXISTS iclass.ships(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   name varchar(40) NOT NULL,
   previous_names varchar(500),
   build_date date,
@@ -24,12 +24,15 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   class_status iclass.class_status_enum,
   ship_status iclass.ship_status_enum,
   class_notation varchar(500),
+  service_notation varchar(500),
+  navigation_notation varchar(500),
+  addtional_notation varchar(500),
   gross_tons DECIMAL(9, 2),
   national_tons DECIMAL(9, 2),
   deadweight integer,
-  registered_owner_id integer REFERENCES iclass.companies(pk),
-  ism_owner_id integer REFERENCES iclass.companies(pk),
-  mlc_owner_id integer REFERENCES iclass.companies(pk),
+  registered_owner_id integer REFERENCES iclass.companies(id),
+  ism_owner_id integer REFERENCES iclass.companies(id),
+  mlc_owner_id integer REFERENCES iclass.companies(id),
   flag_code varchar(3) REFERENCES iclass.flags(code),
   registration_port varchar(30),
   mmsi_number varchar(10),
@@ -47,13 +50,14 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   design_draft DECIMAL(9, 2),
   dual_class varchar(20) REFERENCES iclass.classification_societies(code),
   singal_letter varchar(10),
+  responsible_office_id integer REFERENCES iclass.branch_offices(id),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE iclass.ship_component_tree (
-  pk serial PRIMARY KEY,
-  parent_id integer REFERENCES iclass.ship_component_tree(pk),
+  id serial PRIMARY KEY,
+  parent_id integer REFERENCES iclass.ship_component_tree(id),
   ship_comp_template_code varchar(10) REFERENCES iclass.ship_comp_templates(code),
   code varchar(10),
   name varchar(50),

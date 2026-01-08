@@ -14,7 +14,7 @@ VALUES ('api_test@example.com', 'apipass', 'employees', 'internal');
 
 SELECT results_eq(
     'SELECT api.user_profile(''api_test@example.com'', ''apipass'')::text',
-    'SELECT row_to_json(r)::text FROM (SELECT pk as id, role, category FROM auth.users WHERE email = ''api_test@example.com'') r',
+    'SELECT row_to_json(r)::text FROM (SELECT id as id, role, category FROM auth.users WHERE email = ''api_test@example.com'') r',
     'api.user_profile should return user data as JSON for valid credentials'
 );
 

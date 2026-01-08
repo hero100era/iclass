@@ -1,7 +1,7 @@
 -- Create table for survey/audit
 CREATE TABLE IF NOT EXISTS iclass.survey_audits(
-  pk serial PRIMARY KEY,
-  certificate_id integer REFERENCES iclass.certificates(pk) ON DELETE CASCADE,
+  id serial PRIMARY KEY,
+  certificate_id integer REFERENCES iclass.certificates(id) ON DELETE CASCADE,
   code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
   type iclass.survey_audit_types_enum,
   description varchar(120) NOT NULL,

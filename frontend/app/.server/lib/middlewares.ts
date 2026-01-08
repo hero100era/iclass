@@ -3,11 +3,7 @@ import { getSession, commitSession } from "./sessions";
 import { decrypt, encrypt } from "./jwt";
 
 export const loggingMiddleware = async (
-  {
-    request,
-  }: {
-    request: Request;
-  },
+  { request }: { request: Request },
   next: () => Promise<Response>,
 ) => {
   const requestId = crypto.randomUUID();
@@ -25,7 +21,7 @@ export const loggingMiddleware = async (
 
 export const sessionMiddleware = async (
   { request }: { request: Request },
-  next: () => Promise<Response>
+  next: () => Promise<Response>,
 ) => {
   const url = new URL(request.url);
   const pathname = url.pathname;

@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS auth.users;
 CREATE TABLE auth.users(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   email text CHECK (email ~* '^.+@.+\..+$') UNIQUE NOT NULL,
   pass varchar(512) NOT NULL,
   role varchar(64) NOT NULL,
@@ -63,7 +63,7 @@ CREATE OR REPLACE FUNCTION auth.user_profile(email text, pass text)
 BEGIN
   RETURN query
   SELECT
-    u.pk as id,
+    u.id,
     u.role,
     u.category
   FROM

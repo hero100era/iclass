@@ -122,7 +122,7 @@ CREATE FUNCTION auth.user_profile(email text, pass text) RETURNS TABLE(id intege
 BEGIN
   RETURN query
   SELECT
-    u.pk as id,
+    u.id,
     u.role,
     u.category
   FROM
@@ -143,7 +143,7 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE auth.users (
-    pk integer NOT NULL,
+    id integer NOT NULL,
     email text NOT NULL,
     pass character varying(512) NOT NULL,
     role character varying(64) NOT NULL,
@@ -155,10 +155,10 @@ CREATE TABLE auth.users (
 
 
 --
--- Name: users_pk_seq; Type: SEQUENCE; Schema: auth; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE; Schema: auth; Owner: -
 --
 
-CREATE SEQUENCE auth.users_pk_seq
+CREATE SEQUENCE auth.users_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -168,10 +168,10 @@ CREATE SEQUENCE auth.users_pk_seq
 
 
 --
--- Name: users_pk_seq; Type: SEQUENCE OWNED BY; Schema: auth; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: auth; Owner: -
 --
 
-ALTER SEQUENCE auth.users_pk_seq OWNED BY auth.users.pk;
+ALTER SEQUENCE auth.users_id_seq OWNED BY auth.users.id;
 
 
 --
@@ -184,10 +184,10 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: users pk; Type: DEFAULT; Schema: auth; Owner: -
+-- Name: users id; Type: DEFAULT; Schema: auth; Owner: -
 --
 
-ALTER TABLE ONLY auth.users ALTER COLUMN pk SET DEFAULT nextval('auth.users_pk_seq'::regclass);
+ALTER TABLE ONLY auth.users ALTER COLUMN id SET DEFAULT nextval('auth.users_id_seq'::regclass);
 
 
 --
@@ -199,19 +199,19 @@ ALTER TABLE ONLY auth.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: auth; Owner: -
+-- Name: users users_idey; Type: CONSTRAINT; Schema: auth; Owner: -
 --
 
 ALTER TABLE ONLY auth.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (pk);
+    ADD CONSTRAINT users_idey PRIMARY KEY (id);
 
 
 --
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: schema_migrations schema_migrations_idey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+    ADD CONSTRAINT schema_migrations_idey PRIMARY KEY (version);
 
 
 --

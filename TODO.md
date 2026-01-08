@@ -4,7 +4,7 @@
 - [ ] **Row Level Security (RLS)**
     - [ ] Define RLS policies for `iclass` schema tables.
     - [ ] Ensure `employees` have full read/write access (or scoped by department).
-    - [ ] Ensure `customers` can only read/write data related to their `company_pk`.
+    - [ ] Ensure `customers` can only read/write data related to their `company_id`.
 - [ ] **API Security**
     - [ ] Expose secure views in `api` schema rather than direct table access where possible.
     - [ ] Implement secure functions for complex actions (e.g., `issue_certificate`, `approve_survey`) to encapsulate business logic.

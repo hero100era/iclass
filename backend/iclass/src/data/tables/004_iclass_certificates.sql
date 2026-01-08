@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS iclass.certificates(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   certificate_id varchar(20) NOT NULL,
   version integer NOT NULL,
-  ship_id integer REFERENCES iclass.ships(pk) ON DELETE CASCADE,
-  company_id integer REFERENCES iclass.companies(pk) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.companies(id) ON DELETE CASCADE,
   status iclass.certificate_status_enum NOT NULL,
   remark varchar(2) NOT NULL,
   issued_by varchar(20) REFERENCES iclass.classification_societies(code) NOT NULL,

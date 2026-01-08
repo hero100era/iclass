@@ -4,20 +4,50 @@ import {
     Ship,
     FileBadge,
     Calendar,
-    Settings,
     LogOut,
     User
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", to: "/" },
-    { icon: Ship, label: "Vessels", to: "/vessels" },
-    { icon: FileBadge, label: "Certificates", to: "/certificates" },
-    { icon: Calendar, label: "Surveys", to: "/surveys" },
+    {
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        to: "/",
+        roles: ["admingrp", "employees", "customers", "administrations"]
+    },
+    {
+        icon: Ship,
+        label: "Vessels",
+        to: "/vessels",
+        roles: ["admingrp", "employees", "customers", "administrations"]
+    },
+    {
+        icon: FileBadge,
+        label: "Certificates",
+        to: "/certificates",
+        roles: ["admingrp", "employees", "customers", "administrations"]
+    },
+    {
+        icon: Calendar,
+        label: "Surveys",
+        to: "/surveys",
+        roles: ["admingrp", "employees", "administrations"]
+    },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    user: {
+        role: string;
+        [key: string]: any;
+    } | null;
+}
+
+export function Sidebar({ user }: SidebarProps) {
+    const filteredItems = navItems.filter(item =>
+        !user || item.roles.includes(user.role)
+    );
+
     return (
         <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0">
             <div className="p-6">
@@ -28,7 +58,7 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 px-4 py-2 space-y-1">
-                {navItems.map((item) => (
+                {filteredItems.map((item) => (
                     <NavLink
                         key={item.to}
                         to={item.to}

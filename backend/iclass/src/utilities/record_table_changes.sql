@@ -1,14 +1,14 @@
 SET search_path TO 'iclass, public';
 
 CREATE TABLE IF NOT EXISTS table_data_changes(
-  pk bigserial,
+  id bigserial,
   changed_by varchar(64) NOT NULL,
   table_name varchar(64) NOT NULL,
-  row_pk bigint NOT NULL,
+  row_id bigint NOT NULL,
   opr_type varchar(10) NOT NULL,
   changed_data jsonb NOT NULL,
   changed_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (pk, changed_at)
+  PRIMARY KEY (id, changed_at)
 )
 PARTITION BY RANGE (changed_at);
 
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS table_data_changes_default PARTITION OF table_data_ch
 -- Create indexes to improve query performance
 CREATE INDEX IF NOT EXISTS idx_table_data_changes_table_name ON table_data_changes(table_name, changed_at);
 
-CREATE INDEX IF NOT EXISTS idx_table_data_changes_row_pk ON table_data_changes(row_pk, changed_at);
+CREATE INDEX IF NOT EXISTS idx_table_data_changes_row_id ON table_data_changes(row_id, changed_at);
 
 CREATE INDEX IF NOT EXISTS idx_table_data_changes_changed_by ON table_data_changes(changed_by, changed_at);
 
@@ -28,17 +28,17 @@ CREATE OR REPLACE FUNCTION log_table_changes()
   AS $$
 DECLARE
   changed_data jsonb;
-  row_pk bigint;
+  row_id bigint;
 BEGIN
   BEGIN
     IF TG_OP = 'DELETE' THEN
-      row_pk := OLD.pk;
+      row_id := OLD.id;
     ELSE
-      row_pk := NEW.pk;
+      row_id := NEW.id;
     END IF;
   EXCEPTION
     WHEN undefined_column THEN
-      RAISE WARNING 'Table "%" must have a column named "pk" to use the log_table_changes trigger', TG_TABLE_NAME;
+      RAISE WARNING 'Table "%" must have a column named "id" to use the log_table_changes trigger', TG_TABLE_NAME;
       RETURN NULL;
   END;
   -- Prepare changed data based on operation type
@@ -60,8 +60,8 @@ ELSIF TG_OP = 'INSERT' THEN
     END IF;
     -- Only log if there are actual changes (for updates)
     IF TG_OP != 'UPDATE' OR changed_data IS NOT NULL THEN
-      INSERT INTO table_data_changes(changed_by, opr_type, table_name, row_pk, changed_data)
-        VALUES (CURRENT_USER, TG_OP, TG_TABLE_NAME, row_pk, changed_data);
+      INSERT INTO table_data_changes(changed_by, opr_type, table_name, row_id, changed_data)
+        VALUES (CURRENT_USER, TG_OP, TG_TABLE_NAME, row_id, changed_data);
       END IF;
       IF TG_OP = 'DELETE' THEN
         RETURN OLD;

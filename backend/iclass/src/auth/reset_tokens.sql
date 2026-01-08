@@ -1,8 +1,8 @@
 -- Create the reset_tokens table
 DROP TABLE IF EXISTS auth.reset_tokens;
 CREATE TABLE auth.reset_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    token UUID NOT NULL DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    token UUID NOT NULL DEFAULT uuidv7(),
     email TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '1 hour',

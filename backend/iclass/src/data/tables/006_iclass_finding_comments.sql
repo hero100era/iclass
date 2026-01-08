@@ -1,8 +1,8 @@
 -- Create table for Findings/Comments
 CREATE TABLE IF NOT EXISTS iclass.finding_comments(
-  pk serial PRIMARY KEY,
-  ships_id integer REFERENCES iclass.ships(pk) ON DELETE CASCADE,
-  companies_id integer REFERENCES iclass.companies(pk) ON DELETE CASCADE,
+  id serial PRIMARY KEY,
+  ships_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
+  companies_id integer REFERENCES iclass.companies(id) ON DELETE CASCADE,
   comment_type iclass.comment_types_enum NOT NULL,
   priviate boolean DEFAULT false,
   certificates varchar(500),

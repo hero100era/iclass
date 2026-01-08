@@ -4,14 +4,14 @@ SELECT plan(3);
 -- 1. Setup test user and role-specific data
 INSERT INTO iclass.flags (code, name, fullname) VALUES ('SGP', 'Singapore', 'Republic of Singapore');
 
-INSERT INTO auth.users (pk, email, pass, role, category) 
+INSERT INTO auth.users (id, email, pass, role, category) 
 VALUES (999, 'service_test@example.com', 'pass', 'employees', 'internal');
 
-INSERT INTO iclass.employees (pk, display_name, office_location)
+INSERT INTO iclass.employees (id, display_name, office_location)
 VALUES (999, 'Service Test User', 'Test Office');
 
--- 2. Mock iclass.get_auth_user_pk() to return our test user
-CREATE OR REPLACE FUNCTION iclass.get_auth_user_pk() RETURNS integer AS $$
+-- 2. Mock iclass.get_auth_user_id() to return our test user
+CREATE OR REPLACE FUNCTION iclass.get_auth_user_id() RETURNS integer AS $$
 BEGIN
   RETURN 999;
 END;
@@ -25,8 +25,8 @@ SELECT results_eq(
 );
 
 -- 4. Test for administrations role
-UPDATE auth.users SET role = 'administrations' WHERE pk = 999;
-INSERT INTO iclass.flag_staff (pk, name, flag_code)
+UPDATE auth.users SET role = 'administrations' WHERE id = 999;
+INSERT INTO iclass.flag_staff (id, name, flag_code)
 VALUES (999, 'Flag Officer', 'SGP');
 
 SELECT results_eq(
@@ -36,8 +36,8 @@ SELECT results_eq(
 );
 
 -- 5. Test for customers role
-UPDATE auth.users SET role = 'customers' WHERE pk = 999;
-INSERT INTO iclass.customers (pk, name)
+UPDATE auth.users SET role = 'customers' WHERE id = 999;
+INSERT INTO iclass.customers (id, name)
 VALUES (999, 'Customer User');
 
 SELECT results_eq(

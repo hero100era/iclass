@@ -10,7 +10,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     const host = process.env.API_URL || "http://localhost:2000";
 
     const [vesselRes, certsRes, docsRes, findingsRes] = await Promise.all([
-        ApiGET(request, `${host}/ships?pk=eq.${params.id}`),
+        ApiGET(request, `${host}/ships?id=eq.${params.id}`),
         ApiGET(request, `${host}/certificates?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/documents?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/finding_comments?ships_id=eq.${params.id}`)
@@ -27,8 +27,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
     let surveys: any[] = [];
     if (certificates.length > 0) {
-        const certPks = certificates.map((c: any) => c.pk).join(",");
-        const surveysRes = await ApiGET(request, `${host}/survey_audits?certificate_id=in.(${certPks})`);
+        const certIds = certificates.map((c: any) => c.id).join(",");
+        const surveysRes = await ApiGET(request, `${host}/survey_audits?certificate_id=in.(${certIds})`);
         if (surveysRes.ok) surveys = await surveysRes.json();
     }
 
@@ -157,7 +157,7 @@ export default function VesselDetail() {
                                     <tbody className="divide-y divide-slate-100">
                                         {certificates.length > 0 ? (
                                             certificates.map((cert: any) => (
-                                                <tr key={cert.pk} className="hover:bg-slate-50/50 transition-colors">
+                                                <tr key={cert.id} className="hover:bg-slate-50/50 transition-colors">
                                                     <td className="px-4 py-3 font-medium text-slate-900">{cert.description || cert.certificate_id}</td>
                                                     <td className="px-4 py-3 text-slate-600">{cert.issue_date}</td>
                                                     <td className="px-4 py-3 text-slate-600">{cert.expiry_date}</td>
@@ -203,7 +203,7 @@ export default function VesselDetail() {
                                     <tbody className="divide-y divide-slate-100">
                                         {surveys.length > 0 ? (
                                             surveys.map((survey: any) => (
-                                                <tr key={survey.pk} className="hover:bg-slate-50/50 transition-colors">
+                                                <tr key={survey.id} className="hover:bg-slate-50/50 transition-colors">
                                                     <td className="px-4 py-3 font-medium text-slate-900">{survey.type}</td>
                                                     <td className="px-4 py-3 text-slate-600">{survey.code}</td>
                                                     <td className="px-4 py-3 text-slate-600 font-medium">{survey.description}</td>
@@ -241,7 +241,7 @@ export default function VesselDetail() {
                             <div className="space-y-6">
                                 {findings.length > 0 ? (
                                     findings.map((finding: any) => (
-                                        <div key={finding.pk} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col md:flex-row">
+                                        <div key={finding.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col md:flex-row">
                                             <div className="md:w-64 bg-slate-50/50 p-4 border-b md:border-b-0 md:border-r border-slate-200 space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <StatusBadge status={finding.comment_type} />

@@ -1,6 +1,6 @@
 -- Create table for companies
 CREATE TABLE IF NOT EXISTS iclass.companies(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   imo_number varchar(7) UNIQUE,
   name varchar(80) NOT NULL,
   address varchar(500),

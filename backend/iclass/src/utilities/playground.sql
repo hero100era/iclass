@@ -1,7 +1,7 @@
-SET search_path TO 'api, public';
+SET search_path TO 'api';
 
 CREATE TABLE IF NOT EXISTS api.todos(
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   done boolean NOT NULL DEFAULT FALSE,
   task text NOT NULL,
   due timestamptz

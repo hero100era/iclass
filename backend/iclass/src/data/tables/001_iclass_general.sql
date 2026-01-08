@@ -402,7 +402,7 @@ CREATE TABLE IF NOT EXISTS iclass.flags(
 
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
-  pk serial PRIMARY KEY,
+  id serial PRIMARY KEY,
   category varchar(5),
   code varchar(10) UNIQUE,
   content varchar(1000),
@@ -442,3 +442,10 @@ CREATE TABLE IF NOT EXISTS iclass.ship_comp_templates (
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE NOT EXISTS iclass.branch_offfices (
+  id serial PRIMARY KEY,
+  code varchar(20) UNIQUE NOT NULL,
+  name varchar (500),
+  parent_id integer REFERENCES iclass.branch_offfices(id)
+)

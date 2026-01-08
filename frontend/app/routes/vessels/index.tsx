@@ -64,9 +64,9 @@ export default function VesselList() {
                     </thead>
                     <tbody className="divide-y">
                         {vessels.map((vessel: any) => (
-                            <tr key={vessel.pk} className="hover:bg-muted/30 transition-colors group">
+                            <tr key={vessel.id} className="hover:bg-muted/30 transition-colors group">
                                 <td className="px-6 py-4">
-                                    <Link to={`/vessels/${vessel.pk}`} className="font-medium text-primary hover:underline">
+                                    <Link to={`/vessels/${vessel.id}`} className="font-medium text-primary hover:underline">
                                         {vessel.name}
                                     </Link>
                                 </td>
