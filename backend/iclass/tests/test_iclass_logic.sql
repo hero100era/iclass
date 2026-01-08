@@ -1,6 +1,6 @@
 BEGIN;
+SET search_path TO tap, iclass, public;
 SELECT plan(3);
-SET search_path TO iclass, public;
 
 -- Ensure the trigger function exists for the test
 CREATE OR REPLACE FUNCTION update_updated_at_column()

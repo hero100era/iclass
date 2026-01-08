@@ -1,4 +1,5 @@
 BEGIN;
+SET search_path TO tap, public, iclass, auth, api;
 SELECT plan(4);
 
 -- 1. Check if api schema exists

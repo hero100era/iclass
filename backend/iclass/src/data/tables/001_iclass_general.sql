@@ -81,7 +81,7 @@ CREATE TYPE iclass.certificate_validity_types_enum AS ENUM(
   'C'
 );
 
-CREATE TABLE IF NOT EXISTS iclass.certificates_validity_type(
+CREATE TABLE IF NOT EXISTS iclass.certificates_validity_types(
   code iclass.certificate_validity_types_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
@@ -131,7 +131,7 @@ INSERT INTO iclass.certificate_internal_categories(code, name, description)
   VALUES ('CL', 'Classification', 'Certificates of classification issued by the classification society'),
 ('ST', 'Standard', 'Certificates of conformity to particular requirements issued on the authority of the ships''s flag administration'),
 ('SI', 'Statement for Issue', 'Statement issued by RO for the purpose of the issue of the actual certificates by the flag administration'),
-('Doc', 'Document of Compliance', 'certificates stating that the ships complies with particular requirements even though they are not applicable to the vessel'),
+('DoC', 'Document of Compliance', 'certificates stating that the ships complies with particular requirements even though they are not applicable to the vessel'),
 ('SoC', 'Statement of Compliance', 'statement issued by RO not on behalf of the flag administration'),
 ('OT', 'Other', 'Other certificates')
 ON CONFLICT
@@ -443,9 +443,3 @@ CREATE TABLE IF NOT EXISTS iclass.ship_comp_templates (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE NOT EXISTS iclass.branch_offfices (
-  id serial PRIMARY KEY,
-  code varchar(20) UNIQUE NOT NULL,
-  name varchar (500),
-  parent_id integer REFERENCES iclass.branch_offfices(id)
-)

@@ -1,4 +1,5 @@
 BEGIN;
+SET search_path TO tap, public, iclass, auth;
 SELECT plan(6);
 
 -- 1. Check if iclass schema exists

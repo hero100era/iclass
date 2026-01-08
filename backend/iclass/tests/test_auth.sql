@@ -1,4 +1,5 @@
 BEGIN;
+SET search_path TO tap, public, auth;
 SELECT plan(8);
 
 -- 1. Check if auth schema exists

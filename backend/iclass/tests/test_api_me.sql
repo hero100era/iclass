@@ -1,4 +1,5 @@
 BEGIN;
+SET search_path TO tap, public, iclass, auth, api;
 SELECT plan(3);
 
 -- 1. Setup test user and role-specific data

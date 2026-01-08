@@ -76,7 +76,7 @@ $$
 LANGUAGE plpgsql;
 
 -- the below should be on your exposed schema
-CREATE SCHEMA IF NOT EXISTS api AUTHORIZATION admingrp;
+-- CREATE SCHEMA IF NOT EXISTS api AUTHORIZATION admingrp;
 
 CREATE OR REPLACE FUNCTION api.user_profile(email text, pass text)
   RETURNS json

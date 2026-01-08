@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   design_draft DECIMAL(9, 2),
   dual_class varchar(20) REFERENCES iclass.classification_societies(code),
   singal_letter varchar(10),
-  responsible_office_id integer REFERENCES iclass.branch_offices(id),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

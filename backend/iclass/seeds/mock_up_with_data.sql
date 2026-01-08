@@ -92,14 +92,6 @@ VALUES
   ) 
 ON CONFLICT DO NOTHING;
 
--- Ship Component Tree
-INSERT INTO iclass.ship_component_tree (parent_id, ship_comp_template_code, code, name, properties)
-VALUES 
-  (NULL, 'ME', 'ME1', 'Main Engine No. 1', '{"serial_number": "MAN-12345", "install_date": "2010-05-15"}'),
-  (NULL, 'AE', 'AE1', 'Auxiliary Engine No. 1', '{"serial_number": "YAN-5566", "install_date": "2010-05-15"}'),
-  (NULL, 'BLR', 'BL1', 'Main Boiler No. 1', '{"serial_number": "AL-9988", "install_date": "2010-05-15"}')
-ON CONFLICT DO NOTHING;
-
 -- Certificates
 INSERT INTO iclass.certificates (
   certificate_id, version, ship_id, company_id, status, remark, issued_by, code, validity_type, category, internal_category,
