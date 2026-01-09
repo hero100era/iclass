@@ -1,14 +1,28 @@
-PostgREST is a standalone web server which turns a PostgreSQL database into a RESTful API. It serves an API that is customized based on the structure of the underlying database.
+# Backend Service
 
-To make an API we’ll simply be building a database. All the endpoints and permissions come from database objects like tables, views, roles, and functions. These tutorials will cover a number of common scenarios and how to model them in the database.
+This directory contains the PostgreSQL database schema and the PostgREST configuration.
 
-In order to set up the postgrest API server, a working postgreSQL server shall be avaliable, and the correct db-uri shall be set in the postgrest.conf.
+## Project Structure
 
-Install the PostgREST, details please refer to [PostgREST Docs](https://postgrest.org/en/v12/)
+- **`src/`**: Source code for Database Schema, RLS, and API definitions. See `src/README.md` for details.
+- **`apply_schema.sh`**: Script to compile `src/` files and deploy them to the database.
+- **`postgrest.conf`**: Configuration file for the PostgREST server.
+- **`Makefile`**: Legacy makefile (deprecated in favor of `apply_schema.sh`).
 
-Then run the server via:
+## Setup & Running
 
+### 1. Prerequisites
+- PostgreSQL running locally.
+- PostgREST installed.
+
+### 2. Deploy Schema
+Run the deployment script to build the database from source:
 ```bash
-cd backend
+./apply_schema.sh
+```
+
+### 3. Run API Server
+Start the PostgREST server using the configuration file:
+```bash
 postgrest postgrest.conf
 ```
