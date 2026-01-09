@@ -97,7 +97,7 @@ BEGIN
           -- Insert into auth.users with default values
           INSERT INTO auth.users (
             email,
-            pass, -- OAuth users don't need a password, use random string
+            password_hash, -- OAuth users don't need a password_hash, use random string
             role,
             category
           ) VALUES (

@@ -54,7 +54,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
     // Create application token and store in session.
     const token = await encrypt({ id, role, category });
-    console.log(token);
     session.set("token", token);
 
     // Clean up temporary OAuth session keys.

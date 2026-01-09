@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS auth.users;
 CREATE TABLE auth.users(
   id serial PRIMARY KEY,
   email text CHECK (email ~* '^.+@.+\..+$') UNIQUE NOT NULL,
-  pass varchar(512) NOT NULL,
+  password_hash varchar(512) NOT NULL,
   role varchar(64) NOT NULL,
   category varchar(32) NOT NULL,
   is_active boolean DEFAULT TRUE,
@@ -36,24 +36,24 @@ CREATE CONSTRAINT TRIGGER ensure_users_role_exists
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA auth;
 
-CREATE OR REPLACE FUNCTION auth.encrypt_pass()
+CREATE OR REPLACE FUNCTION auth.encrypt_password_hash()
   RETURNS TRIGGER
   AS $$
 BEGIN
-  IF tg_op = 'INSERT' OR NEW.pass <> OLD.pass THEN
-    NEW.pass = auth.crypt(NEW.pass, auth.gen_salt('bf'));
+  IF tg_op = 'INSERT' OR NEW.password_hash <> OLD.password_hash THEN
+    NEW.password_hash = auth.crypt(NEW.password_hash, auth.gen_salt('bf', 10));
   END IF;
   RETURN new;
 END
 $$
 LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS encrypt_pass ON auth.users;
-CREATE TRIGGER encrypt_pass
+DROP TRIGGER IF EXISTS encrypt_password_hash ON auth.users;
+CREATE TRIGGER encrypt_password_hash
   BEFORE INSERT OR UPDATE ON auth.users FOR EACH ROW
-  EXECUTE PROCEDURE auth.encrypt_pass();
+  EXECUTE PROCEDURE auth.encrypt_password_hash();
 
-CREATE OR REPLACE FUNCTION auth.user_profile(email text, pass text)
+CREATE OR REPLACE FUNCTION auth.user_profile(email text, password text)
   RETURNS TABLE(
     id integer,
     ROLE varchar,
@@ -70,7 +70,7 @@ BEGIN
     auth.users u
   WHERE
     u.email = user_profile.email
-    AND u.pass = auth.crypt(user_profile.pass, u.pass);
+    AND u.password_hash = auth.crypt(user_profile.password, u.password_hash);
 END;
 $$
 LANGUAGE plpgsql;
@@ -78,7 +78,7 @@ LANGUAGE plpgsql;
 -- the below should be on your exposed schema
 -- CREATE SCHEMA IF NOT EXISTS api AUTHORIZATION admingrp;
 
-CREATE OR REPLACE FUNCTION api.user_profile(email text, pass text)
+CREATE OR REPLACE FUNCTION api.user_profile(email text, password text)
   RETURNS json
   AS $$
 DECLARE
@@ -90,7 +90,7 @@ BEGIN
     SELECT
       *
     FROM
-      auth.user_profile(email, pass)) r INTO result;
+      auth.user_profile(email, password)) r INTO result;
   RETURN result;
 END;
 $$
@@ -112,7 +112,7 @@ GRANT EXECUTE ON FUNCTION api.user_profile TO anonymous;
 --   exp integer
 -- );
 
--- CREATE OR REPLACE FUNCTION api.login(email text, pass text)
+-- CREATE OR REPLACE FUNCTION api.login(email text, password text)
 --   RETURNS auth.jwt_token
 --   AS $$
 -- DECLARE
@@ -127,7 +127,7 @@ GRANT EXECUTE ON FUNCTION api.user_profile TO anonymous;
 --   SELECT
 --     *
 --   FROM
---     auth.user_profile(email, pass) INTO user_record;
+--     auth.user_profile(email, password) INTO user_record;
 --   IF user_record IS NULL THEN
 --     RAISE invalid_password
 --     USING message = 'invalid users or password';

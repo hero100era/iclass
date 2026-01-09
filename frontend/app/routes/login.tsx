@@ -18,7 +18,7 @@ export async function action({ request }: Route.ActionArgs) {
   const pgrst_query_str = `${host}/rpc/user_profile`;
   const response = await ApiPOST(request, pgrst_query_str, {
     email,
-    pass: password,
+    password,
   });
   const data = await response.json();
   if (!response.ok || !data) {
