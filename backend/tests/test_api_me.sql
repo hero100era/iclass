@@ -5,7 +5,7 @@ SELECT plan(3);
 -- 1. Setup test user and role-specific data
 INSERT INTO iclass.flags (code, name, fullname) VALUES ('SGP', 'Singapore', 'Republic of Singapore');
 
-INSERT INTO auth.users (id, email, pass, role, category) 
+INSERT INTO auth.users (id, email, password_hash, role, category) 
 VALUES (999, 'service_test@example.com', 'pass', 'employees', 'internal');
 
 INSERT INTO iclass.employees (id, display_name, office_location)

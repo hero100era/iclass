@@ -11,15 +11,15 @@ SELECT has_table('auth', 'users', 'Table auth.users should exist');
 -- 3. Check columns in auth.users
 SELECT has_column('auth', 'users', 'id', 'Column auth.users.id should exist');
 SELECT has_column('auth', 'users', 'email', 'Column auth.users.email should exist');
-SELECT has_column('auth', 'users', 'pass', 'Column auth.users.pass should exist');
+SELECT has_column('auth', 'users', 'password_hash', 'Column auth.users.password_hash should exist');
 
 -- 4. Test password encryption trigger
 -- We need to insert a user and check if the password is encrypted (not equal to the input)
-INSERT INTO auth.users (email, pass, role, category) 
+INSERT INTO auth.users (email, password_hash, role, category) 
 VALUES ('test@example.com', 'mypassword', 'employees', 'internal');
 
-SELECT isnt(
-    (SELECT pass FROM auth.users WHERE email = 'test@example.com'),
+SELECT isnt(    
+    (SELECT password_hash FROM auth.users WHERE email = 'test@example.com'),
     'mypassword',
     'Password should be encrypted by the trigger'
 );

@@ -10,12 +10,12 @@ SELECT has_function('api', 'user_profile', ARRAY['text', 'text'], 'Function api.
 
 -- 3. Test api.user_profile with valid credentials
 -- First insert a user in auth.users
-INSERT INTO auth.users (email, pass, role, category) 
+INSERT INTO auth.users (email, password_hash, role, category) 
 VALUES ('api_test@example.com', 'apipass', 'employees', 'internal');
 
 SELECT results_eq(
     'SELECT api.user_profile(''api_test@example.com'', ''apipass'')::text',
-    'SELECT row_to_json(r)::text FROM (SELECT id as id, role, category FROM auth.users WHERE email = ''api_test@example.com'') r',
+    'SELECT row_to_json(r)::text FROM (SELECT id, role, category FROM auth.users WHERE email = ''api_test@example.com'') r',
     'api.user_profile should return user data as JSON for valid credentials'
 );
 
