@@ -38,7 +38,7 @@ BEGIN
     END IF;
   EXCEPTION
     WHEN undefined_column THEN
-      RAISE WARNING 'Table "%" must have a column named "id" to use the log_table_changes trigger', TG_TABLE_NAME;
+      RAISE WARNING 'Table "%" must have a primary key column named "id" to use the log_table_changes trigger', TG_TABLE_NAME;
       RETURN NULL;
   END;
   -- Prepare changed data based on operation type

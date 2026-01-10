@@ -4,17 +4,23 @@ SET search_path TO 'iclass';
 -- Organization Chart Schema for Microsoft Teams (for Postgresql v18+)
 -- =============================================
 
+-- Enable ltree extension for hierarchical queries
+CREATE EXTENSION IF NOT EXISTS ltree;
+
 -- =============================================
 -- 1. ORGANIZATIONS TABLE
 -- Top-level organization/tenant information
 -- =============================================
 CREATE TABLE organizations (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    tenant_id VARCHAR(100) UNIQUE NOT NULL,  -- Microsoft 365 Tenant ID
+    id serial PRIMARY KEY,
+    tenant_id VARCHAR(100) UNIQUE,  -- Microsoft 365 Tenant ID
     name VARCHAR(255) NOT NULL,
     display_name VARCHAR(255),
     domain VARCHAR(255),
     logo_url TEXT,
+    imo_number VARCHAR(7) UNIQUE,
+    mlc_responsibility boolean DEFAULT TRUE,
+    doc_ships_types varchar(30),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE
@@ -24,13 +30,11 @@ CREATE TABLE organizations (
 -- 2. DEPARTMENTS TABLE
 -- Department/Division structure
 -- =============================================
--- Enable ltree extension for hierarchical queries
-CREATE EXTENSION IF NOT EXISTS ltree;
 
 CREATE TABLE departments (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    parent_department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+    id serial PRIMARY KEY,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    parent_department_id integer REFERENCES departments(id) ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
     description TEXT,
@@ -44,25 +48,23 @@ CREATE TABLE departments (
     CONSTRAINT unique_dept_code_per_org UNIQUE (organization_id, code)
 );
 
-
-
 -- =============================================
 -- 3. LOCATIONS TABLE
 -- Office locations
 -- =============================================
 CREATE TABLE locations (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     address_line1 VARCHAR(255),
     address_line2 VARCHAR(255),
     city VARCHAR(100),
     state_province VARCHAR(100),
-    postal_code VARCHAR(20),
+    post_code VARCHAR(20),
     country VARCHAR(100),
-    country_code CHAR(2),
+    country_code VARCHAR(3),
     timezone VARCHAR(50),
-    is_headquarters BOOLEAN DEFAULT FALSE,
+    is_headquarter BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE
@@ -73,8 +75,8 @@ CREATE TABLE locations (
 -- Standard job titles/positions
 -- =============================================
 CREATE TABLE job_titles (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     level INTEGER,  -- Job level/grade
     job_family VARCHAR(100),
@@ -87,12 +89,13 @@ CREATE TABLE job_titles (
 );
 
 -- =============================================
--- 5. EMPLOYEES TABLE
+-- 6. EMPLOYEES TABLE
 -- Core employee/user information
 -- =============================================
 CREATE TABLE employees (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    user_id integer REFERENCES auth.users(id) ON DELETE CASCADE,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     
     -- Microsoft 365 / Azure AD identifiers
     azure_ad_id VARCHAR(100) UNIQUE,  -- Azure AD Object ID
@@ -112,13 +115,13 @@ CREATE TABLE employees (
     mobile_phone VARCHAR(50),
     
     -- Organization Position
-    job_title_id UUID REFERENCES job_titles(id) ON DELETE SET NULL,
+    job_title_id integer REFERENCES job_titles(id) ON DELETE SET NULL,
     job_title_custom VARCHAR(255),  -- For custom titles not in job_titles table
-    department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
-    location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
+    department_id integer REFERENCES departments(id) ON DELETE SET NULL,
+    location_id integer REFERENCES locations(id) ON DELETE SET NULL,
     
     -- Manager Relationship (Self-referencing for org chart)
-    manager_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+    manager_id integer REFERENCES employees(id) ON DELETE SET NULL,
     
     -- Additional MS Teams relevant fields
     profile_photo_url TEXT,
@@ -142,29 +145,48 @@ CREATE TABLE employees (
     CONSTRAINT unique_employee_number_per_org UNIQUE (organization_id, employee_number)
 );
 
+
+
+-- ============================================= 
+-- 5. Contract History TABLE
+-- Record contract details with our Organization(for customers, flags and empoyee)
 -- =============================================
--- 6. MANAGER HISTORY TABLE
+CREATE TABLE contract_history (
+    id serial PRIMARY KEY,
+    organization_id integer REFERENCES organizations(id) ON DELETE CASCADE,
+    employee_id integer REFERENCES employees(id) ON DELETE CASCADE,
+    contract_file varchar(128),
+    contract_start date,
+    contract_end date,
+    notes text,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- =============================================
+-- 7. MANAGER HISTORY TABLE
 -- Track manager changes over time
 -- =============================================
 CREATE TABLE manager_history (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    manager_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+    id serial PRIMARY KEY,
+    employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    manager_id integer REFERENCES employees(id) ON DELETE SET NULL,
     start_date DATE NOT NULL,
     end_date DATE,
     change_reason VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES employees(id)
+    created_by integer REFERENCES employees(id)
 );
 
 -- =============================================
--- 7. DEPARTMENT MEMBERSHIP HISTORY
+-- 8. DEPARTMENT MEMBERSHIP HISTORY
 -- Track department changes
 -- =============================================
 CREATE TABLE department_history (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    department_id integer NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
     start_date DATE NOT NULL,
     end_date DATE,
     is_primary BOOLEAN DEFAULT TRUE,
@@ -172,13 +194,13 @@ CREATE TABLE department_history (
 );
 
 -- =============================================
--- 8. DOTTED LINE RELATIONSHIPS
+-- 9. DOTTED LINE RELATIONSHIPS
 -- For matrix organization structures
 -- =============================================
 CREATE TABLE dotted_line_relationships (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    dotted_line_manager_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    employee_id serial NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    dotted_line_manager_id serial NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     relationship_type VARCHAR(100),  -- e.g., 'Project Manager', 'Functional Manager'
     description TEXT,
     start_date DATE,
@@ -192,12 +214,12 @@ CREATE TABLE dotted_line_relationships (
 );
 
 -- =============================================
--- 9. TEAMS INTEGRATION TABLE
+-- 10. TEAMS INTEGRATION TABLE
 -- Microsoft Teams specific data
 -- =============================================
 CREATE TABLE teams_presence (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     availability VARCHAR(50),  -- Available, Busy, Away, DoNotDisturb, Offline
     activity VARCHAR(100),
     status_message TEXT,
@@ -208,12 +230,12 @@ CREATE TABLE teams_presence (
 );
 
 -- =============================================
--- 10. ORGANIZATIONAL ROLES
+-- 11. ORGANIZATIONAL ROLES
 -- Special roles beyond job titles
 -- =============================================
 CREATE TABLE organizational_roles (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -221,9 +243,9 @@ CREATE TABLE organizational_roles (
 );
 
 CREATE TABLE employee_organizational_roles (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    role_id UUID NOT NULL REFERENCES organizational_roles(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    role_id integer NOT NULL REFERENCES organizational_roles(id) ON DELETE CASCADE,
     start_date DATE,
     end_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -231,13 +253,15 @@ CREATE TABLE employee_organizational_roles (
     CONSTRAINT unique_employee_role UNIQUE (employee_id, role_id)
 );
 
+
+
 -- =============================================
--- 11. SYNC LOG TABLE
+-- 12. SYNC LOG TABLE
 -- Track synchronization with Microsoft 365
 -- =============================================
 CREATE TABLE sync_logs (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id serial PRIMARY KEY,
+    organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     sync_type VARCHAR(50) NOT NULL,  -- 'full', 'incremental', 'user', 'department'
     status VARCHAR(50) NOT NULL,  -- 'started', 'completed', 'failed'
     started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -339,7 +363,7 @@ WITH RECURSIVE dept_tree AS (
         parent_department_id,
         0 AS level,
         ARRAY[name]::VARCHAR[] AS path_names,
-        ARRAY[id]::UUID[] AS path_ids
+        ARRAY[id]::integer[] AS path_ids
     FROM departments
     WHERE parent_department_id IS NULL
     
@@ -372,9 +396,9 @@ FROM dept_tree;
 -- =============================================
 
 -- Function: Get all descendants (direct and indirect reports) of a manager
-CREATE OR REPLACE FUNCTION get_all_reports(p_manager_id UUID)
+CREATE OR REPLACE FUNCTION get_all_reports(p_manager_id integer)
 RETURNS TABLE (
-    employee_id UUID,
+    employee_id integer,
     display_name VARCHAR(255),
     email VARCHAR(255),
     level INTEGER
@@ -405,9 +429,9 @@ SELECT * FROM reports ORDER BY level, display_name;
 $$ LANGUAGE SQL;
 
 -- Function: Get management chain (upward hierarchy)
-CREATE OR REPLACE FUNCTION get_management_chain(p_employee_id UUID)
+CREATE OR REPLACE FUNCTION get_management_chain(p_employee_id integer)
 RETURNS TABLE (
-    employee_id UUID,
+    employee_id integer,
     display_name VARCHAR(255),
     job_title VARCHAR(255),
     level INTEGER
@@ -504,49 +528,6 @@ CREATE TRIGGER track_employee_manager_change
     FOR EACH ROW
     EXECUTE FUNCTION track_manager_change();
 
--- =============================================
--- SAMPLE DATA (Optional)
--- =============================================
-
--- Insert sample organization
-INSERT INTO organizations (tenant_id, name, display_name, domain)
-VALUES (
-    'contoso-tenant-id',
-    'Contoso Corporation',
-    'Contoso',
-    'contoso.com'
-);
-
--- Insert sample locations
-INSERT INTO locations (organization_id, name, city, country, country_code, is_headquarters)
-VALUES 
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Headquarters', 'Seattle', 'United States', 'US', TRUE),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'East Coast Office', 'New York', 'United States', 'US', FALSE);
-
--- Insert sample departments
-INSERT INTO departments (id, organization_id, name, code, level)
-VALUES 
-    ('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Executive', 'EXEC', 0),
-    ('b2eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Engineering', 'ENG', 1),
-    ('b3eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Human Resources', 'HR', 1);
-
--- Update parent departments
-UPDATE departments SET parent_department_id = 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' 
-WHERE id IN ('b2eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'b3eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
-
--- Usage examples 
--- Get full org chart for a specific employee
-SELECT * FROM get_all_reports('employee-uuid-here');
-
--- Get management chain
-SELECT * FROM get_management_chain('employee-uuid-here');
-
--- Find all employees in a department and sub-departments
-SELECT * FROM v_employee_full 
-WHERE department_id IN (
-    SELECT id FROM v_department_hierarchy 
-    WHERE 'parent-dept-uuid'::UUID = ANY(path_ids)
-);
 
 --at the end of the file, set back the default search_path.
 SET search_path TO "$user", public;

@@ -25,8 +25,8 @@ SELECT has_trigger('iclass', 'ships', 'update_ships_updated_at', 'Trigger update
 
 -- 2. Test update_updated_at_column trigger
 -- Insert a ship
-INSERT INTO iclass.ships (name, administration_types, type_iacs, class_number, updated_at)
-VALUES ('Test Ship', 'C', 'BC', 'TEST-123', '2000-01-01 00:00:00Z');
+INSERT INTO iclass.ships (name, administration_types, type_iacs, updated_at)
+VALUES ('Test Ship', 'C', 'BC', '2000-01-01 00:00:00Z');
 
 -- Get the initial updated_at
 SELECT updated_at AS initial_time FROM iclass.ships WHERE name = 'Test Ship' \gset

@@ -14,8 +14,8 @@ CREATE OR REPLACE TRIGGER iclass.update_ships_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 
-CREATE OR REPLACE TRIGGER iclass.update_companies_updated_at_trigger
-  BEFORE UPDATE ON companies
+CREATE OR REPLACE TRIGGER iclass.update_organizations_updated_at_trigger
+  BEFORE UPDATE ON organizations
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 

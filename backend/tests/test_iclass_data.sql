@@ -17,9 +17,12 @@ SELECT has_table('iclass', 'customers', 'Table iclass.customers should exist');
 
 -- 5. Test foreign key constraint for employees
 -- Ensure that we can't insert an employee without a corresponding auth user
+INSERT INTO iclass.organizations (id, name) VALUES (1, 'Test Org');
+
 SELECT throws_ok(
-    'INSERT INTO iclass.employees (id, display_name) VALUES (999999, ''Ghost Employee'')',
-    'insert or update on table "employees" violates foreign key constraint "employees_id_fkey"',
+    'INSERT INTO iclass.employees (user_id, organization_id, first_name, last_name, email, display_name) 
+     VALUES (999999, 1, ''Ghost'', ''Employee'', ''ghost@example.com'', ''Ghost Employee'')',
+    'insert or update on table "employees" violates foreign key constraint "employees_user_id_fkey"',
     'Should throw error when inserting employee with non-existent auth user'
 );
 

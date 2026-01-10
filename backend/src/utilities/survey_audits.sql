@@ -1,4 +1,4 @@
-SET search_path TO 'iclass, public';
+SET search_path TO 'iclass';
 
 CREATE TYPE iclass.job_status_enum AS ENUM(
   'ST',
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS iclass.audits(
   created_by varchar(100) NOT NULL,
   created_date timestamp NOT NULL,
   ship_id integer REFERENCES ships(id),
-  company_id integer REFERENCES iclass.companies(id),
+  company_id integer REFERENCES iclass.organizations(id),
   auditor_id integer REFERENCES iclass.employees(id),
   reviewer_id integer REFERENCES iclass.employees(id),
   statement varchar(255),
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS iclass.ms_jobs(
   created_at timestamp NOT NULL,
   operator_id integer REFERENCES iclass.employees(id),
   ship_id integer REFERENCES iclass.ships(id),
-  company_id integer REFERENCES iclass.companies(id)
+  company_id integer REFERENCES iclass.organizations(id)
 )
 PARTITION BY RANGE (created_at);
 

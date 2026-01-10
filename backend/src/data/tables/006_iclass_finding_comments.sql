@@ -1,8 +1,8 @@
 -- Create table for Findings/Comments
 CREATE TABLE IF NOT EXISTS iclass.finding_comments(
   id serial PRIMARY KEY,
-  ships_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
-  companies_id integer REFERENCES iclass.companies(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.organizations(id) ON DELETE CASCADE,
   comment_type iclass.comment_types_enum NOT NULL,
   priviate boolean DEFAULT false,
   certificates varchar(500),
@@ -16,5 +16,6 @@ CREATE TABLE IF NOT EXISTS iclass.finding_comments(
   mms_reference varchar(20),
   text varchar(10000) NOT NULL,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );

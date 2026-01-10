@@ -81,12 +81,12 @@ CREATE TYPE iclass.certificate_validity_types_enum AS ENUM(
   'C'
 );
 
-CREATE TABLE IF NOT EXISTS iclass.certificates_validity_types(
+CREATE TABLE IF NOT EXISTS iclass.certificate_validity_types(
   code iclass.certificate_validity_types_enum PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
-INSERT INTO iclass.certificates_validity_types(code, name)
+INSERT INTO iclass.certificate_validity_types(code, name)
   VALUES ('F', 'Full Term'),
 ('I', 'Interim'),
 ('S', 'Short Term'),
@@ -202,7 +202,7 @@ ON CONFLICT
 -- Create enum for certificates applicability
 CREATE TYPE iclass.certificates_applicability_enum AS ENUM(
   'Vessel',
-  'Companies'
+  'Company'
 );
 
 
@@ -314,18 +314,18 @@ INSERT INTO iclass.survey_audit_codes(code, description, is_statutory, is_audit,
 ('ILO133', 'ILO133 - Crew Accommodation', TRUE, FALSE, FALSE, FALSE),
 ('ILO152', 'ILO152 - Cargo Gear', TRUE, FALSE, FALSE, FALSE),
 ('INF', 'Fitness for the Carriage of INF Cargo', TRUE, FALSE, FALSE, TRUE),
-('DOC', 'Safety Management - Company', TRUE, FALSE, FALSE, TRUE),
-('SMC', 'Safety Management - Vessel', TRUE, FALSE, TRUE, TRUE),
-('ISPS', 'Ships and Port Facility Security', TRUE, FALSE, FALSE, TRUE),   
-('ISO9001', 'Quality management systems', TRUE, FALSE, TRUE, FALSE),
-('ISO14001', 'Environmental management systems', FALSE, FALSE, TRUE, FALSE),
-('ISO45001', 'Occupational health and safety management system', FALSE, TRUE, TRUE, FALSE),
-('ISO50001', 'Energy management system', TRUE, FALSE, TRUE, FALSE),
+('DOC', 'Safety Management - Company', TRUE, TRUE, TRUE, TRUE),
+('SMC', 'Safety Management - Vessel', TRUE, TRUE, FALSE, TRUE),
+('ISPS', 'Ships and Port Facility Security', TRUE, TRUE, FALSE, TRUE),   
+('ISO9001', 'Quality management systems', TRUE, TRUE, TRUE, FALSE),
+('ISO14001', 'Environmental management systems', FALSE, TRUE, TRUE, FALSE),
+('ISO45001', 'Occupational health and safety management system', FALSE, TRUE, FALSE, FALSE),
+('ISO50001', 'Energy management system', TRUE, TRUE, FALSE, FALSE),
 ('LL', 'International Convention on Load Lines', TRUE, FALSE, TRUE, TRUE),
 ('OPP', 'Oil Pollution Prevention', TRUE, FALSE, FALSE, TRUE),
 ('NLS', 'Pollution Prevention for the Carriage of Noxious Liquid Substances in Bulk', TRUE, FALSE, FALSE, TRUE),
 ('SPP', 'Sewage Pollution Prevention', TRUE, FALSE, FALSE, TRUE),
-('GPP', 'Garbage Pollution Prevention', TRUE, FALSE, FALSE, TRUE),
+('GPP', 'Garbage Pollution Prevention', TRUE, FALSE, FALSE, FALSE),
 ('APP', 'Air Pollution Prevention', TRUE, FALSE, FALSE, TRUE),
 ('EE', 'Energy Efficiency', TRUE, FALSE, FALSE, TRUE),
 ('FDCS', 'Fuel Oil Consumption Reporting', TRUE, FALSE, FALSE, TRUE),
@@ -386,6 +386,21 @@ INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
 ON CONFLICT
   DO NOTHING;
 
+CREATE TYPE iclass.task_status_enum AS ENUM (
+    'draft',
+    'submitted',
+    'accepted',
+    'assigned',
+    'scheduled',
+    'planning',
+    'executing',
+    'pending_review',
+    'approved',
+    'completed',
+    'cancelled',
+    'rejected'
+);
+
 CREATE TABLE IF NOT EXISTS iclass.flags(
   code varchar(3) PRIMARY KEY,
   name varchar(20) NOT NULL,
@@ -397,18 +412,8 @@ CREATE TABLE IF NOT EXISTS iclass.flags(
   contract_file varchar(128),
   contract_start date,
   contract_end date,
-  hssc boolean
-);
-
-
-CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
-  id serial PRIMARY KEY,
-  category varchar(5),
-  code varchar(10) UNIQUE,
-  content varchar(1000),
-  description text,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  is_hssc BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.certificate_templates (
@@ -416,12 +421,17 @@ CREATE TABLE IF NOT EXISTS iclass.certificate_templates (
   name varchar(100) NOT NULL,
   version varchar(20) NOT NULL,
   survey_audit_code varchar(10) REFERENCES iclass.survey_audit_codes(code),
-  category iclass.certificate_internal_categories_enum,
-  file_path_rml varchar(255),
-  file_path_html varchar(255),             
+  validity_type iclass.certificate_validity_types_enum,
+  category iclass.certificate_categories_enum,
+  internal_category iclass.certificate_internal_categories_enum,
+  file_path_xml varchar(255),
+  file_path_html varchar(255),
+  file_path_pdf varchar(255),
   description text,
+  applicability iclass.certificates_applicability_enum,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.report_templates (
@@ -430,9 +440,23 @@ CREATE TABLE IF NOT EXISTS iclass.report_templates (
   version varchar(20) NOT NULL,
   file_path_rml varchar(255),
   file_path_html varchar(255),
+  file_path_pdf varchar(255),
   description text,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
+  id serial PRIMARY KEY,
+  category varchar(5),
+  code varchar(10) UNIQUE,
+  survey_audit_code varchar(10) REFERENCES iclass.survey_audit_codes(code),
+  content varchar(1000),
+  description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.ship_comp_templates (
@@ -440,6 +464,8 @@ CREATE TABLE IF NOT EXISTS iclass.ship_comp_templates (
   name varchar(100) NOT NULL,
   properties json,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
+
 

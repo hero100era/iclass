@@ -13,7 +13,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         ApiGET(request, `${host}/ships?id=eq.${params.id}`),
         ApiGET(request, `${host}/certificates?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/documents?ship_id=eq.${params.id}`),
-        ApiGET(request, `${host}/finding_comments?ships_id=eq.${params.id}`)
+        ApiGET(request, `${host}/finding_comments?ship_id=eq.${params.id}`)
     ]);
 
     if (!vesselRes.ok) throw new Response("Vessel not found.", { status: 404 });

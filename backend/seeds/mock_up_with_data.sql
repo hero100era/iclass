@@ -1,5 +1,5 @@
 -- Flags
-INSERT INTO iclass.flags(code, name, fullname, email, tel, fax, contact, contract_file, contract_start, contract_end, hssc)
+INSERT INTO iclass.flags(code, name, fullname, email, tel, fax, contact, contract_file, contract_start, contract_end, is_hssc)
 VALUES 
   ('CN', 'China', 'People''s Republic of China', 'info@msa.gov.cn', '+86 10 1234 5678', '+86 10 1234 5679', 'MSA Headquarters', '/contracts/flags/cn_contract.pdf', '2024-01-01', '2029-12-31', TRUE),
   ('US', 'United States', 'United States of America', 'info@uscg.mil', '+1 202 555 0123', '+1 202 555 0124', 'USCG Headquarters', '/contracts/flags/us_contract.pdf', '2023-01-01', '2028-12-31', TRUE),
@@ -8,13 +8,11 @@ VALUES
   ('MH', 'Marshall Islands', 'Republic of the Marshall Islands', 'maritime@register-iri.com', '+1 123 456 7890', '+1 123 456 7891', 'IRI Maritime', '/contracts/flags/mh_contract.pdf', '2024-03-01', '2029-02-28', TRUE)
 ON CONFLICT DO NOTHING;
 
--- Companies
-INSERT INTO iclass.companies (imo_number, name, address, country, city, zip_code, mlc_responsibility, doc_ships_types, operation_address1, operation_address2, operation_address3, contract_file, contract_start, contract_end, contact_details)
+-- organizations
+INSERT INTO iclass.organizations (tenant_id, name, display_name, imo_number, doc_ships_types)
 VALUES 
-  ('1234567', 'Oceanic Logistics Ltd', '123 Harbor Way', 'SGP', 'Singapore', '098412', TRUE, 'GC, OT', '123 Harbor Way', 'Building 5', 'Suite 201', '/contracts/companies/oceanic_logistics.pdf', '2024-01-15', '2026-01-14', 'John Doe: +65 9123 4567'),
-  ('2345678', 'Global Maritime Management', '456 Sea View Road', 'USA', 'New York', '10001', TRUE, 'BC, PS', '456 Sea View Road', 'Floor 42', NULL, '/contracts/companies/global_maritime.pdf', '2023-05-20', '2025-05-19', 'Jane Smith: +1 212 555 9876'),
-  ('3456789', 'China Shipping Group', '789 Bund Street', 'CHN', 'Shanghai', '200001', TRUE, 'BC, CT', '789 Bund Street', 'Donghai Tower', 'Level 8', '/contracts/companies/china_shipping.pdf', '2024-02-01', '2027-01-31', 'Li Wei: +86 21 1234 5678'),
-  ('4567890', 'Pacific Ship Management', '101 Island Dr', 'MHL', 'Majuro', '96960', FALSE, 'OT', '101 Island Dr', NULL, NULL, '/contracts/companies/pacific_ship.pdf', '2023-11-10', '2025-11-09', 'Sam Jones: +692 123 4567')
+('tenant-damoco-id','DAMICO', 'DAMICEO SPA', '7634567', 'BC OIL GEN'),
+('tenant-zhouji-id','Zhouji', 'Zhou Ji Ship Management', '7634563', 'BC OIL GEN CHE')
 ON CONFLICT DO NOTHING;
 
 -- Ship Component Templates
@@ -27,7 +25,7 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Certificate Templates
-INSERT INTO iclass.certificate_templates (code, name, version, survey_audit_code, category, file_path_rml, file_path_html, description)
+INSERT INTO iclass.certificate_templates (code, name, version, survey_audit_code, internal_category, file_path_xml, file_path_html, description)
 VALUES 
   ('CSS-T', 'Cargo Ship Safety Template', '1.0', 'CSS', 'ST', '/templates/css.rml', '/templates/css.html', 'Standard template for Cargo Ship Safety'),
   ('SMC-T', 'Safety Management Template', '2.1', 'SMC', 'ST', '/templates/smc.rml', '/templates/smc.html', 'Template for Safety Management Certificate'),
@@ -38,7 +36,7 @@ ON CONFLICT DO NOTHING;
 -- Ships
 INSERT INTO iclass.ships(
   name, imo_number, previous_names, build_date, commissioning_date, keel_laid_date, contract_date, class_entry_date,
-  administration_types, administration_country, classed_by, class_number, port_of_registry, date_of_registry, registry_number,
+  administration_types, administration_country, classed_by, port_of_registry, date_of_registry, registry_number,
   call_sign, official_number, type_iacs, type_other, type_mms, class_status, ship_status, class_notation,
   gross_tons, national_tons, deadweight, net_tons, light_ship, ballast_capacity, equipment_number,
   length, length_oa, length_bp, moulded_depth, moulded_breadth, moulded_draft, design_draft,
@@ -48,82 +46,82 @@ INSERT INTO iclass.ships(
 VALUES 
   (
     'JIA HE', '9345678', 'HUA MEI', '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
-    'C', 'CHN', 'ABS', '123456', 'Shanghai', '2010-06-15', 'REG-CN-9345',
+    'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
     'ABC123', 'OFF-9345', 'BC', NULL, 'BC', 'V', 'E', '+100A1 Bulk Carrier',
     10000.00, 10000.00, 15000, 6000.00, 4500.00, 8000.00, 1500,
     150.00, 160.00, 145.00, 12.00, 25.00, 8.50, 9.00,
     'CCS', 'ABC123', 'CN', 'Shanghai', '123456789', 'Bulk Carrier',
-    (SELECT id FROM iclass.companies WHERE imo_number = '3456789'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '3456789'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '3456789')
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
   ),
   (
     'OCEAN TRADER', '9123456', NULL, '2005-03-10', '2005-05-12', '2004-09-05', '2004-06-20', '2005-04-15',
-    'C', 'SGP', 'LR', 'L10023', 'Singapore', '2005-05-01', 'REG-SG-9123',
+    'C', 'SGP', 'LR', 'Singapore', '2005-05-01', 'REG-SG-9123',
     'SG9923', 'OFF-9123', 'GC', NULL, 'GC', 'V', 'E', '100A1 General Cargo Ship',
     15000.00, 15000.00, 20000, 9000.00, 6500.00, 12000.00, 2200,
     180.00, 190.00, 175.00, 15.00, 28.00, 10.00, 10.50,
     'NK', 'SG9923', 'SG', 'Singapore', '563123456', 'General Cargo',
-    (SELECT id FROM iclass.companies WHERE imo_number = '1234567'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '1234567'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '1234567')
+    (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '1234567')
   ),
   (
     'SEA VOYAGER', '9234567', 'VOYAGER ONE', '2008-09-22', '2008-11-15', '2007-12-01', '2007-10-10', '2008-10-20',
-    'C', 'PAN', 'BV', 'B22933', 'Panama City', '2008-11-01', 'REG-PA-9234',
+    'C', 'PAN', 'BV', 'Panama City', '2008-11-01', 'REG-PA-9234',
     'HP2293', 'OFF-9234', 'OT', NULL, 'OT', 'V', 'E', 'Oil Tanker, FLS',
     45000.00, 45000.00, 80000, 25000.00, 18000.00, 35000.00, 4500,
     240.00, 250.00, 235.00, 21.00, 42.00, 14.50, 15.00,
     'ABS', 'HP2293', 'PA', 'Panama City', '351445000', 'Oil Tanker',
-    (SELECT id FROM iclass.companies WHERE imo_number = '2345678'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '4567890'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '4567890')
+    (SELECT id FROM iclass.organizations WHERE imo_number = '2345678'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '4567890'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '4567890')
   ),
   (
     'PACIFIC STAR', '9455667', NULL, '2015-11-30', '2016-01-15', '2014-12-20', '2014-09-01', '2016-01-05',
-    'C', 'MHL', 'ABS', 'A33445', 'Majuro', '2016-01-10', 'REG-MH-9455',
+    'C', 'MHL', 'ABS', 'Majuro', '2016-01-10', 'REG-MH-9455',
     'V7A234', 'OFF-9455', 'PS', NULL, 'PS', 'V', 'E', 'Passenger Ship, Unrestricted Service',
     60000.00, 60000.00, 10000, 35000.00, 25000.00, 8000.00, 6000,
     260.00, 280.00, 250.00, 25.00, 32.00, 8.00, 8.50,
     'LR', 'V7A234', 'MH', 'Majuro', '538001234', 'Passenger Ship',
-    (SELECT id FROM iclass.companies WHERE imo_number = '2345678'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '2345678'),
-    (SELECT id FROM iclass.companies WHERE imo_number = '2345678')
+    (SELECT id FROM iclass.organizations WHERE imo_number = '2345678'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '2345678'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '2345678')
   ) 
 ON CONFLICT DO NOTHING;
 
 -- Certificates
 INSERT INTO iclass.certificates (
-  certificate_id, version, ship_id, company_id, status, remark, issued_by, code, validity_type, category, internal_category,
+  version, ship_id, company_id, status, remark, issued_by, code, validity_type, category, internal_category,
   description, issue_date, expiry_date, mlc_declaration_date, mlc_declaration_place, doc_administration, extended_date
 )
 VALUES
   (
-    'CERT-JH-001', (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), (SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL,
+    1, (SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL,
     'V', 'OK', 'ABS', 'SPP', 'F', 'IC', 'ST',
     'Safety Equipment Certificate', CURRENT_DATE - INTERVAL '1 year', CURRENT_DATE + INTERVAL '4 years',
     NULL, NULL, NULL, NULL
   ),
   (
-    'CERT-OT-002', (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), (SELECT id FROM iclass.ships WHERE imo_number = '9123456'), NULL,
+    1, (SELECT id FROM iclass.ships WHERE imo_number = '9123456'), NULL,
     'V', 'OK', 'LR', 'CL', 'F', 'IC', 'CL',
     'Classification Certificate', CURRENT_DATE - INTERVAL '6 months', CURRENT_DATE + INTERVAL '4.5 years',
     NULL, NULL, NULL, NULL
   ),
   (
-    'CERT-SV-003', (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), (SELECT id FROM iclass.ships WHERE imo_number = '9234567'), NULL,
+     2, (SELECT id FROM iclass.ships WHERE imo_number = '9234567'), NULL,
     'S', 'XX', 'BV', 'LL', 'F', 'IC', 'ST',
     'Load Line Certificate', CURRENT_DATE - INTERVAL '2 years', CURRENT_DATE + INTERVAL '3 years',
     NULL, NULL, 'PA', NULL
   ),
   (
-    'CERT-PS-004', (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), (SELECT id FROM iclass.ships WHERE imo_number = '9455667'), NULL,
+    1, (SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL,
     'V', 'OK', 'ABS', 'SMC', 'F', 'IC', 'ST',
     'Safety Management Certificate', CURRENT_DATE - INTERVAL '1 month', CURRENT_DATE + INTERVAL '4 years 11 months',
     '2023-12-01', 'CN', NULL, NULL
   ),
   (
-    'CERT-DOC-001', (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), NULL, (SELECT id FROM iclass.companies WHERE imo_number = '1234567'),
+    1, (SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL,
     'V', 'OK', 'LR', 'DOC', 'F', 'IC', 'DoC',
     'Document of Compliance', CURRENT_DATE - INTERVAL '2 years', CURRENT_DATE + INTERVAL '3 years',
     NULL, NULL, 'SG', NULL
@@ -131,33 +129,33 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Survey Audits
-INSERT INTO iclass.survey_audits (certificate_id, code, type, description, last_held_date, place_held, next_due_date, postponement_date, status, range_from_date, range_to_date, fee)
+INSERT INTO iclass.survey_audits (certificate_id, code, description, last_held_date, place_held, next_due_date, postponement_date, status, range_from_date, range_to_date, fee)
 VALUES
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 'CERT-JH-001' AND version = 1),
-    'CSS', 'A', 'Annual Survey for Safety Equipment', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1),
+    'CSS', 'Annual Survey for Safety Equipment', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL, 'D', CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   ),
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 'CERT-OT-002' AND version = 1),
-    'CL', 'In', 'Intermediate Classification Survey', CURRENT_DATE - INTERVAL '2 years', 'Singapore',
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1),
+    'CL', 'Intermediate Classification Survey', CURRENT_DATE - INTERVAL '2 years', 'Singapore',
     CURRENT_DATE + INTERVAL '6 months', NULL, 'D', CURRENT_DATE + INTERVAL '3 months', CURRENT_DATE + INTERVAL '9 months', 5000.00
   ),
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 'CERT-SV-003' AND version = 1),
-    'LL', 'R', 'Renewal Load Line Survey', CURRENT_DATE - INTERVAL '3 years', 'Panama',
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 2 AND version = 1),
+    'LL', 'Renewal Load Line Survey', CURRENT_DATE - INTERVAL '3 years', 'Panama',
     CURRENT_DATE - INTERVAL '2 days', NULL, 'O', CURRENT_DATE - INTERVAL '3 months', CURRENT_DATE + INTERVAL '3 months', 2500.00
   ),
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 'CERT-PS-004' AND version = 1),
-    'SMC', 'In', 'Intermediate Safety Management Audit', CURRENT_DATE - INTERVAL '2.5 years', 'Miami',
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 2 AND version = 1),
+    'SMC', 'Intermediate Safety Management Audit', CURRENT_DATE - INTERVAL '2.5 years', 'Miami',
     CURRENT_DATE + INTERVAL '2 months', CURRENT_DATE + INTERVAL '3 months', 'B', CURRENT_DATE - INTERVAL '1 month', CURRENT_DATE + INTERVAL '5 months', 3000.00
   )
 ON CONFLICT DO NOTHING;
 
 -- Finding Comments
 INSERT INTO iclass.finding_comments (
-  ships_id, companies_id, comment_type, priviate, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
+  ship_id, company_id, comment_type, priviate, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
   status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, text
 )
 VALUES
@@ -177,7 +175,7 @@ VALUES
     NULL, NULL, NULL, 'Fire drill records incomplete.'
   ),
   (
-    NULL, (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), 'O', FALSE, 'CERT-DOC-001',
+    NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'O', FALSE, 'CERT-DOC-001',
     CURRENT_DATE - INTERVAL '1 year', 'Singapore', NULL, NULL, 'A',
     NULL, NULL, 'MMS-2024-003', 'Company maintenance system well organized.'
   )
@@ -189,5 +187,5 @@ VALUES
   ((SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL, 'Main Deck Plan', 'Drawing', '/files/ships/9345678/deck-plan.pdf', NULL, 'Final'),
   ((SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL, 'GA Plan', 'Drawing', '/files/ships/9345678/ga-plan.pdf', NULL, 'Final'),
   ((SELECT id FROM iclass.ships WHERE imo_number = '9123456'), NULL, 'Stability Booklet', 'Manual', '/files/ships/9123456/stability.pdf', '2030-01-01', 'Approved'),
-  (NULL, (SELECT id FROM iclass.companies WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
+  (NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
 ON CONFLICT DO NOTHING;

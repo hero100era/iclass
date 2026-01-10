@@ -6,6 +6,8 @@ CREATE TABLE auth.users(
   role varchar(64) NOT NULL,
   category varchar(32) NOT NULL,
   is_active boolean DEFAULT TRUE,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   last_active timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 

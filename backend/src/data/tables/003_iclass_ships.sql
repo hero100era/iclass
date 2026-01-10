@@ -1,6 +1,7 @@
 -- Create table for ships
 CREATE TABLE IF NOT EXISTS iclass.ships(
   id serial PRIMARY KEY,
+  class_number integer GENERATED ALWAYS AS IDENTITY UNIQUE,
   name varchar(40) NOT NULL,
   previous_names varchar(500),
   build_date date,
@@ -12,7 +13,6 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   administration_types iclass.administration_types_enum NOT NULL DEFAULT 'C',
   administration_country char(3),
   classed_by varchar(20) REFERENCES iclass.classification_societies(code),
-  class_number varchar(8) UNIQUE NOT NULL,
   port_of_registry varchar(50),
   date_of_registry date,
   registry_number varchar(20),
@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   gross_tons DECIMAL(9, 2),
   national_tons DECIMAL(9, 2),
   deadweight integer,
-  registered_owner_id integer REFERENCES iclass.companies(id),
-  ism_owner_id integer REFERENCES iclass.companies(id),
-  mlc_owner_id integer REFERENCES iclass.companies(id),
+  registered_owner_id integer REFERENCES iclass.organizations(id),
+  ism_owner_id integer REFERENCES iclass.organizations(id),
+  mlc_owner_id integer REFERENCES iclass.organizations(id),
   flag_code varchar(3) REFERENCES iclass.flags(code),
   registration_port varchar(30),
   mmsi_number varchar(10),
@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   dual_class varchar(20) REFERENCES iclass.classification_societies(code),
   singal_letter varchar(10),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE iclass.ship_component_tree (
@@ -62,5 +63,6 @@ CREATE TABLE iclass.ship_component_tree (
   name varchar(50),
   properties json,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
