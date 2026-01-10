@@ -8,10 +8,10 @@ INSERT INTO iclass.flags (code, name, fullname) VALUES ('SGP', 'Singapore', 'Rep
 INSERT INTO auth.users (id, email, password_hash, role, category) 
 VALUES (999, 'service_test@example.com', 'pass', 'employees', 'internal');
 
-INSERT INTO iclass.organizations (id, name) VALUES (1, 'Test Org');
-INSERT INTO iclass.locations (id, organization_id, name) VALUES (1, 1, 'Test Office');
+INSERT INTO iclass.organizations (id, name) VALUES (999, 'Test Org');
+INSERT INTO iclass.locations (id, organization_id, name) VALUES (999, 999, 'Test Office');
 INSERT INTO iclass.employees (user_id, organization_id, first_name, last_name, display_name, location_id, email)
-VALUES (999, 1, 'Service', 'User', 'Service Test User', 1, 'service_test@example.com');
+VALUES (999, 999, 'Service', 'User', 'Service Test User', 999, 'service_test@example.com');
 
 -- 2. Mock iclass.get_auth_user_id() to return our test user
 CREATE OR REPLACE FUNCTION iclass.get_auth_user_id() RETURNS integer AS $$
