@@ -1,19 +1,24 @@
 import { useState } from "react";
 import { useLoaderData } from "react-router";
-import { Ship, Scale, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, ChevronRight, Download, ExternalLink, Anchor, Flag, Lock, MessageSquare } from "lucide-react";
-import { ApiGET } from "~/.server/lib/api";
+import { Ship, Scale, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, ChevronRight, Download, ExternalLink, Anchor, Flag, Lock, MessageSquare, Plus, Minus } from "lucide-react";
+import { ApiGET, ApiPOST } from "~/.server/lib/api";
 import type { Route } from "./+types/detail";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
 import { GridItem, StatusBadge } from "~/components/ui/DetailHelpers";
+import { SurveyRequestProvider, useSurveyRequest } from "~/components/SurveyRequestCart";
+import { CartDrawer, FloatingCartButton } from "~/components/CartDrawer";
+import { getSession } from "~/.server/lib/sessions";
+import { decrypt } from "~/.server/lib/jwt";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
     const host = process.env.API_URL || "http://localhost:2000";
 
-    const [vesselRes, certsRes, docsRes, findingsRes] = await Promise.all([
+    const [vesselRes, certsRes, docsRes, findingsRes, otherSurveysRes] = await Promise.all([
         ApiGET(request, `${host}/ships?id=eq.${params.id}`),
         ApiGET(request, `${host}/certificates?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/documents?ship_id=eq.${params.id}`),
-        ApiGET(request, `${host}/finding_comments?ship_id=eq.${params.id}`)
+        ApiGET(request, `${host}/finding_comments?ship_id=eq.${params.id}`),
+        ApiGET(request, `${host}/other_survey_pool`)
     ]);
 
     if (!vesselRes.ok) throw new Response("Vessel not found.", { status: 404 });
@@ -24,6 +29,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     const certificates = certsRes.ok ? await certsRes.json() : [];
     const documents = docsRes.ok ? await docsRes.json() : [];
     const findings = findingsRes.ok ? await findingsRes.json() : [];
+    const otherSurveys = otherSurveysRes.ok ? await otherSurveysRes.json() : [];
 
     let surveys: any[] = [];
     if (certificates.length > 0) {
@@ -32,13 +38,80 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         if (surveysRes.ok) surveys = await surveysRes.json();
     }
 
-    return { vessel: vessels[0], certificates, surveys, documents, findings };
+    return { vessel: vessels[0], certificates, surveys, documents, findings, otherSurveys };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+    const host = process.env.API_URL || "http://localhost:2000";
+    const session = await getSession(request.headers.get("Cookie"));
+    const user = await decrypt(session.get("token"));
+    const userId = user?.id;
+
+    const formData = await request.formData();
+    const intent = formData.get("intent");
+
+    if (intent === "submit_survey_request") {
+        const payload = JSON.parse(formData.get("payload") as string);
+        const { requestData, cartItems } = payload;
+        console.log(requestData);
+
+        const res = await ApiPOST(request, `${host}/survey_requests`, {
+            ...requestData,
+            ordered_by_id: userId
+        });
+        if (!res.ok) {
+            const error = await res.text();
+            return { success: false, error: `Failed to create survey request: ${error}` };
+        }
+
+        const newRequests = await res.json();
+        const newRequest = newRequests[0];
+
+        const cartPayload = cartItems.map((item: any) => ({
+            ...item,
+            survey_request_id: newRequest.id
+        }));
+
+        const cartRes = await ApiPOST(request, `${host}/survey_request_carts`, cartPayload);
+        if (!cartRes.ok) {
+            const error = await cartRes.text();
+            return { success: false, error: `Failed to add items to request cart: ${error}` };
+        }
+
+        return { success: true };
+    }
+
+    return { success: false, error: "Invalid intent" };
 }
 
 const DNV_BLUE = "#005EAA";
 
 export default function VesselDetail() {
-    const { vessel, certificates, surveys, documents, findings } = useLoaderData<typeof loader>();
+    return (
+        <SurveyRequestProvider>
+            <VesselDetailContent />
+        </SurveyRequestProvider>
+    );
+}
+
+function VesselDetailContent() {
+    const { vessel, certificates, surveys, documents, findings, otherSurveys } = useLoaderData<typeof loader>();
+    const { addItem, removeItem, isItemSelected } = useSurveyRequest();
+    const [showOtherSelector, setShowOtherSelector] = useState(false);
+
+    const handleToggleCartItem = (item: any, type: 'survey' | 'finding' | 'other') => {
+        if (isItemSelected(item.id, type)) {
+            removeItem(item.id, type);
+        } else {
+            addItem({
+                id: item.id,
+                type,
+                description: type === 'survey' ? item.description : type === 'finding' ? item.text : item.name,
+                code: type === 'survey' ? item.code : type === 'finding' ? item.comment_type : item.code,
+                date: type === 'survey' ? item.next_due_date : type === 'finding' ? item.date_issued : undefined
+            });
+        }
+    };
 
     return (
         <div className="min-h-screen bg-slate-50/50 pb-20">
@@ -198,6 +271,7 @@ export default function VesselDetail() {
                                             <th className="px-4 py-3 font-medium">Last Held</th>
                                             <th className="px-4 py-3 font-medium">Next Due</th>
                                             <th className="px-4 py-3 font-medium">Status</th>
+                                            <th className="px-4 py-3 font-medium text-right">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -215,6 +289,18 @@ export default function VesselDetail() {
                                                     <td className="px-4 py-3">
                                                         <StatusBadge status={survey.status} />
                                                     </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button
+                                                            onClick={() => handleToggleCartItem(survey, 'survey')}
+                                                            className={`p-1.5 rounded-md transition-colors ${isItemSelected(survey.id, 'survey')
+                                                                ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
+                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                                }`}
+                                                            title={isItemSelected(survey.id, 'survey') ? "Remove from Request" : "Add to Request"}
+                                                        >
+                                                            {isItemSelected(survey.id, 'survey') ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))
                                         ) : (
@@ -226,6 +312,50 @@ export default function VesselDetail() {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                            <div className="mt-4 flex justify-end">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowOtherSelector(!showOtherSelector)}
+                                        className="text-[#005EAA] hover:text-[#004a85] text-sm font-medium underline underline-offset-4 flex items-center gap-1 transition-colors group"
+                                    >
+                                        <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        Request Occasional Survey(s)
+                                    </button>
+
+                                    {showOtherSelector && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setShowOtherSelector(false)} />
+                                            <div className="absolute right-0 bottom-full mb-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2">
+                                                <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Available Surveys</span>
+                                                </div>
+                                                <div className="max-h-64 overflow-y-auto">
+                                                    {otherSurveys.map((item: any) => (
+                                                        <button
+                                                            key={item.id}
+                                                            onClick={() => {
+                                                                handleToggleCartItem(item, 'other');
+                                                                setShowOtherSelector(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center justify-between group transition-colors"
+                                                        >
+                                                            <div className="flex-1 min-w-0 pr-3">
+                                                                <div className="text-sm font-semibold text-slate-900 group-hover:text-[#005EAA] transition-colors">{item.name}</div>
+                                                                <div className="text-[10px] text-slate-500 truncate">{item.description}</div>
+                                                            </div>
+                                                            {isItemSelected(item.id, 'other') ? (
+                                                                <Minus className="w-4 h-4 text-amber-500 shrink-0" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4 text-slate-300 group-hover:text-[#005EAA] shrink-0" />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -267,6 +397,19 @@ export default function VesselDetail() {
                                                 <div className="pt-2">
                                                     <StatusBadge status={finding.status === 'A' ? 'Active' : finding.status === 'P' ? 'Postponed' : 'Overdue'} />
                                                 </div>
+                                                <div className="pt-4 mt-4 border-t border-slate-200">
+                                                    <button
+                                                        onClick={() => handleToggleCartItem(finding, 'finding')}
+                                                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isItemSelected(finding.id, 'finding')
+                                                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                                            : "bg-[#005EAA]/10 text-[#005EAA] hover:bg-[#005EAA]/20"
+                                                            }`}
+                                                    >
+                                                        {isItemSelected(finding.id, 'finding') ? (
+                                                            <><Minus className="w-4 h-4" /> Remove</>) : (
+                                                            <><Plus className="w-4 h-4" /> Add to Request</>)}
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div className="flex-1 p-5">
                                                 <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
@@ -291,6 +434,8 @@ export default function VesselDetail() {
                     </AccordionItem>
                 </Accordion>
             </div>
+            <CartDrawer vesselId={vessel.id} companyId={vessel.registered_owner_id} />
+            <FloatingCartButton />
         </div>
     );
 }

@@ -36,6 +36,9 @@ ALTER TABLE iclass.employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.flags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.flag_staff ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.survey_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.survey_request_carts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.other_survey_pool ENABLE ROW LEVEL SECURITY;
 
 -- 1. Employees Policies (Full Access)
 CREATE POLICY employee_full_access ON iclass.organizations FOR SELECT TO employees USING (true);
@@ -45,6 +48,9 @@ CREATE POLICY employee_full_access ON iclass.survey_audits FOR SELECT TO employe
 CREATE POLICY employee_full_access ON iclass.finding_comments FOR SELECT TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.employees FOR SELECT TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.customers FOR SELECT TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.survey_requests FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.survey_request_carts FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.other_survey_pool FOR ALL TO employees USING (true);
 
 -- 2. Customers Policies (Scoped Access)
 -- Companies: only their own
@@ -92,6 +98,29 @@ CREATE POLICY customer_read_own_findings ON iclass.finding_comments FOR SELECT T
   ); 
 -- Customers shouldn't see private comments
 
+-- Survey Requests: for their ships or company
+CREATE POLICY customer_access_own_survey_requests ON iclass.survey_requests FOR ALL TO customers
+  USING (
+    company_id = iclass.get_customer_company_id() OR
+    ship_id IN (SELECT id FROM iclass.ships WHERE 
+      registered_owner_id = iclass.get_customer_company_id() OR
+      ism_owner_id = iclass.get_customer_company_id() OR
+      mlc_owner_id = iclass.get_customer_company_id())
+  );
+
+-- Request Survey Carts: for their ships or company
+CREATE POLICY customer_access_own_survey_request_carts ON iclass.survey_request_carts FOR ALL TO customers
+  USING (
+    company_id = iclass.get_customer_company_id() OR
+    ship_id IN (SELECT id FROM iclass.ships WHERE 
+      registered_owner_id = iclass.get_customer_company_id() OR
+      ism_owner_id = iclass.get_customer_company_id() OR
+      mlc_owner_id = iclass.get_customer_company_id())
+  );
+
+-- Other Survey Pool: Read only for everyone
+CREATE POLICY customer_read_other_survey_pool ON iclass.other_survey_pool FOR SELECT TO customers USING (true);
+
 -- Customers: only their own profile
 CREATE POLICY customer_read_own_profile ON iclass.customers FOR SELECT TO customers
   USING (id = iclass.get_auth_user_id());
@@ -120,6 +149,10 @@ CREATE POLICY administration_read_own_survey_audits ON iclass.survey_audits FOR 
 
 -- Finding Comments: for ships under their flag
 CREATE POLICY administration_read_own_findings ON iclass.finding_comments FOR SELECT TO administrations
+  USING (ship_id IN (SELECT id FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
+
+-- Survey Requests: for ships under their flag
+CREATE POLICY administration_read_own_survey_requests ON iclass.survey_requests FOR SELECT TO administrations
   USING (ship_id IN (SELECT id FROM iclass.ships WHERE flag_code = iclass.get_current_flag_code()));
 
 -- 4. Anonymous/Default Policies (Denied by default because RLS is enabled)

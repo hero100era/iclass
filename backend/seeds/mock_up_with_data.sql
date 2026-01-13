@@ -189,3 +189,9 @@ VALUES
   ((SELECT id FROM iclass.ships WHERE imo_number = '9123456'), NULL, 'Stability Booklet', 'Manual', '/files/ships/9123456/stability.pdf', '2030-01-01', 'Approved'),
   (NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.other_survey_pool (name, description, fee, code)
+VALUES
+  ('Damage Survey', 'Damage Survey', 1500.00, 'DS'),
+  ('Change of Flag', 'Change of Flag', 5000.00, 'COF')
+ON CONFLICT DO NOTHING; 

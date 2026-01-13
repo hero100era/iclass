@@ -68,6 +68,25 @@ SELECT
 FROM auth.users u
 WHERE u.id = iclass.get_auth_user_id();
 
+CREATE OR REPLACE VIEW api.survey_requests AS
+SELECT
+  id, ship_id, company_id, ordered_by_id, location, estimated_date,
+  contact_person, contact_phone, contact_email, alternative_contact,
+  alternative_person, alternative_phone, alternative_email, alternative_mobile,
+  is_assigned, comments, file_path, status, created_at, updated_at, is_active
+FROM iclass.survey_requests;
+
+CREATE OR REPLACE VIEW api.survey_request_carts AS
+SELECT
+  id, ship_id, company_id, survey_request_id, survey_audit_id, comments_id, other_survey_code
+FROM iclass.survey_request_carts;
+
+CREATE OR REPLACE VIEW api.other_survey_pool AS
+SELECT
+  id, name, description, fee, code, is_active
+FROM iclass.other_survey_pool
+WHERE is_active = TRUE;
+
 -- Grants
 GRANT SELECT ON api.ships TO employees, customers, administrations;
 GRANT SELECT ON api.certificates TO employees, customers, administrations;
@@ -75,6 +94,9 @@ GRANT SELECT ON api.survey_audits TO employees, customers, administrations;
 GRANT SELECT ON api.documents TO employees, customers, administrations;
 GRANT SELECT ON api.finding_comments TO employees, customers, administrations;
 GRANT SELECT ON api.me TO employees, customers, administrations;
+GRANT SELECT, INSERT ON api.survey_requests TO employees, customers;
+GRANT SELECT, INSERT ON api.survey_request_carts TO employees, customers;
+GRANT SELECT ON api.other_survey_pool TO employees, customers;
 
 -- Add INSERT/UPDATE grants for employees
 GRANT INSERT, UPDATE, DELETE ON api.ships TO employees;
@@ -82,6 +104,8 @@ GRANT INSERT, UPDATE, DELETE ON api.certificates TO employees;
 GRANT INSERT, UPDATE, DELETE ON api.survey_audits TO employees;
 GRANT INSERT, UPDATE, DELETE ON api.documents TO employees;
 GRANT INSERT, UPDATE, DELETE ON api.finding_comments TO employees;
+GRANT UPDATE, DELETE ON api.survey_requests TO employees;
+GRANT UPDATE, DELETE ON api.survey_request_carts TO employees;
 
 -- Customers can only read
 -- (Actually, RLS handles the 'which' rows, GRANT handles the 'what' actions)

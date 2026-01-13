@@ -3,7 +3,7 @@ set -e
 
 # --- Configuration ---
 DB_NAME="${POSTGRES_DB:-mydb}"
-DB_USER="${POSTGRES_USER:-postgres}"
+DB_USER="${POSTGRES_USER:-joshua}"
 DB_PASSWORD="${POSTGRES_PASSWORD:-summer2011}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
@@ -38,9 +38,11 @@ echo "BEGIN;" > "$TEMP_FILE"
 log_info "  - Loading Setup (Schemas/Extensions)..."
 cat "$SRC_DIR/utilities/create_schemas.sql" >> "$TEMP_FILE"
 
-# 2. Roles
-log_info "  - Loading Roles..."
-cat "$SRC_DIR/auth/roles.sql" >> "$TEMP_FILE"
+# # 2. auth tables
+log_info "  - Loading auth schema..."
+cat "$SRC_DIR/auth/jwt.sql" >> "$TEMP_FILE"
+cat "$SRC_DIR/auth/oauth.sql" >> "$TEMP_FILE"
+cat "$SRC_DIR/auth/reset_tokens.sql" >> "$TEMP_FILE"
 
 # 3. Data Types (Enums/Domains)
 log_info "  - Loading Data Types..."
@@ -89,16 +91,16 @@ echo "COMMIT;" >> "$TEMP_FILE"
 # --- Apply ---
 log_info "Applying to database: $DB_NAME..."
 
-if [ -z "$DATABASE_URL" ]; then
-    export PGPASSWORD="$DB_PASSWORD"
-    PG_ARGS="-h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
-else
-    PG_ARGS="$DATABASE_URL"
-fi
+# if [ -z "$DATABASE_URL" ]; then
+#     export PGPASSWORD="$DB_PASSWORD"
+#     PG_ARGS="-h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+# else
+#     PG_ARGS="$DATABASE_URL"
+# fi
 
-if psql $PG_ARGS -v ON_ERROR_STOP=1 -q -f "$TEMP_FILE"; then
-    echo -e "${GREEN}✔ Schema successfully reloaded!${NC}"
-else
-    echo -e "${RED}✘ Schema reload failed.${NC}"
-    exit 1
-fi
+# if psql $PG_ARGS -v ON_ERROR_STOP=1 -q -f "$TEMP_FILE"; then
+#     echo -e "${GREEN}✔ Schema successfully reloaded!${NC}"
+# else
+#     echo -e "${RED}✘ Schema reload failed.${NC}"
+#     exit 1
+# fi
