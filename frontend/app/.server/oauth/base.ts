@@ -5,6 +5,8 @@ import { getEnvOrDie } from "~/.server/lib/env";
 import type { OAuthProvider } from "~/definitions/auth_scheme";
 import { createGithubOAuthClient } from "./github";
 import { createDiscordOAuthClient } from "./discord";
+import { createMicrosoftOAuthClient } from "./microsoft";
+import { createGoogleOAuthClient } from "./google";
 
 export type Cookies = Record<string, string | undefined>;
 
@@ -146,6 +148,10 @@ export function getOAuthClient(provider: OAuthProvider) {
       return createDiscordOAuthClient();
     case "github":
       return createGithubOAuthClient();
+    case "microsoft":
+      return createMicrosoftOAuthClient();
+    case "google":
+      return createGoogleOAuthClient();
 
     default:
       throw new Error(`Invalid provider: ${provider satisfies never}`);

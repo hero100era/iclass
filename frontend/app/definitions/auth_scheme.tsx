@@ -31,7 +31,7 @@ export type FormState =
     }
   | undefined;
 
-export const oAuthProviders = ["github", "discord"] as const;
+export const oAuthProviders = ["github", "discord", "microsoft", "google"] as const;
 export type OAuthProvider = (typeof oAuthProviders)[number];
 
 export const userRoles = ["admin", "user"] as const;
