@@ -2,7 +2,7 @@ services:
   web:
     build: ./frontend
     ports:
-      - '5137:5137'
+      - "5173:5173"
     environment:
       NODE_ENV: production
       SECRET_KEY: ${SECRET_KEY}
@@ -24,7 +24,7 @@ services:
       PGRST_APP_SETTINGS_JWT_EXPIRE_SECONDS: 3600
 
     ports:
-      - '2000:2000'
+      - "2000:2000"
     depends_on:
       - db
     networks:
@@ -38,7 +38,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -46,7 +46,6 @@ services:
 
 volumes:
   postgres_data:
-
 
 networks:
   my_network:
