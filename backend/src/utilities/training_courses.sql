@@ -67,7 +67,7 @@ CREATE TABLE iclass.training_sessions (
     cost_per_participant DECIMAL(10,2),
     currency_code VARCHAR(3) DEFAULT 'USD',
     notes TEXT,
-    created_by integer REFERENCES iclass.users(id),
+    created_by integer REFERENCES auth.users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -86,7 +86,7 @@ CREATE TABLE iclass.session_dates (
 
 CREATE TABLE iclass.training_enrollments (
     id serial PRIMARY KEY,
-    user_id integer REFERENCES iclass.users(id) NOT NULL,
+    user_id integer REFERENCES auth.users(id) NOT NULL,
     course_id integer REFERENCES iclass.training_courses(id) NOT NULL,
     session_id integer REFERENCES iclass.training_sessions(id),
     enrollment_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -94,7 +94,7 @@ CREATE TABLE iclass.training_enrollments (
         'self_enrolled', 'manager_assigned', 'hr_assigned', 
         'system_assigned', 'mandatory', 'external'
     )),
-    enrolled_by integer REFERENCES iclass.users(id),
+    enrolled_by integer REFERENCES auth.users(id),
     status VARCHAR(30) DEFAULT 'enrolled' CHECK (status IN (
         'pending_approval', 'enrolled', 'waitlisted', 
         'in_progress', 'completed', 'failed', 
@@ -103,7 +103,7 @@ CREATE TABLE iclass.training_enrollments (
     approval_status VARCHAR(20) CHECK (approval_status IN (
         'pending', 'approved', 'rejected', 'not_required'
     )),
-    approved_by integer REFERENCES iclass.users(id),
+    approved_by integer REFERENCES auth.users(id),
     approval_date TIMESTAMP WITH TIME ZONE,
     approval_notes TEXT,
     due_date DATE,
@@ -116,7 +116,7 @@ CREATE TABLE iclass.training_enrollments (
 CREATE TABLE iclass.training_completions (
     id serial PRIMARY KEY,
     enrollment_id integer REFERENCES iclass.training_enrollments(id),
-    user_id integer REFERENCES iclass.users(id) NOT NULL,
+    user_id integer REFERENCES auth.users(id) NOT NULL,
     course_id integer REFERENCES iclass.training_courses(id) NOT NULL,
     session_id integer REFERENCES iclass.training_sessions(id),
     completion_date DATE NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE iclass.training_completions (
     certificate_file_path VARCHAR(255),
     certificate_issued_date DATE,
     certificate_expiry_date DATE,
-    verified_by integer REFERENCES iclass.users(id),
+    verified_by integer REFERENCES auth.users(id),
     verification_date TIMESTAMP WITH TIME ZONE,
     verification_method VARCHAR(50),
     external_provider VARCHAR(255),
@@ -139,12 +139,12 @@ CREATE TABLE iclass.training_completions (
 );
 
 -- Ship Types (Rows for the Class Matrix)
-CREATE TABLE ref_ship_types (
+CREATE TABLE iclass.ref_ship_types (
     code VARCHAR(10) PRIMARY KEY,
     description VARCHAR(100)
 );
 
-INSERT INTO ref_ship_types (code, description) VALUES
+INSERT INTO iclass.ref_ship_types (code, description) VALUES
 ('GEN', 'General Cargo'),
 ('OTHER', 'Other Ship Types'), -- Corrected typo "OHTER" from source
 ('BULK', 'Bulk Carrier'),
@@ -157,12 +157,12 @@ INSERT INTO ref_ship_types (code, description) VALUES
 
 -- Class Actions (Columns for the Class Matrix)
 -- Covers New Building (Hull/Mach) and Fleet in Service (Ann/Int/Spec)
-CREATE TABLE ref_class_actions (
+CREATE TABLE iclass.ref_class_actions (
     code VARCHAR(10) PRIMARY KEY,
-    description VARCHAR(20) -- 'New Building' or 'Fleet In Service'
+    description VARCHAR(100) -- 'New Building' or 'Fleet In Service'
 );
 
-INSERT INTO ref_class_actions (code, description) VALUES
+INSERT INTO iclass.ref_class_actions (code, description) VALUES
 ('NB_H', 'New Building - Hull'),
 ('NB_M', 'New Building - Machinery'),
 ('FIS_ANN', 'Fleet In Service - Annual'),
@@ -170,12 +170,12 @@ INSERT INTO ref_class_actions (code, description) VALUES
 ('FIS_S', 'Fleet In Service - Special');
 
 -- Special Modules (Rows for Class Specific Modules)
-CREATE TABLE ref_special_modules (
+CREATE TABLE iclass.ref_special_modules (
     code VARCHAR(20) PRIMARY KEY,
     description VARCHAR(100)
 );
 
-INSERT INTO ref_special_modules (code, description) VALUES
+INSERT INTO iclass.ref_special_modules (code, description) VALUES
 ('Bo', 'Boiler Survey'),
 ('T', 'Propeller Shaft Survey'),
 ('B', 'Dry Docking'),
@@ -214,7 +214,7 @@ CREATE TABLE iclass.qual_module_matrix (
 
 CREATE TABLE iclass.qual_statutory_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES iclass.users(id),
+    user_id INT REFERENCES auth.users(id),
     cert_code VARCHAR(20) REFERENCES iclass.certificate_survey_pool(code),
     phase_code VARCHAR(20) REFERENCES iclass.survey_audit_types(code),
     

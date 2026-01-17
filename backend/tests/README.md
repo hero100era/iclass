@@ -9,6 +9,12 @@ To run these tests, you need:
 2.  **pgTAP** extension installed in your database.
 3.  **pg_prove** (part of the `TAP::Parser::SourceHandler::pgTAP` Perl module) installed on your system.
 
+## install pgtap
+make sure that pgtap package installed on your system, then in order to install pgtap to postgresql, you need:
+```bash
+CREATE EXTENSION pgtap SCHEMA tap;
+```
+
 ## Test Files
 
 - `test_auth.sql`: Tests for the `auth` schema (users, password encryption, profiles).
@@ -40,3 +46,5 @@ psql -d <database_name> -f tests/test_auth.sql
 
 - **Isolation**: Each test file is wrapped in a transaction (`BEGIN; ... ROLLBACK;`). This ensures that the tests do not modify your actual data, as all changes are undone at the end.
 - **TAP Output**: The tests produce output in the Test Anything Protocol (TAP) format, which is easily parsed by tools like `pg_prove`.  
+
+
