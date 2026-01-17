@@ -16,7 +16,7 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Ship Component Templates
-INSERT INTO iclass.ship_comp_templates (code, name, properties)
+INSERT INTO iclass.component_library (code, name, properties)
 VALUES 
   ('ME', 'Main Engine', '{"maker": "MAN B&W", "model": "6S60MC-C", "power_kw": 12000}'),
   ('AE', 'Auxiliary Engine', '{"maker": "Yanmar", "model": "6EY22LW", "power_kw": 1000}'),
@@ -25,7 +25,7 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Certificate Templates
-INSERT INTO iclass.certificate_templates (code, name, version, survey_audit_code, internal_category, file_path_xml, file_path_html, description)
+INSERT INTO iclass.certificate_templates (code, name, version, cert_code, internal_category, file_path_xml, file_path_html, description)
 VALUES 
   ('CSS-T', 'Cargo Ship Safety Template', '1.0', 'CSS', 'ST', '/templates/css.rml', '/templates/css.html', 'Standard template for Cargo Ship Safety'),
   ('SMC-T', 'Safety Management Template', '2.1', 'SMC', 'ST', '/templates/smc.rml', '/templates/smc.html', 'Template for Safety Management Certificate'),
@@ -92,7 +92,7 @@ ON CONFLICT DO NOTHING;
 
 -- Certificates
 INSERT INTO iclass.certificates (
-  version, ship_id, company_id, status, remark, issued_by, code, validity_type, category, internal_category,
+  version, ship_id, company_id, status, remark, issued_by, cert_code, validity_type, category, internal_category,
   description, issue_date, expiry_date, mlc_declaration_date, mlc_declaration_place, doc_administration, extended_date
 )
 VALUES
@@ -128,28 +128,29 @@ VALUES
   )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO iclass.survey_pool (name, description, fee, code)
+VALUES
+  ('Damage Survey', 'Damage Survey', 1500.00, 'DS'),
+  ('Change of Flag', 'Change of Flag', 5000.00, 'COF')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, period, window_before, window_after, is_mandatory) VALUES
+('ILL.ANN', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE),
+('ILL.REN', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE)
+ON CONFLICT DO NOTHING;
+
 -- Survey Audits
-INSERT INTO iclass.survey_audits (certificate_id, code, description, last_held_date, place_held, next_due_date, postponement_date, status, range_from_date, range_to_date, fee)
+INSERT INTO iclass.survey_audits (certificate_id, pool_id, description, last_held_date, place_held, next_due_date, postponement_date, status, range_from_date, range_to_date, fee)
 VALUES
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1),
-    'CSS', 'Annual Survey for Safety Equipment', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'A'),
+   'Load Line Annual Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL, 'D', CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   ),
   (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1),
-    'CL', 'Intermediate Classification Survey', CURRENT_DATE - INTERVAL '2 years', 'Singapore',
-    CURRENT_DATE + INTERVAL '6 months', NULL, 'D', CURRENT_DATE + INTERVAL '3 months', CURRENT_DATE + INTERVAL '9 months', 5000.00
-  ),
-  (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 2 AND version = 1),
-    'LL', 'Renewal Load Line Survey', CURRENT_DATE - INTERVAL '3 years', 'Panama',
-    CURRENT_DATE - INTERVAL '2 days', NULL, 'O', CURRENT_DATE - INTERVAL '3 months', CURRENT_DATE + INTERVAL '3 months', 2500.00
-  ),
-  (
-    (SELECT id FROM iclass.certificates WHERE certificate_id = 2 AND version = 1),
-    'SMC', 'Intermediate Safety Management Audit', CURRENT_DATE - INTERVAL '2.5 years', 'Miami',
-    CURRENT_DATE + INTERVAL '2 months', CURRENT_DATE + INTERVAL '3 months', 'B', CURRENT_DATE - INTERVAL '1 month', CURRENT_DATE + INTERVAL '5 months', 3000.00
+    (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'R'),
+   'Load Line Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
+    CURRENT_DATE + INTERVAL '11 months', NULL, 'D', CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   )
 ON CONFLICT DO NOTHING;
 
@@ -190,8 +191,3 @@ VALUES
   (NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.other_survey_pool (name, description, fee, code)
-VALUES
-  ('Damage Survey', 'Damage Survey', 1500.00, 'DS'),
-  ('Change of Flag', 'Change of Flag', 5000.00, 'COF')
-ON CONFLICT DO NOTHING; 

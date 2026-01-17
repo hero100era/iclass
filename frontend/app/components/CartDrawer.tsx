@@ -40,7 +40,7 @@ export function CartDrawer({ vesselId, companyId }: CartDrawerProps) {
             company_id: companyId || null,
             survey_audit_id: item.type === "survey" ? item.id : null,
             comments_id: item.type === "finding" ? item.id : null,
-            other_survey_code: item.type === "other" ? item.code : null
+            occ_survey_pool_id: item.type === "other" ? item.code : null
         }));
 
         fetcher.submit(

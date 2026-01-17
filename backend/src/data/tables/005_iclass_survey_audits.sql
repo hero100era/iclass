@@ -1,32 +1,27 @@
--- Create table for survey/audit
 CREATE TABLE IF NOT EXISTS iclass.survey_pool (
   id serial PRIMARY KEY,
+  code varchar(10) UNIQUE NOT NULL,
   name varchar(120) NOT NULL,
   description text,
   fee DECIMAL(9, 2),
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE IF NOT EXISTS iclass.mandatory_survey_pool (
-  code varchar(10) REFERENCES iclass.survey_audit_codes(code) UNIQUE NOT NULL,
+  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code),
   type iclass.survey_audit_types_enum,
   period INTERVAL,
   window_before INTERVAL,
   window_after INTERVAL,
   is_doc boolean DEFAULT FALSE,
-  CONSTRAINT unique_active_mandatory_survey_audit UNIQUE (code, type, is_active)
-) INHERITS (iclass.survey_pool);
+  is_mandatory boolean DEFAULT FALSE,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE,
+  CONSTRAINT unique_mandatory_survey_audit UNIQUE (cert_code, type)
+);
 
-CREATE TABLE IF NOT EXISTS iclass.other_survey_pool (
-  code varchar(10) UNIQUE NOT NULL
-) INHERITS (iclass.survey_pool);
 
 CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   id serial PRIMARY KEY,
   certificate_id integer REFERENCES iclass.certificates(id) ON DELETE CASCADE,
-  code varchar(10) REFERENCES iclass.survey_audit_codes(code) ON DELETE SET NULL,
+  pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   description varchar(120) NOT NULL,
   last_held_date date NOT NULL,
   place_held varchar(50) NOT NULL,

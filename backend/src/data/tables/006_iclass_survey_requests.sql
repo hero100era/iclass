@@ -29,5 +29,5 @@ CREATE TABLE IF NOT EXISTS iclass.survey_request_carts (
   survey_request_id integer REFERENCES iclass.survey_requests(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
   comments_id integer REFERENCES iclass.finding_comments(id) ON DELETE SET NULL,
-  other_survey_code varchar(10) REFERENCES iclass.other_survey_pool(code) ON DELETE SET NULL
+  occ_survey_pool_id varchar(10) REFERENCES iclass.survey_pool(code) ON DELETE SET NULL
 );

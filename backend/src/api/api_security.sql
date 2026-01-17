@@ -21,7 +21,7 @@ FROM iclass.ships;
 CREATE OR REPLACE VIEW api.certificates AS
 SELECT
   id, certificate_id, version, ship_id, company_id, certifiate_template_code,
-  status, remark, issued_by, code, validity_type, category, internal_category,
+  status, remark, issued_by, cert_code, validity_type, category, internal_category,
   description, issue_date, expiry_date, mlc_declaration_date, mlc_declaration_place,
   doc_administration, extended_date, file_path_cert, file_path_draft,
   created_at, updated_at, is_active
@@ -29,10 +29,11 @@ FROM iclass.certificates;
 
 CREATE OR REPLACE VIEW api.survey_audits AS
 SELECT
-  id, certificate_id, code, description,
-  last_held_date, place_held, next_due_date, postponement_date, status,
-  range_from_date, range_to_date, fee, created_at, updated_at, is_active
-FROM iclass.survey_audits;
+  s.id, s.certificate_id, s.pool_id, s.description,
+  s.last_held_date, s.place_held, s.next_due_date, s.postponement_date, s.status,
+  s.range_from_date, s.range_to_date, s.fee, s.created_at, s.updated_at, s.is_active, p.code
+FROM iclass.survey_audits s
+LEFT JOIN iclass.survey_pool p ON s.pool_id = p.id;
 
 CREATE OR REPLACE VIEW api.documents AS
 SELECT
@@ -78,13 +79,13 @@ FROM iclass.survey_requests;
 
 CREATE OR REPLACE VIEW api.survey_request_carts AS
 SELECT
-  id, ship_id, company_id, survey_request_id, survey_audit_id, comments_id, other_survey_code
+  id, ship_id, company_id, survey_request_id, survey_audit_id, comments_id, occ_survey_pool_id
 FROM iclass.survey_request_carts;
 
-CREATE OR REPLACE VIEW api.other_survey_pool AS
+CREATE OR REPLACE VIEW api.survey_pool AS
 SELECT
-  id, name, description, fee, code, is_active
-FROM iclass.other_survey_pool
+  id, code, name, description, fee, is_active, is_mandatory
+FROM iclass.survey_pool
 WHERE is_active = TRUE;
 
 -- Grants
@@ -96,7 +97,7 @@ GRANT SELECT ON api.finding_comments TO employees, customers, administrations;
 GRANT SELECT ON api.me TO employees, customers, administrations;
 GRANT SELECT, INSERT ON api.survey_requests TO employees, customers;
 GRANT SELECT, INSERT ON api.survey_request_carts TO employees, customers;
-GRANT SELECT ON api.other_survey_pool TO employees, customers;
+GRANT SELECT ON api.survey_pool TO employees, customers;
 
 -- Add INSERT/UPDATE grants for employees
 GRANT INSERT, UPDATE, DELETE ON api.ships TO employees;

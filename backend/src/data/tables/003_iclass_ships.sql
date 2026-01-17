@@ -58,10 +58,11 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
 CREATE TABLE iclass.ship_component_tree (
   id serial PRIMARY KEY,
   parent_id integer REFERENCES iclass.ship_component_tree(id),
-  ship_comp_template_code varchar(10) REFERENCES iclass.ship_comp_templates(code),
-  code varchar(10),
-  name varchar(50),
-  properties json,
+  lib_id integer REFERENCES iclass.component_library(id),
+  custom_name varchar(100),
+  sequencer integer,
+  position_description text,
+  properties jsonb,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE

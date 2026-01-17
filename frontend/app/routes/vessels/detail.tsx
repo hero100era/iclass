@@ -18,7 +18,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         ApiGET(request, `${host}/certificates?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/documents?ship_id=eq.${params.id}`),
         ApiGET(request, `${host}/finding_comments?ship_id=eq.${params.id}`),
-        ApiGET(request, `${host}/other_survey_pool`)
+        ApiGET(request, `${host}/survey_pool?is_mandatory=is.false`)
     ]);
 
     if (!vesselRes.ok) throw new Response("Vessel not found.", { status: 404 });
@@ -265,7 +265,6 @@ function VesselDetailContent() {
                                 <table className="w-full text-sm text-left">
                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
                                         <tr>
-                                            <th className="px-4 py-3 font-medium">Type</th>
                                             <th className="px-4 py-3 font-medium">Code</th>
                                             <th className="px-4 py-3 font-medium">Description</th>
                                             <th className="px-4 py-3 font-medium">Last Held</th>
@@ -278,7 +277,6 @@ function VesselDetailContent() {
                                         {surveys.length > 0 ? (
                                             surveys.map((survey: any) => (
                                                 <tr key={survey.id} className="hover:bg-slate-50/50 transition-colors">
-                                                    <td className="px-4 py-3 font-medium text-slate-900">{survey.type}</td>
                                                     <td className="px-4 py-3 text-slate-600">{survey.code}</td>
                                                     <td className="px-4 py-3 text-slate-600 font-medium">{survey.description}</td>
                                                     <td className="px-4 py-3 text-slate-600">

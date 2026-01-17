@@ -38,7 +38,7 @@ ALTER TABLE iclass.flags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.flag_staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_request_carts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE iclass.other_survey_pool ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.survey_pool ENABLE ROW LEVEL SECURITY;
 
 -- 1. Employees Policies (Full Access)
 CREATE POLICY employee_full_access ON iclass.organizations FOR SELECT TO employees USING (true);
@@ -50,7 +50,7 @@ CREATE POLICY employee_full_access ON iclass.employees FOR SELECT TO employees U
 CREATE POLICY employee_full_access ON iclass.customers FOR SELECT TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.survey_requests FOR ALL TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.survey_request_carts FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.other_survey_pool FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.survey_pool FOR ALL TO employees USING (true);
 
 -- 2. Customers Policies (Scoped Access)
 -- Companies: only their own
@@ -119,7 +119,7 @@ CREATE POLICY customer_access_own_survey_request_carts ON iclass.survey_request_
   );
 
 -- Other Survey Pool: Read only for everyone
-CREATE POLICY customer_read_other_survey_pool ON iclass.other_survey_pool FOR SELECT TO customers USING (true);
+CREATE POLICY customer_read_survey_pool ON iclass.survey_pool FOR SELECT TO customers USING (true);
 
 -- Customers: only their own profile
 CREATE POLICY customer_read_own_profile ON iclass.customers FOR SELECT TO customers

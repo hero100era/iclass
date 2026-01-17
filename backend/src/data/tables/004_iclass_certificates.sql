@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS iclass.certificates(
   status iclass.certificate_status_enum NOT NULL,
   remark varchar(2) NOT NULL,
   issued_by varchar(20) REFERENCES iclass.classification_societies(code) NOT NULL,
-  code varchar(10) REFERENCES iclass.survey_audit_codes(code) NOT NULL,
+  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) NOT NULL,
   validity_type iclass.certificate_validity_types_enum NOT NULL,
   category iclass.certificate_categories_enum NOT NULL,
   internal_category iclass.certificate_internal_categories_enum NOT NULL,
