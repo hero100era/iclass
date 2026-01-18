@@ -1,11 +1,14 @@
 import { getSession } from "./sessions";
 
-async function ApiGET(request: Request, url = "") {
+async function ApiGET(request: Request, url = "", customHeaders: Record<string, string> = {}) {
   const session = await getSession(request.headers.get("Cookie"));
   const token = session.get("token");
-  let headers = request.headers;
+  const headers = new Headers(request.headers);
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  }
+  for (const [key, value] of Object.entries(customHeaders)) {
+    headers.set(key, value);
   }
   const response = await fetch(url, {
     method: "GET",

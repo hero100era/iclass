@@ -1,26 +1,51 @@
 import { Search, Plus, Filter, MoreVertical } from "lucide-react";
-import { Link, useLoaderData } from "react-router";
-import { useState } from "react";
+import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { ApiGET } from "~/.server/lib/api";
 import type { Route } from "./+types/index";
 
+const ITEM_PER_PAGE = 5;
+
 export async function loader({ request }: Route.LoaderArgs) {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const limit = ITEM_PER_PAGE;
+    const offset = (page - 1) * limit;
+
     const host = process.env.API_URL || "http://localhost:2000";
-    const res = await ApiGET(request, `${host}/ships`);
+    const pgrst_query_str = `${host}/ships?limit=${limit}&offset=${offset}`;
+    const res = await ApiGET(request, pgrst_query_str, {
+        "Prefer": "count=exact"
+    });
 
     if (!res.ok) {
-        return { vessels: [] };
+        return { vessels: [], totalPages: 0, currentPage: page };
     }
 
     const vessels = await res.json();
-    return { vessels };
+    const contentRange = res.headers.get("Content-Range");
+    let totalCount = 0;
+    if (contentRange) {
+        const parts = contentRange.split("/");
+        if (parts.length > 1) {
+            totalCount = parseInt(parts[1], 10);
+        }
+    }
+
+    const totalPages = Math.ceil(totalCount / limit);
+    return { vessels, totalPages, currentPage: page };
 }
 
 export default function VesselList() {
-    const { vessels } = useLoaderData<typeof loader>();
-    const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = 1; // Simplify for now, pagination logic can be improved later
+    const { vessels, totalPages, currentPage } = useLoaderData<typeof loader>();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const handlePageChange = (page: number) => {
+        setSearchParams((prev) => {
+            prev.set("page", page.toString());
+            return prev;
+        });
+    };
 
     return (
         <div className="space-y-6">
@@ -93,7 +118,7 @@ export default function VesselList() {
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
                     className="border-t bg-muted/10"
                 />
             </div>

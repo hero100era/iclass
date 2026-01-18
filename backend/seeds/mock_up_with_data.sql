@@ -55,6 +55,50 @@ VALUES
     (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
     (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
   ),
+    (
+    'JIA HENG', '9345679', NULL, '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
+    'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
+    'ABC123', 'OFF-9345', 'BC', NULL, 'BC', 'V', 'E', '+100A1 Bulk Carrier',
+    10000.00, 10000.00, 15000, 6000.00, 4500.00, 8000.00, 1500,
+    150.00, 160.00, 145.00, 12.00, 25.00, 8.50, 9.00,
+    'CCS', 'ABC123', 'CN', 'Shanghai', '123456789', 'Bulk Carrier',
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
+  ),
+    (
+    'JIA BEI', '9345690', NULL, '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
+    'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
+    'ABC123', 'OFF-9345', 'BC', NULL, 'BC', 'V', 'E', '+100A1 Bulk Carrier',
+    10000.00, 10000.00, 15000, 6000.00, 4500.00, 8000.00, 1500,
+    150.00, 160.00, 145.00, 12.00, 25.00, 8.50, 9.00,
+    'CCS', 'ABC123', 'CN', 'Shanghai', '123456789', 'Bulk Carrier',
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
+  ),
+    (
+    'JIA JIANG', '9345691', NULL, '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
+    'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
+    'ABC123', 'OFF-9345', 'BC', NULL, 'BC', 'V', 'E', '+100A1 Bulk Carrier',
+    10000.00, 10000.00, 15000, 6000.00, 4500.00, 8000.00, 1500,
+    150.00, 160.00, 145.00, 12.00, 25.00, 8.50, 9.00,
+    'CCS', 'ABC123', 'CN', 'Shanghai', '123456789', 'Bulk Carrier',
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
+  ),
+    (
+    'JIA JING', '9345692', NULL, '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
+    'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
+    'ABC123', 'OFF-9345', 'BC', NULL, 'BC', 'V', 'E', '+100A1 Bulk Carrier',
+    10000.00, 10000.00, 15000, 6000.00, 4500.00, 8000.00, 1500,
+    150.00, 160.00, 145.00, 12.00, 25.00, 8.50, 9.00,
+    'CCS', 'ABC123', 'CN', 'Shanghai', '123456789', 'Bulk Carrier',
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789'),
+    (SELECT id FROM iclass.organizations WHERE imo_number = '3456789')
+  ),
   (
     'OCEAN TRADER', '9123456', NULL, '2005-03-10', '2005-05-12', '2004-09-05', '2004-06-20', '2005-04-15',
     'C', 'SGP', 'LR', 'Singapore', '2005-05-01', 'REG-SG-9123',
