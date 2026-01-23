@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS auth.users cascade;
-CREATE TABLE auth.users(
+CREATE TABLE IF NOT EXISTS auth.users(
   id serial PRIMARY KEY,
   email text CHECK (email ~* '^.+@.+\..+$') UNIQUE NOT NULL,
   password_hash varchar(512) NOT NULL,

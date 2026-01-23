@@ -113,6 +113,7 @@ CREATE TABLE employees (
     secondary_email VARCHAR(255),
     business_phone VARCHAR(50),
     mobile_phone VARCHAR(50),
+    address varchar(500),
     
     -- Organization Position
     job_title_id integer REFERENCES job_titles(id) ON DELETE SET NULL,

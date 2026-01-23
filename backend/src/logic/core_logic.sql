@@ -16,7 +16,7 @@ $$ LANGUAGE plpgsql;
 -- 2. Function to calculate next due date for surveys
 CREATE OR REPLACE FUNCTION iclass.calculate_next_due_date(
   p_last_held_date date,
-  p_survey_type iclass.survey_audit_types_enum
+  p_survey_type text
 ) RETURNS date AS $$
 DECLARE
   v_next_due_date date;

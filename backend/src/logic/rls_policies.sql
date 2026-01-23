@@ -39,6 +39,11 @@ ALTER TABLE iclass.flag_staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_request_carts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_pool ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.survey_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.audit_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.survey_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iclass.audit_lines ENABLE ROW LEVEL SECURITY;
 
 -- 1. Employees Policies (Full Access)
 CREATE POLICY employee_full_access ON iclass.organizations FOR SELECT TO employees USING (true);
@@ -51,6 +56,11 @@ CREATE POLICY employee_full_access ON iclass.customers FOR SELECT TO employees U
 CREATE POLICY employee_full_access ON iclass.survey_requests FOR ALL TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.survey_request_carts FOR ALL TO employees USING (true);
 CREATE POLICY employee_full_access ON iclass.survey_pool FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.jobs FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.survey_jobs FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.audit_jobs FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.survey_lines FOR ALL TO employees USING (true);
+CREATE POLICY employee_full_access ON iclass.audit_lines FOR ALL TO employees USING (true);
 
 -- 2. Customers Policies (Scoped Access)
 -- Companies: only their own

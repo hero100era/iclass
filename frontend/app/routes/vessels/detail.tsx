@@ -53,7 +53,6 @@ export async function action({ request }: Route.ActionArgs) {
     if (intent === "submit_survey_request") {
         const payload = JSON.parse(formData.get("payload") as string);
         const { requestData, cartItems } = payload;
-        console.log(requestData);
 
         const res = await ApiPOST(request, `${host}/survey_requests`, {
             ...requestData,
@@ -100,6 +99,8 @@ function VesselDetailContent() {
     const [showOtherSelector, setShowOtherSelector] = useState(false);
 
     const handleToggleCartItem = (item: any, type: 'survey' | 'finding' | 'other') => {
+        if (type === 'survey' && item.is_ordered) return;
+
         if (isItemSelected(item.id, type)) {
             removeItem(item.id, type);
         } else {
@@ -290,11 +291,14 @@ function VesselDetailContent() {
                                                     <td className="px-4 py-3 text-right">
                                                         <button
                                                             onClick={() => handleToggleCartItem(survey, 'survey')}
-                                                            className={`p-1.5 rounded-md transition-colors ${isItemSelected(survey.id, 'survey')
-                                                                ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                            disabled={survey.is_ordered}
+                                                            className={`p-1.5 rounded-md transition-colors ${survey.is_ordered
+                                                                ? "bg-slate-50 text-slate-300 cursor-not-allowed"
+                                                                : isItemSelected(survey.id, 'survey')
+                                                                    ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
+                                                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                                 }`}
-                                                            title={isItemSelected(survey.id, 'survey') ? "Remove from Request" : "Add to Request"}
+                                                            title={survey.is_ordered ? "Already Ordered" : isItemSelected(survey.id, 'survey') ? "Remove from Request" : "Add to Request"}
                                                         >
                                                             {isItemSelected(survey.id, 'survey') ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                                         </button>

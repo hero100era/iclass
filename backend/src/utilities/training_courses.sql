@@ -19,7 +19,7 @@ CREATE TABLE iclass.ro_modules (
 -- It links a Certificate Code-> Module -> Specific Role -> Specific Topic.
 CREATE TABLE iclass.training_courses (
     id SERIAL PRIMARY KEY,
-    survey_code VARCHAR(20) REFERENCES iclass.certificate_survey_pool(code),
+    survey_code VARCHAR(10) REFERENCES iclass.certificate_survey_pool(code),
     module_code VARCHAR(5) REFERENCES iclass.ro_modules(code),
     target_role iclass.staff_role_type_enum NOT NULL, -- Is this training for TS, FS, or BOTH?
     description TEXT NOT NULL,
@@ -215,8 +215,8 @@ CREATE TABLE iclass.qual_module_matrix (
 CREATE TABLE iclass.qual_statutory_matrix (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES auth.users(id),
-    cert_code VARCHAR(20) REFERENCES iclass.certificate_survey_pool(code),
-    phase_code VARCHAR(20) REFERENCES iclass.survey_audit_types(code),
+    cert_code VARCHAR(10) REFERENCES iclass.certificate_survey_pool(code),
+    phase_code VARCHAR(2) REFERENCES iclass.survey_audit_types(code),
     
     is_authorized BOOLEAN DEFAULT FALSE,
     authorized_date DATE,

@@ -8,6 +8,16 @@ export default [
     route("certificates", "routes/certificates/index.tsx"),
     route("surveys", "routes/surveys/index.tsx"),
     route("profile", "routes/profile.tsx"),
+    route("requests", "routes/requests/index.tsx"),
+    route("requests/:id", "routes/requests/detail.tsx"),
+    route("jobs", "routes/jobs/index.tsx"),
+
+  ]),
+  route("jobs/:id", "routes/jobs/layout.tsx", [
+    index("routes/jobs/overview.tsx"),
+    route("assign-surveyor", "routes/jobs/assign-surveyor.tsx"),
+    route("register-scope", "routes/jobs/register-scope.tsx"),
+    // route(":itemId", "routes/jobs/item.tsx"),
   ]),
   route("login", "routes/login.tsx"),
   route("login/oauth/:provider", "routes/oauth.tsx"),

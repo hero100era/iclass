@@ -16,13 +16,13 @@ CREATE TABLE IF NOT EXISTS iclass.survey_requests (
   is_assigned boolean DEFAULT FALSE,
   comments text,
   file_path varchar(255),
-  status iclass.task_status_enum DEFAULT 'draft',
+  status iclass.task_status_enum DEFAULT 'submitted',
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.survey_request_carts (
+CREATE TABLE IF NOT EXISTS iclass.survey_request_carts ( 
   id serial PRIMARY KEY,
   ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
   company_id integer REFERENCES iclass.organizations(id) ON DELETE CASCADE,

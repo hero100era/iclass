@@ -1,16 +1,9 @@
-CREATE TYPE iclass.administration_types_enum AS ENUM(
-  'C',
-  'N',
-  'O',
-  'X',
-  'U'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.administration_types(
-  code iclass.administration_types_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "C N O X U" for code.
 INSERT INTO iclass.administration_types(code, name)
   VALUES ('C', 'Civilian'),
 ('N', 'Naval'),
@@ -20,17 +13,13 @@ INSERT INTO iclass.administration_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.class_status_enum AS ENUM(
-  'V',
-  'S',
-  'W'
-);
 
 CREATE TABLE iclass.class_status(
-  code iclass.class_status_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "V S W" for code.
 INSERT INTO iclass.class_status(code, name)
   VALUES ('V', 'Valid'),
 ('S', 'Suspended'),
@@ -38,17 +27,12 @@ INSERT INTO iclass.class_status(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.ship_status_enum AS ENUM(
-  'E',
-  'L',
-  'P'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.ship_status(
-  code iclass.ship_status_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "E L P" for code.
 INSERT INTO iclass.ship_status(code, name)
   VALUES ('E', 'In Service'),
 ('L', 'Laid Up'),
@@ -56,17 +40,12 @@ INSERT INTO iclass.ship_status(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.certificate_status_enum AS ENUM(
-  'V',
-  'S',
-  'W'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.certificate_status(
-  code iclass.certificate_status_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "V S W" for code.
 INSERT INTO iclass.certificate_status(code, name)
   VALUES ('V', 'Valid'),
 ('S', 'Suspended'),
@@ -74,18 +53,12 @@ INSERT INTO iclass.certificate_status(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.certificate_validity_types_enum AS ENUM(
-  'F',
-  'I',
-  'S',
-  'C'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.certificate_validity_types(
-  code iclass.certificate_validity_types_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "F I S C" for code.
 INSERT INTO iclass.certificate_validity_types(code, name)
   VALUES ('F', 'Full Term'),
 ('I', 'Interim'),
@@ -94,17 +67,12 @@ INSERT INTO iclass.certificate_validity_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.certificate_categories_enum AS ENUM(
-  'IC',
-  'C',
-  'SoC'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.certificate_categories(
-  code iclass.certificate_categories_enum PRIMARY KEY,
+  code varchar(3) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "IC C SoC" for code.
 INSERT INTO iclass.certificate_categories(code, name)
   VALUES ('IC', 'International Certificates'),
 ('C', 'Conditional'),
@@ -112,21 +80,13 @@ INSERT INTO iclass.certificate_categories(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.certificate_internal_categories_enum AS ENUM(
-  'CL',
-  'ST',
-  'SI',
-  'DoC',
-  'SoC',
-  'OT'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.certificate_internal_categories(
-  code iclass.certificate_internal_categories_enum PRIMARY KEY,
+  code varchar(3) PRIMARY KEY,
   name varchar(100) NOT NULL,
   description text
 );
 
+--recommend only use char in "CL ST SI DoC SoC OT" for code.
 INSERT INTO iclass.certificate_internal_categories(code, name, description)
   VALUES ('CL', 'Classification', 'Certificates of classification issued by the classification society'),
 ('ST', 'Standard', 'Certificates of conformity to particular requirements issued on the authority of the ships''s flag administration'),
@@ -137,18 +97,12 @@ INSERT INTO iclass.certificate_internal_categories(code, name, description)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.survey_audit_status_enum AS ENUM(
-  'D',
-  'O',
-  'P',
-  'B'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.survey_audit_status(
-  code iclass.survey_audit_status_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "D O P B" for code.
 INSERT INTO iclass.survey_audit_status(code, name)
   VALUES ('D', 'Within Due Date'),
 ('O', 'Overdue'),
@@ -157,20 +111,12 @@ INSERT INTO iclass.survey_audit_status(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.comment_types_enum AS ENUM(
-  'M',
-  'C',
-  'S',
-  'N',
-  'D',
-  'O'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.comment_types(
-  code iclass.comment_types_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "M C S N D O" for code.
 INSERT INTO iclass.comment_types(code, name)
   VALUES ('M', 'Memorandum'),
 ('C', 'Condition of Class'),
@@ -181,17 +127,12 @@ INSERT INTO iclass.comment_types(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.comment_status_enum AS ENUM(
-  'A',
-  'P',
-  'O'
-);
-
 CREATE TABLE IF NOT EXISTS iclass.comment_status(
-  code iclass.comment_status_enum PRIMARY KEY,
+  code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "A P O" for code.
 INSERT INTO iclass.comment_status(code, name)
   VALUES ('A', 'Active'),
 ('P', 'Postponed'),
@@ -228,23 +169,13 @@ INSERT INTO iclass.classification_societies(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.vessel_types_iacs_enum AS ENUM(
-  'BC',
-  'CT',
-  'GC',
-  'GT',
-  'LC',
-  'OT',
-  'PS',
-  'ZZ'
-);
-
 -- Create table for vessel types reference
 CREATE TABLE IF NOT EXISTS iclass.vessel_types_iacs(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "BC CT GC GT LC OT PS ZZ" for code.
 INSERT INTO iclass.vessel_types_iacs(code, name)
   VALUES ('BC', 'Bulk carrier (all combinations OB, OBO,OO)'),
 ('CT', 'Chemical tanker'),
@@ -257,25 +188,13 @@ INSERT INTO iclass.vessel_types_iacs(code, name)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.vessel_types_mms_enum AS ENUM(
-  'BC',
-  'CH',
-  'CT',
-  'GC',
-  'MO',
-  'OC',
-  'OT',
-  'PH',
-  'PS',
-  'PR'
-);
-
 -- Create table for MMS vessel types reference
 CREATE TABLE IF NOT EXISTS iclass.vessel_types_mms(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
 
+--recommend only use char in "BC CH CT GC MO OC OT PH PS PR" for code.
 INSERT INTO iclass.vessel_types_mms(code, name)
   VALUES ('BC', 'Bulk carrier'),
 ('CH', 'Cargo high speed craft'),
@@ -363,17 +282,6 @@ INSERT INTO iclass.certificate_survey_pool(code, description, is_statutory, is_a
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.survey_audit_types_enum AS ENUM(
-  'A',
-  'F',
-  'I',
-  'In',
-  'It',
-  'O',
-  'P',
-  'R'
-);
-
 -- Create table for Survey/Audit Types
 CREATE TABLE IF NOT EXISTS iclass.survey_audit_types(
   code varchar(2) PRIMARY KEY,
@@ -381,6 +289,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_audit_types(
   is_scheduled boolean NOT NULL
 );
 
+--recommend only use char in "A F I In It O Ad P R" for code.
 INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
   VALUES ('A', 'Annual', TRUE),
 ('F', 'Final', FALSE),
@@ -388,6 +297,7 @@ INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
 ('In', 'Intermediate', TRUE),
 ('It', 'Interim', FALSE),
 ('O', 'Other', FALSE),
+('Ad', 'Additional', FALSE),
 ('P', 'Periodical', TRUE),
 ('R', 'Renewal', TRUE)
 ON CONFLICT
@@ -397,6 +307,7 @@ CREATE TYPE iclass.task_status_enum AS ENUM (
     'draft',
     'submitted',
     'accepted',
+    'partial',
     'assigned',
     'scheduled',
     'planning',
@@ -428,9 +339,9 @@ CREATE TABLE IF NOT EXISTS iclass.certificate_templates (
   name varchar(100) NOT NULL,
   version varchar(20) NOT NULL,
   cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code),
-  validity_type iclass.certificate_validity_types_enum,
-  category iclass.certificate_categories_enum,
-  internal_category iclass.certificate_internal_categories_enum,
+  validity_type varchar(2) REFERENCES iclass.certificate_validity_types(code),
+  category varchar(3) REFERENCES iclass.certificate_categories(code),
+  internal_category varchar(2) REFERENCES iclass.certificate_internal_categories(code),
   file_path_xml varchar(255),
   file_path_html varchar(255),
   file_path_pdf varchar(255),
@@ -454,13 +365,25 @@ CREATE TABLE IF NOT EXISTS iclass.report_templates (
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.checklist_templates (
+CREATE TABLE iclass.checklist_sections (
+    id integer PRIMARY KEY,
+    cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
+    survey_type varchar(2) REFERENCES iclass.survey_audit_types(code),
+    section_number VARCHAR(20) NOT NULL, -- e.g., '1.1.1', '2.2.2'
+    title TEXT NOT NULL, -- e.g., 'Examination of plans and designs'
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.checklist_items (
   id serial PRIMARY KEY,
-  category varchar(5),
-  code varchar(10) UNIQUE,
-  survey_code varchar(10) REFERENCES iclass.certificate_survey_pool(code),
+  code varchar(20),
+  item_number varchar(50),
+  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
+  section_id integer REFERENCES iclass.checklist_sections(id) ON DELETE CASCADE,
   content varchar(1000),
   description text,
+  reg_reference text,
+  referenced_item_id integer REFERENCES iclass.checklist_items(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE

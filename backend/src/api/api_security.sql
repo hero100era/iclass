@@ -30,10 +30,22 @@ FROM iclass.certificates;
 CREATE OR REPLACE VIEW api.survey_audits AS
 SELECT
   s.id, s.certificate_id, s.pool_id, s.description,
-  s.last_held_date, s.place_held, s.next_due_date, s.postponement_date, s.status,
-  s.range_from_date, s.range_to_date, s.fee, s.created_at, s.updated_at, s.is_active, p.code
+  s.last_held_date, s.place_held, s.next_due_date, s.postponement_date,
+  s.task_status,
+  CASE
+    WHEN s.task_status = 'partial' THEN 'P'
+    WHEN CURRENT_DATE < s.range_from_date THEN 'B'
+    WHEN CURRENT_DATE >= s.range_from_date AND CURRENT_DATE <= s.range_to_date THEN 'D'
+    WHEN CURRENT_DATE > s.range_to_date AND (s.postponement_date IS NULL OR CURRENT_DATE > s.postponement_date) THEN 'O'
+    WHEN CURRENT_DATE > s.range_to_date AND CURRENT_DATE <= s.postponement_date THEN 'D'
+    ELSE 'O'
+  END AS status,
+  s.range_from_date, s.range_to_date, s.fee, s.is_ordered, s.created_at, s.updated_at, s.is_active, 
+  p.code, p.cert_code,
+  c.ship_id, c.company_id
 FROM iclass.survey_audits s
-LEFT JOIN iclass.survey_pool p ON s.pool_id = p.id;
+LEFT JOIN iclass.survey_pool p ON s.pool_id = p.id
+LEFT JOIN iclass.certificates c ON s.certificate_id = c.id;
 
 CREATE OR REPLACE VIEW api.documents AS
 SELECT
@@ -88,6 +100,87 @@ SELECT
 FROM iclass.survey_pool
 WHERE is_active = TRUE;
 
+CREATE OR REPLACE VIEW api.jobs AS
+SELECT
+  id, file_path_report, file_path_draft, comments, additional,
+  location, fee, job_status, created_at, updated_at, is_active
+FROM iclass.jobs;
+
+CREATE OR REPLACE VIEW api.survey_jobs AS
+SELECT
+  id, job_id, ship_id, surveyor_id, reviewer_id, initialized
+FROM iclass.survey_jobs;
+
+CREATE OR REPLACE VIEW api.audit_jobs AS
+SELECT
+  id, job_id, ship_id, company_id, auditor_id, reviewer_id, initialized
+FROM iclass.audit_jobs;
+
+CREATE OR REPLACE VIEW api.survey_lines AS
+SELECT
+  id, job_id, survey_audit_id, initialized, credit_periodical
+FROM iclass.survey_lines;
+
+CREATE OR REPLACE VIEW api.audit_lines AS
+SELECT
+  id, job_id, survey_audit_id, initialized, credit_periodical
+FROM iclass.audit_lines;
+
+CREATE OR REPLACE VIEW api.job_participants AS
+SELECT
+  id, survey_job_id, audit_job_id, employee_id, is_monitor, is_trainee
+FROM iclass.job_participants;
+
+CREATE OR REPLACE VIEW api.comment_lines AS
+SELECT
+  id, job_id, finding_comment_id, created_at, updated_at
+FROM iclass.comment_lines;
+
+-- Consolidated view for surveyor's job list
+CREATE OR REPLACE VIEW api.surveyor_jobs AS
+SELECT
+    j.id,
+    j.location,
+    j.job_status,
+    j.created_at,
+    j.updated_at,
+    'Survey'::text as job_type,
+    sj.ship_id,
+    s.name as ship_name,
+    NULL::integer as company_id,
+    NULL::text as company_name,
+    sj.surveyor_id as personnel_id
+FROM iclass.jobs j
+JOIN iclass.survey_jobs sj ON j.id = sj.job_id
+LEFT JOIN iclass.ships s ON sj.ship_id = s.id
+UNION ALL
+SELECT
+    j.id,
+    j.location,
+    j.job_status,
+    j.created_at,
+    j.updated_at,
+    'Audit'::text as job_type,
+    aj.ship_id,
+    s.name as ship_name,
+    aj.company_id,
+    o.name as company_name,
+    aj.auditor_id as personnel_id
+FROM iclass.jobs j
+JOIN iclass.audit_jobs aj ON j.id = aj.job_id
+LEFT JOIN iclass.ships s ON aj.ship_id = s.id
+LEFT JOIN iclass.organizations o ON aj.company_id = o.id;
+
+CREATE OR REPLACE VIEW api.employees AS
+SELECT
+  id, user_id, first_name, last_name, display_name, email, job_title_id, department_id, location_id, is_active
+FROM iclass.employees;
+
+CREATE OR REPLACE VIEW api.organizations AS
+SELECT
+  id, name, display_name, domain, imo_number, is_active
+FROM iclass.organizations;
+
 -- Grants
 GRANT SELECT ON api.ships TO employees, customers, administrations;
 GRANT SELECT ON api.certificates TO employees, customers, administrations;
@@ -107,6 +200,20 @@ GRANT INSERT, UPDATE, DELETE ON api.documents TO employees;
 GRANT INSERT, UPDATE, DELETE ON api.finding_comments TO employees;
 GRANT UPDATE, DELETE ON api.survey_requests TO employees;
 GRANT UPDATE, DELETE ON api.survey_request_carts TO employees;
+
+-- Grants for jobs
+GRANT SELECT, INSERT, UPDATE ON api.jobs TO employees;
+GRANT SELECT, INSERT, UPDATE ON api.survey_jobs TO employees;
+GRANT SELECT, INSERT, UPDATE ON api.audit_jobs TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.survey_lines TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.audit_lines TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.comment_lines TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.job_participants TO employees;
+GRANT SELECT ON api.surveyor_jobs TO employees;
+
+-- Grants for employees and organizations
+GRANT SELECT ON api.employees TO employees;
+GRANT SELECT ON api.organizations TO employees;
 
 -- Customers can only read
 -- (Actually, RLS handles the 'which' rows, GRANT handles the 'what' actions)

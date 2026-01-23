@@ -1,3 +1,4 @@
+insert into auth.users (email, password_hash, role, category) values ('eros.wang@qq.com', '123456', 'admingrp','surveyor');
 -- Flags
 INSERT INTO iclass.flags(code, name, fullname, email, tel, fax, contact, contract_file, contract_start, contract_end, is_hssc)
 VALUES 
@@ -184,17 +185,17 @@ INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, p
 ON CONFLICT DO NOTHING;
 
 -- Survey Audits
-INSERT INTO iclass.survey_audits (certificate_id, pool_id, description, last_held_date, place_held, next_due_date, postponement_date, status, range_from_date, range_to_date, fee)
+INSERT INTO iclass.survey_audits (certificate_id, pool_id, description, last_held_date, place_held, next_due_date, postponement_date, range_from_date, range_to_date, fee)
 VALUES
   (
     (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'A'),
    'Load Line Annual Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
-    CURRENT_DATE + INTERVAL '11 months', NULL, 'D', CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
+    CURRENT_DATE + INTERVAL '11 months', NULL,  CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   ),
   (
     (SELECT id FROM iclass.certificates WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'R'),
    'Load Line Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
-    CURRENT_DATE + INTERVAL '11 months', NULL, 'D', CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
+    CURRENT_DATE + INTERVAL '11 months', NULL, CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   )
 ON CONFLICT DO NOTHING;
 
@@ -235,3 +236,8 @@ VALUES
   (NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO iclass.organizations (name, display_name, imo_number, is_active) VALUES 
+('RINA', 'RINA SPA', '1234567', TRUE);
+
+INSERT INTO iclass.employees (user_id, organization_id, employee_number, first_name, last_name,display_name, email, mobile_phone, hire_date, is_active) VALUES 
+(1, 1, '1234567', 'John', 'Doe','John Doe', 'eros.wang@qq.com', '123-456-7890', '2021-07-31', TRUE);

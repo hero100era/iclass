@@ -4,6 +4,8 @@ import {
     Ship,
     FileBadge,
     Calendar,
+    ClipboardList,
+    Briefcase,
     LogOut,
     User
 } from "lucide-react";
@@ -33,6 +35,18 @@ const navItems = [
         label: "Surveys",
         to: "/surveys",
         roles: ["admingrp", "employees", "administrations"]
+    },
+    {
+        icon: ClipboardList,
+        label: "Requests",
+        to: "/requests",
+        roles: ["admingrp", "employees", "administrations"]
+    },
+    {
+        icon: Briefcase,
+        label: "Jobs",
+        to: "/jobs",
+        roles: ["admingrp", "employees"]
     },
 ];
 
