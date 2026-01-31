@@ -52,6 +52,18 @@ BEGIN
                 v_has_survey := TRUE;
             END IF;
         END IF;
+
+        IF v_cart_item.occ_survey_code IS NOT NULL THEN
+            -- Check if it's an audit or survey via survey_pool
+            IF EXISTS (
+                SELECT 1 FROM iclass.survey_pool sp
+                WHERE sp.code = v_cart_item.occ_survey_code AND sp.is_audit = TRUE
+            ) THEN
+                v_has_audit := TRUE;
+            ELSE
+                v_has_survey := TRUE;
+            END IF;
+        END IF;
     END LOOP;
 
     -- 4. Create Survey Job if needed
@@ -60,17 +72,23 @@ BEGIN
         VALUES (v_job_id, v_ship_id, p_surveyor_id, p_reviewer_id)
         RETURNING id INTO v_survey_job_id;
 
-        -- Add lines
-        INSERT INTO iclass.survey_lines (job_id, survey_audit_id)
-        SELECT v_survey_job_id, survey_audit_id
-        FROM iclass.survey_request_carts
-        WHERE survey_request_id = p_request_id AND survey_audit_id IS NOT NULL
-        AND NOT EXISTS (
-             SELECT 1 FROM iclass.survey_audits sa
-                JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
-                JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
-                WHERE sa.id = iclass.survey_request_carts.survey_audit_id AND csp.is_audit = TRUE
-        );
+        -- Add lines (mandatory surveys)
+        INSERT INTO iclass.survey_lines (job_id, survey_audit_id, pool_id)
+        SELECT v_survey_job_id, src.survey_audit_id, sa.pool_id
+        FROM iclass.survey_request_carts src
+        JOIN iclass.survey_audits sa ON src.survey_audit_id = sa.id
+        JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
+        JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
+        WHERE src.survey_request_id = p_request_id AND src.survey_audit_id IS NOT NULL
+        AND csp.is_audit = FALSE;
+
+        -- Add lines (occasional surveys)
+        INSERT INTO iclass.survey_lines (job_id, pool_id)
+        SELECT v_survey_job_id, sp.id
+        FROM iclass.survey_request_carts src
+        JOIN iclass.survey_pool sp ON src.occ_survey_code = sp.code
+        WHERE src.survey_request_id = p_request_id AND src.occ_survey_code IS NOT NULL
+        AND sp.is_audit = FALSE;
     END IF;
 
     -- 5. Create Audit Job if needed
@@ -79,24 +97,30 @@ BEGIN
         VALUES (v_job_id, v_ship_id, v_company_id, p_auditor_id, p_reviewer_id)
         RETURNING id INTO v_audit_job_id;
 
-        -- Add lines
-        INSERT INTO iclass.audit_lines (job_id, survey_audit_id)
-        SELECT v_audit_job_id, survey_audit_id
-        FROM iclass.survey_request_carts
-        WHERE survey_request_id = p_request_id AND survey_audit_id IS NOT NULL
-        AND EXISTS (
-             SELECT 1 FROM iclass.survey_audits sa
-                JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
-                JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
-                WHERE sa.id = iclass.survey_request_carts.survey_audit_id AND csp.is_audit = TRUE
-        );
+        -- Add lines (mandatory audits)
+        INSERT INTO iclass.audit_lines (job_id, survey_audit_id, pool_id)
+        SELECT v_audit_job_id, src.survey_audit_id, sa.pool_id
+        FROM iclass.survey_request_carts src
+        JOIN iclass.survey_audits sa ON src.survey_audit_id = sa.id
+        JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
+        JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
+        WHERE src.survey_request_id = p_request_id AND src.survey_audit_id IS NOT NULL
+        AND csp.is_audit = TRUE;
+
+        -- Add lines (occasional audits)
+        INSERT INTO iclass.audit_lines (job_id, pool_id)
+        SELECT v_audit_job_id, sp.id
+        FROM iclass.survey_request_carts src
+        JOIN iclass.survey_pool sp ON src.occ_survey_code = sp.code
+        WHERE src.survey_request_id = p_request_id AND src.occ_survey_code IS NOT NULL
+        AND sp.is_audit = TRUE;
     END IF;
 
     -- 6. Add findings/recommendations to the job scope
     INSERT INTO iclass.comment_lines (job_id, finding_comment_id)
-    SELECT v_job_id, comments_id
+    SELECT v_job_id, comment_id
     FROM iclass.survey_request_carts
-    WHERE survey_request_id = p_request_id AND comments_id IS NOT NULL;
+    WHERE survey_request_id = p_request_id AND comment_id IS NOT NULL;
 
     -- 7. Update request status
     UPDATE iclass.survey_requests

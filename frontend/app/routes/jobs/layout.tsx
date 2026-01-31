@@ -49,7 +49,7 @@ export default function JobLayout() {
             id: "reporting",
             title: "2. Reporting",
             items: [
-                { id: "recording", label: "2.1 Recording" },
+                { id: "checklist", label: "2.1 Checklist" },
                 { id: "memo-finding", label: "2.2 Memo and finding" },
                 { id: "issue-statement", label: "2.3 Issue statement" },
                 { id: "attach-documents-reporting", label: "2.4 Attach documents" },

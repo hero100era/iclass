@@ -1,5 +1,6 @@
 import { Plus, Trash2, ClipboardList, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useLoaderData, Form, useActionData, useNavigation } from "react-router";
+import { useState } from "react";
 import { ApiGET, ApiPOST, ApiDELETE, ApiPATCH } from "~/.server/lib/api";
 import type { Route } from "./+types/register-scope";
 import { cn } from "~/lib/utils";
@@ -29,8 +30,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     // 2. Get survey/audit lines and comment lines
     const [surveyLinesRes, auditLinesRes, commentLinesRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code)`) : Promise.resolve({ json: () => [] }),
-        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,status,range_from_date,range_to_date,next_due_date,cert_code)`) : Promise.resolve({ json: () => [] }),
+        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)`) : Promise.resolve({ json: () => [] }),
+        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,cert_code),survey_pool(code,description,cert_code)`) : Promise.resolve({ json: () => [] }),
         ApiGET(request, `${host}/comment_lines?job_id=eq.${id}&select=*,finding_comments(*)`)
     ]);
 
@@ -51,7 +52,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         availableFindings = await findingsRes.json();
     }
 
-    return { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings };
+    // 4. Get all active survey pool items for fallback/new additions
+    const poolRes = await ApiGET(request, `${host}/survey_pool?is_active=eq.true`);
+    const allPoolItems = await poolRes.json();
+
+    return { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings, allPoolItems };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -66,10 +71,18 @@ export async function action({ request, params }: Route.ActionArgs) {
         const auditJobId = formData.get("audit_job_id");
 
         if (surveyJobId) {
-            const res = await ApiPOST(request, `${host}/survey_lines`, { job_id: parseInt(surveyJobId as string), survey_audit_id: parseInt(surveyAuditId as string) });
+            const payload: any = { job_id: parseInt(surveyJobId as string) };
+            if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
+            if (formData.get("pool_id")) payload.pool_id = parseInt(formData.get("pool_id") as string);
+
+            const res = await ApiPOST(request, `${host}/survey_lines`, payload);
             if (!res.ok) return { error: "Failed to add survey line" };
         } else if (auditJobId) {
-            const res = await ApiPOST(request, `${host}/audit_lines`, { job_id: parseInt(auditJobId as string), survey_audit_id: parseInt(surveyAuditId as string) });
+            const payload: any = { job_id: parseInt(auditJobId as string) };
+            if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
+            if (formData.get("pool_id")) payload.pool_id = parseInt(formData.get("pool_id") as string);
+
+            const res = await ApiPOST(request, `${host}/audit_lines`, payload);
             if (!res.ok) return { error: "Failed to add audit line" };
         }
         return { success: "Survey added to scope" };
@@ -112,12 +125,24 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function RegisterScope() {
-    const { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings } = useLoaderData<typeof loader>();
+    const { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings, allPoolItems } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const isSubmitting = navigation.state !== "idle";
+    const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
+
+    // Find the selected survey to get its pool_id
+    const selectedSurvey = availableSurveys.find((s: any) => s.id.toString() === selectedSurveyId);
 
     const allLines = [...surveyLines.map((l: any) => ({ ...l, type: "survey" })), ...auditLines.map((l: any) => ({ ...l, type: "audit" }))];
+
+    // Filter available pool items: exclude those that are already in availableSurveys (by pool_id) or already in scope (by pool_id)
+    const existingPoolIdsInAudits = new Set(availableSurveys.map((s: any) => s.pool_id).filter(Boolean));
+    // also check lines in current scope to avoid duplicates if possible, though business logic might allow multiples? Assuming unique per job for now for simplicity or just let backend handle constraint.
+    // Let's at least filter out those that are "Linked" via survey_audit matches, but here we are talking about adding FRESH pool items.
+    // If a pool item is in availableSurveys, user should use the "Available Survey" dropdown (which links to survey_audit).
+    // So we primarily filter out matchng pool_ids from availableSurveys.
+    const availablePoolOptions = allPoolItems.filter((p: any) => !existingPoolIdsInAudits.has(p.id));
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">
@@ -175,8 +200,8 @@ export default function RegisterScope() {
                                             {line.type}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code}</td>
-                                    <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description}</td>
+                                    <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
+                                    <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
                                     <td className="px-4 py-2">
                                         <div className="text-slate-500">{line.survey_audits?.range_from_date || "N/A"} to {line.survey_audits?.range_to_date || "N/A"}</div>
                                         <div className="text-[10px] text-slate-400 font-bold">DUE: {line.survey_audits?.next_due_date || "N/A"}</div>
@@ -226,7 +251,14 @@ export default function RegisterScope() {
                         <input type="hidden" name="audit_job_id" value={auditJob?.id || ""} />
                         <div className="flex-1 space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Survey to Scope</label>
-                            <select name="survey_audit_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
+                            <input type="hidden" name="pool_id" value={selectedSurvey?.pool_id || ""} />
+                            <select
+                                name="survey_audit_id"
+                                required
+                                className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                                value={selectedSurveyId}
+                                onChange={(e) => setSelectedSurveyId(e.target.value)}
+                            >
                                 <option value="">-- Select Available Survey --</option>
                                 {availableSurveys.map((s: any) => (
                                     <option key={s.id} value={s.id}>{s.description} ({s.cert_code}) - Due: {s.next_due_date}</option>
@@ -242,6 +274,33 @@ export default function RegisterScope() {
                         >
                             <Plus size={14} />
                             Add Line
+                        </button>
+                    </Form>
+                </div>
+
+                {/* Add from Pool Section */}
+                <div className="p-3 bg-slate-50 border-t border-slate-200">
+                    <Form method="post" className="flex items-end gap-2 max-w-lg">
+                        <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
+                        <input type="hidden" name="audit_job_id" value={auditJob?.id || ""} />
+                        <div className="flex-1 space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Or Add New Survey Type (Not in Ship's List)</label>
+                            <select name="pool_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
+                                <option value="">-- Select Survey Type --</option>
+                                {availablePoolOptions.map((p: any) => (
+                                    <option key={p.id} value={p.id}>{p.description} ({p.cert_code || p.code})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            type="submit"
+                            name="intent"
+                            value="add_survey"
+                            disabled={isSubmitting}
+                            className="bg-white border border-slate-300 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-slate-50 flex items-center gap-1.5 shrink-0 transition-colors"
+                        >
+                            <Plus size={14} />
+                            Add Type
                         </button>
                     </Form>
                 </div>

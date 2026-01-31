@@ -91,16 +91,16 @@ echo "COMMIT;" >> "$TEMP_FILE"
 # --- Apply ---
 log_info "Applying to database: $DB_NAME..."
 
-# if [ -z "$DATABASE_URL" ]; then
-#     export PGPASSWORD="$DB_PASSWORD"
-#     PG_ARGS="-h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
-# else
-#     PG_ARGS="$DATABASE_URL"
-# fi
+if [ -z "$DATABASE_URL" ]; then
+    export PGPASSWORD="$DB_PASSWORD"
+    PG_ARGS="-h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+else
+    PG_ARGS="$DATABASE_URL"
+fi
 
-# if psql $PG_ARGS -v ON_ERROR_STOP=1 -q -f "$TEMP_FILE"; then
-#     echo -e "${GREEN}✔ Schema successfully reloaded!${NC}"
-# else
-#     echo -e "${RED}✘ Schema reload failed.${NC}"
-#     exit 1
-# fi
+if psql $PG_ARGS -v ON_ERROR_STOP=1 -q -f "$TEMP_FILE"; then
+    echo -e "${GREEN}✔ Schema successfully reloaded!${NC}"
+else
+    echo -e "${RED}✘ Schema reload failed.${NC}"
+    exit 1
+fi

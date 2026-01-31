@@ -45,22 +45,22 @@ ALTER TABLE iclass.audit_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.survey_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iclass.audit_lines ENABLE ROW LEVEL SECURITY;
 
--- 1. Employees Policies (Full Access)
-CREATE POLICY employee_full_access ON iclass.organizations FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.ships FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.certificates FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_audits FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.finding_comments FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.employees FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.customers FOR SELECT TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_requests FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_request_carts FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_pool FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.jobs FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_jobs FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.audit_jobs FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.survey_lines FOR ALL TO employees USING (true);
-CREATE POLICY employee_full_access ON iclass.audit_lines FOR ALL TO employees USING (true);
+-- 1. Employees Policies (Full Read Access)
+CREATE POLICY employee_read_access ON iclass.organizations FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.ships FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.certificates FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_audits FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.finding_comments FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.employees FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.customers FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_requests FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_request_carts FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_pool FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.jobs FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_jobs FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.audit_jobs FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.survey_lines FOR SELECT TO employees USING (true);
+CREATE POLICY employee_read_access ON iclass.audit_lines FOR SELECT TO employees USING (true);
 
 -- 2. Customers Policies (Scoped Access)
 -- Companies: only their own
@@ -85,7 +85,7 @@ CREATE POLICY customer_read_own_certificates ON iclass.certificates FOR SELECT T
       mlc_owner_id = iclass.get_customer_company_id())
   );
 
--- Survey Audits: for their ships
+-- Survey Audits: for their ships 
 CREATE POLICY customer_read_own_survey_audits ON iclass.survey_audits FOR SELECT TO customers
   USING (
     certificate_id IN (SELECT id FROM iclass.certificates WHERE 

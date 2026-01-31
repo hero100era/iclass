@@ -17,6 +17,7 @@ export default [
     index("routes/jobs/overview.tsx"),
     route("assign-surveyor", "routes/jobs/assign-surveyor.tsx"),
     route("register-scope", "routes/jobs/register-scope.tsx"),
+    route("checklist", "routes/jobs/checklist.tsx"),
     // route(":itemId", "routes/jobs/item.tsx"),
   ]),
   route("login", "routes/login.tsx"),

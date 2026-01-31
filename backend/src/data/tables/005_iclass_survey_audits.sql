@@ -1,24 +1,3 @@
-CREATE TABLE IF NOT EXISTS iclass.survey_pool (
-  id serial PRIMARY KEY,
-  code varchar(10) UNIQUE NOT NULL,
-  name varchar(120) NOT NULL,
-  description text,
-  fee DECIMAL(9, 2),
-  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE SET NULL,
-  type varchar(2) REFERENCES iclass.survey_audit_types(code),
-  period INTERVAL,
-  window_before INTERVAL,
-  window_after INTERVAL,
-  is_statutory boolean DEFAULT FALSE,
-  is_audit boolean DEFAULT FALSE,
-  is_doc boolean DEFAULT FALSE,
-  is_mandatory boolean DEFAULT FALSE,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE,
-  CONSTRAINT unique_mandatory_survey_audit UNIQUE (cert_code, type)
-);
-
 -- status is now calculated dynamically in api.survey_audits view
 CREATE TABLE IF NOT EXISTS iclass.survey_audits(
   id serial PRIMARY KEY,
@@ -60,6 +39,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_jobs (
   ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
   surveyor_id integer REFERENCES iclass.employees(id),
   reviewer_id integer REFERENCES iclass.employees(id),
+  description varchar(200),
   initialized boolean DEFAULT FALSE
 );
 
@@ -70,6 +50,7 @@ CREATE TABLE IF NOT EXISTS iclass.audit_jobs (
   company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
   auditor_id integer REFERENCES iclass.employees(id),
   reviewer_id integer REFERENCES iclass.employees(id),
+  description varchar(200),
   initialized boolean DEFAULT FALSE
 );
 
@@ -95,15 +76,17 @@ CREATE TABLE IF NOT EXISTS iclass.ms_jobs (
 CREATE TABLE IF NOT EXISTS iclass.survey_lines (
   id serial PRIMARY KEY,
   job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   initialized boolean DEFAULT FALSE,
-  credit_periodical boolean DEFAULT FALSE
+  credit_periodical boolean DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.audit_lines (
   id serial PRIMARY KEY,
   job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   initialized boolean DEFAULT FALSE,
   credit_periodical boolean DEFAULT TRUE
 );
@@ -116,14 +99,22 @@ CREATE TABLE IF NOT EXISTS iclass.ms_lines (
 
 CREATE TABLE IF NOT EXISTS iclass.survey_checklists (
   id bigserial PRIMARY KEY,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id),
   survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL
+  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
+  result varchar(2) REFERENCES iclass.checklist_results(code),
+  particulars jsonb,
+  report_by integer REFERENCES iclass.employees(id),
+  report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS iclass.audit_checklists (
+CREATE TABLE IF NOT EXISTS iclass.audit_checklists ( 
   id bigserial PRIMARY KEY,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id),
   audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL
+  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
+  result varchar(2) REFERENCES iclass.checklist_results(code),
+  particulars jsonb,
+  report_by integer REFERENCES iclass.employees(id),
+  report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

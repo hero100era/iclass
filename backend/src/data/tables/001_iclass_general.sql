@@ -365,10 +365,48 @@ CREATE TABLE IF NOT EXISTS iclass.report_templates (
   is_active BOOLEAN DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS iclass.survey_pool (
+  id serial PRIMARY KEY,
+  code varchar(10) UNIQUE NOT NULL,
+  name varchar(120) NOT NULL,
+  description text,
+  fee DECIMAL(9, 2),
+  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE SET NULL,
+  type varchar(2) REFERENCES iclass.survey_audit_types(code),
+  period INTERVAL,
+  window_before INTERVAL,
+  window_after INTERVAL,
+  is_statutory boolean DEFAULT FALSE,
+  is_audit boolean DEFAULT FALSE,
+  is_doc boolean DEFAULT FALSE,
+  is_mandatory boolean DEFAULT FALSE,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE,
+  CONSTRAINT unique_mandatory_survey_audit UNIQUE (cert_code, type)
+);
+
+CREATE TABLE IF NOT EXISTS iclass.checklist_results (
+  code varchar(2) PRIMARY KEY,
+  description varchar(200) NOT NULL
+);
+
+INSERT INTO iclass.checklist_results(code, description)
+VALUES ('N', 'Not inspected (item will be listed as "pending" in the Ship Status)'),
+('PI', 'Partially inspected (item will be listed as "partially inspected" in the Ship Status)'),
+('X', 'Inspected and found in order (or Yes if the item requires a Yes/No answer)'),
+('D', 'Damaged and/or deficient, to be detailed in the narrative form'),
+('R', 'Repaired, to be detailed in the narrative form'),
+('NA', 'Not Applicable (not required by the rules or considered not necessary by the Surveyor when allowed by rules)'),
+('NS', 'Not requested by the rules or not fitted on board'),
+('OS', 'Out of Service (not in service)')
+ON CONFLICT
+  DO NOTHING;
+
 CREATE TABLE iclass.checklist_sections (
-    id integer PRIMARY KEY,
-    cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
-    survey_type varchar(2) REFERENCES iclass.survey_audit_types(code),
+    id serial PRIMARY KEY,
+    survey_id integer REFERENCES iclass.survey_pool(id),
+    code varchar(50) NOT NULL,
     section_number VARCHAR(20) NOT NULL, -- e.g., '1.1.1', '2.2.2'
     title TEXT NOT NULL, -- e.g., 'Examination of plans and designs'
     is_active BOOLEAN DEFAULT TRUE
@@ -376,12 +414,12 @@ CREATE TABLE iclass.checklist_sections (
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_items (
   id serial PRIMARY KEY,
-  code varchar(20),
-  item_number varchar(50),
-  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
+  code varchar(100),
+  item_number integer NOT NULL,
   section_id integer REFERENCES iclass.checklist_sections(id) ON DELETE CASCADE,
   content varchar(1000),
   description text,
+  particulars jsonb,
   reg_reference text,
   referenced_item_id integer REFERENCES iclass.checklist_items(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -400,5 +438,8 @@ CREATE TABLE IF NOT EXISTS iclass.component_library (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
 );
+
+
+
 
 

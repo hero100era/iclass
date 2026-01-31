@@ -1,7 +1,7 @@
 -- Create table for ships
 CREATE TABLE IF NOT EXISTS iclass.ships(
   id serial PRIMARY KEY,
-  class_number integer GENERATED ALWAYS AS IDENTITY UNIQUE,
+  class_number integer NOT NULL DEFAULT nextval('class_number_seq'),
   name varchar(40) NOT NULL,
   previous_names varchar(500),
   build_date date,

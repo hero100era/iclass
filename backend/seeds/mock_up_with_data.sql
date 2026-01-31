@@ -241,3 +241,22 @@ INSERT INTO iclass.organizations (name, display_name, imo_number, is_active) VAL
 
 INSERT INTO iclass.employees (user_id, organization_id, employee_number, first_name, last_name,display_name, email, mobile_phone, hire_date, is_active) VALUES 
 (1, 1, '1234567', 'John', 'Doe','John Doe', 'eros.wang@qq.com', '123-456-7890', '2021-07-31', TRUE);
+
+INSERT INTO iclass.checklist_sections (survey_id, code, section_number, title) VALUES
+((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.1', 'examination of current certificates and other records'), 
+((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.2', 'load line annual survey'),
+((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.3', 'completion of the annual survey')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.checklist_items(code, section_id, item_number, content)
+VALUES
+  ('LA.1.2.1.1',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 1, 'checking the validity, as appropriate, of the Cargo Ship Safety Equipment Certificate, the Cargo Ship Safety Radio Certificate and the Cargo Ship Safety Construction Certificate or the Cargo Ship Safety Certificate'),
+  ('LA.1.2.1.2',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 2, 'checking the validity of the Safety Management Certificate (SMC) and that a copy of the Document of Compliance (DOC) is on board'),
+  ('LA.1.2.1.3',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 3, 'checking the validity of the International Ship Security Certificat'),
+  ('LA.1.2.1.4',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 4, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate'),
+  ('LA.1.2.1.5',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 5, 'checking the validity of the International Oil Pollution Prevention Certificate'),
+  ('LA.1.2.1.6',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 6, 'checking, when appropriate, the validity of the International Oil Pollution Prevention Exemption Certificate for Unmanned Non-Self-Propelled (UNSP) Barges'),
+  ('LA.1.2.1.7',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 7, 'checking the certificate of class, if the ship is classed with a classification society'),
+  ('LA.1.2.1.8',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 8, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate'),
+  ('LA.1.2.1.9',(select id from iclass.checklist_sections where code = 'LA' and section_number = '1.2.1'), 9, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate')
+ON CONFLICT DO NOTHING;

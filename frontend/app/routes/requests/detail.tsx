@@ -9,10 +9,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const host = process.env.API_URL || "http://localhost:2000";
 
     const [reqRes, cartRes, empRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_requests?id=eq.${id}`),
-        ApiGET(request, `${host}/survey_request_carts?survey_request_id=eq.${id}`),
+        ApiGET(request, `${host}/survey_requests?id=eq.${id}&select=*,ships(name,imo_number),organizations(name)`),
+        ApiGET(request, `${host}/survey_request_carts?survey_request_id=eq.${id}&select=*,survey_audits!survey_audit_id(*),finding_comments!comment_id(*)`),
         ApiGET(request, `${host}/employees?is_active=eq.true&order=display_name.asc`)
     ]);
+
 
     if (!reqRes.ok || !cartRes.ok || !empRes.ok) {
         throw new Response("Failed to load request details", { status: 500 });
@@ -21,6 +22,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const requests = await reqRes.json();
     const cartItems = await cartRes.json();
     const employees = await empRes.json();
+
 
     if (requests.length === 0) {
         throw new Response("Request not found", { status: 404 });
@@ -60,6 +62,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function RequestDetail() {
     const { requestItem, cartItems, employees } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
+
+    const surveyItems = cartItems.filter((item: any) => item.survey_audit_id || item.occ_survey_code);
+    const findingItems = cartItems.filter((item: any) => item.comment_id);
 
     const hasAuditItems = cartItems.some((item: any) => ['SMC', 'ISPS', 'MLC', 'DOC'].includes(item.survey_audits?.cert_code));
     // More generically, use the is_audit flag from backend if possible, but here we'll just check if auditor assignment is needed.
@@ -126,38 +131,84 @@ export default function RequestDetail() {
                         </div>
                     </div>
 
-                    {/* Cart Items */}
-                    <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-6 py-4 border-b bg-muted/50">
-                            <h3 className="font-semibold flex items-center gap-2">
-                                <FileText size={18} />
-                                <span>Requested Items</span>
-                            </h3>
-                        </div>
-                        <table className="w-full text-left">
-                            <thead className="bg-muted/30 border-b text-sm">
-                                <tr>
-                                    <th className="px-6 py-3 font-semibold text-muted-foreground">Code</th>
-                                    <th className="px-6 py-3 font-semibold text-muted-foreground">Description</th>
-                                    <th className="px-6 py-3 font-semibold text-muted-foreground">Range</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {cartItems.map((item: any) => (
-                                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                                        <td className="px-6 py-4 font-mono text-sm">{item.survey_audits?.survey_pool?.code || item.occ_survey_pool_id}</td>
-                                        <td className="px-6 py-4">
-                                            <p className="font-medium">{item.survey_audits?.description || "Occasional Survey"}</p>
-                                            {item.comments_id && <p className="text-xs text-muted-foreground">Finding ID: {item.comments_id}</p>}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                                            {item.survey_audits?.range_from_date} - {item.survey_audits?.range_to_date}
-                                        </td>
+                    {/* Surveys & Audits */}
+                    {surveyItems.length > 0 && (
+                        <div className="bg-card border rounded-xl overflow-hidden shadow-sm mb-8">
+                            <div className="px-6 py-4 border-b bg-muted/50">
+                                <h3 className="font-semibold flex items-center gap-2 text-primary">
+                                    <FileText size={18} />
+                                    <span>Surveys & Audits</span>
+                                </h3>
+                            </div>
+                            <table className="w-full text-left">
+                                <thead className="bg-muted/30 border-b text-sm">
+                                    <tr>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Code</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Description</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Range / Details</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {surveyItems.map((item: any) => (
+                                        <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="px-6 py-4 font-mono text-sm">{item.survey_audits?.code || item.occ_survey_code}</td>
+                                            <td className="px-6 py-4">
+                                                <p className="font-medium">{item.survey_audits?.description || "Occasional Survey"}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-muted-foreground">
+                                                {item.survey_audits ? (
+                                                    <span>{item.survey_audits.range_from_date} - {item.survey_audits.range_to_date}</span>
+                                                ) : (
+                                                    <span className="italic">Occasional item</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {/* Finding Comments */}
+                    {findingItems.length > 0 && (
+                        <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                            <div className="px-6 py-4 border-b bg-amber-500/5">
+                                <h3 className="font-semibold flex items-center gap-2 text-amber-600">
+                                    <CheckCircle2 size={18} />
+                                    <span>Finding Comments</span>
+                                </h3>
+                            </div>
+                            <table className="w-full text-left">
+                                <thead className="bg-muted/30 border-b text-sm">
+                                    <tr>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Type</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Description / Text</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {findingItems.map((item: any) => (
+                                        <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                                                    {item.finding_comments?.comment_type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="text-sm leading-relaxed">{item.finding_comments?.text}</p>
+                                                {item.finding_comments?.due_date && (
+                                                    <p className="text-xs text-muted-foreground mt-1">Due: {item.finding_comments.due_date}</p>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-medium">{item.finding_comments?.status}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
                 {/* Assignment Sidebar */}

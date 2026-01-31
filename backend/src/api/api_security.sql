@@ -91,12 +91,12 @@ FROM iclass.survey_requests;
 
 CREATE OR REPLACE VIEW api.survey_request_carts AS
 SELECT
-  id, ship_id, company_id, survey_request_id, survey_audit_id, comments_id, occ_survey_pool_id
+  id, ship_id, company_id, survey_request_id, survey_audit_id, comment_id, occ_survey_code
 FROM iclass.survey_request_carts;
 
 CREATE OR REPLACE VIEW api.survey_pool AS
 SELECT
-  id, code, name, description, fee, is_active, is_mandatory
+  id, code, name, description, fee, is_active, is_mandatory, cert_code
 FROM iclass.survey_pool
 WHERE is_active = TRUE;
 
@@ -118,12 +118,12 @@ FROM iclass.audit_jobs;
 
 CREATE OR REPLACE VIEW api.survey_lines AS
 SELECT
-  id, job_id, survey_audit_id, initialized, credit_periodical
+  id, job_id, survey_audit_id, pool_id, initialized, credit_periodical
 FROM iclass.survey_lines;
 
 CREATE OR REPLACE VIEW api.audit_lines AS
 SELECT
-  id, job_id, survey_audit_id, initialized, credit_periodical
+  id, job_id, survey_audit_id, pool_id, initialized, credit_periodical
 FROM iclass.audit_lines;
 
 CREATE OR REPLACE VIEW api.job_participants AS
@@ -181,6 +181,31 @@ SELECT
   id, name, display_name, domain, imo_number, is_active
 FROM iclass.organizations;
 
+CREATE OR REPLACE VIEW api.checklist_sections AS
+SELECT
+  id, survey_id, code, section_number, title, is_active
+FROM iclass.checklist_sections;
+
+CREATE OR REPLACE VIEW api.checklist_items AS
+SELECT
+  id, code, item_number, section_id, content, description, particulars, reg_reference, referenced_item_id, created_at, updated_at, is_active
+FROM iclass.checklist_items;
+
+CREATE OR REPLACE VIEW api.survey_checklists AS
+SELECT
+  id, survey_audit_id, survey_job_id, item_id, result, particulars, report_by, report_at
+FROM iclass.survey_checklists;
+
+CREATE OR REPLACE VIEW api.audit_checklists AS
+SELECT
+  id, survey_audit_id, audit_job_id, item_id, result, particulars, report_by, report_at
+FROM iclass.audit_checklists;
+
+CREATE OR REPLACE VIEW api.checklist_results AS
+SELECT
+  code, description
+FROM iclass.checklist_results;
+
 -- Grants
 GRANT SELECT ON api.ships TO employees, customers, administrations;
 GRANT SELECT ON api.certificates TO employees, customers, administrations;
@@ -214,6 +239,12 @@ GRANT SELECT ON api.surveyor_jobs TO employees;
 -- Grants for employees and organizations
 GRANT SELECT ON api.employees TO employees;
 GRANT SELECT ON api.organizations TO employees;
+GRANT SELECT ON api.checklist_sections TO employees;
+GRANT SELECT ON api.checklist_items TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.survey_checklists TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.audit_checklists TO employees;
+GRANT SELECT ON api.checklist_results TO employees;
+GRANT SELECT ON iclass.checklist_results TO employees;
 
 -- Customers can only read
 -- (Actually, RLS handles the 'which' rows, GRANT handles the 'what' actions)
