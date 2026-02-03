@@ -173,15 +173,15 @@ VALUES
   )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.survey_pool (name, description, fee, code)
+INSERT INTO iclass.survey_pool (code, name, description, fee)
 VALUES
-  ('Damage Survey', 'Damage Survey', 1500.00, 'DS'),
-  ('Change of Flag', 'Change of Flag', 5000.00, 'COF')
+  ('DS', 'Damage Survey', 'Damage Survey', 1500.00),
+  ('COF', 'Change of Flag', 'Change of Flag', 5000.00)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, period, window_before, window_after, is_mandatory) VALUES
-('ILL.ANN', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE),
-('ILL.REN', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE)
+('LL.A', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE),
+('LL.R', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE)
 ON CONFLICT DO NOTHING;
 
 -- Survey Audits

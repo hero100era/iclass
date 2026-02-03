@@ -278,7 +278,9 @@ INSERT INTO iclass.certificate_survey_pool(code, description, is_statutory, is_a
 ('Bo5', 'Boiler Survey(No.5)', FALSE, FALSE, FALSE, TRUE),
 ('Bo6', 'Boiler Survey(No.6)', FALSE, FALSE, FALSE, TRUE),
 ('BOT', 'Bottom survey', TRUE, FALSE, FALSE, TRUE),
-('REFCS','Refrigerated Cargo System', FALSE, FALSE, FALSE, TRUE)
+('REFCS','Refrigerated Cargo System', FALSE, FALSE, FALSE, TRUE),
+('DS', 'Damage Survey', FALSE, FALSE, FALSE, FALSE),
+('COF', 'Change of Flag', FALSE, FALSE, FALSE, FALSE)
 ON CONFLICT
   DO NOTHING;
 
@@ -367,7 +369,7 @@ CREATE TABLE IF NOT EXISTS iclass.report_templates (
 
 CREATE TABLE IF NOT EXISTS iclass.survey_pool (
   id serial PRIMARY KEY,
-  code varchar(10) UNIQUE NOT NULL,
+  code varchar(20) NOT NULL UNIQUE,
   name varchar(120) NOT NULL,
   description text,
   fee DECIMAL(9, 2),

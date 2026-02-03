@@ -1,7 +1,9 @@
 -- Create table for ships
+CREATE SEQUENCE IF NOT EXISTS iclass.class_number_seq START WITH 200000;
+
 CREATE TABLE IF NOT EXISTS iclass.ships(
   id serial PRIMARY KEY,
-  class_number integer NOT NULL DEFAULT nextval('class_number_seq'),
+  class_number integer NOT NULL DEFAULT nextval('iclass.class_number_seq'),
   name varchar(40) NOT NULL,
   previous_names varchar(500),
   build_date date,

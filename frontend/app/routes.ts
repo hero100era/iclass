@@ -11,7 +11,7 @@ export default [
     route("requests", "routes/requests/index.tsx"),
     route("requests/:id", "routes/requests/detail.tsx"),
     route("jobs", "routes/jobs/index.tsx"),
-
+    route("admin/checklists", "routes/admin/checklists.tsx"),
   ]),
   route("jobs/:id", "routes/jobs/layout.tsx", [
     index("routes/jobs/overview.tsx"),
@@ -22,7 +22,7 @@ export default [
   ]),
   route("login", "routes/login.tsx"),
   route("login/oauth/:provider", "routes/oauth.tsx"),
-  route("oauth/callback/:provider", "routes/oauth_callback.tsx"),
+  route("oauth/callback/:provider", "routes/oauth-callback.tsx"),
   route("logout", "routes/logout.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),
   route("reset-password", "routes/reset-password.tsx"),

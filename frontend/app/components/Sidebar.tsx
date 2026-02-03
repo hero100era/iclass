@@ -48,6 +48,12 @@ const navItems = [
         to: "/jobs",
         roles: ["admingrp", "employees"]
     },
+    {
+        icon: ClipboardList,
+        label: "Admin",
+        to: "/admin/checklists",
+        roles: ["admingrp"]
+    },
 ];
 
 interface SidebarProps {

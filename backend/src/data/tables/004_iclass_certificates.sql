@@ -1,6 +1,8 @@
+CREATE SEQUENCE IF NOT EXISTS iclass.certificate_id_seq;
+
 CREATE TABLE IF NOT EXISTS iclass.certificates(
   id serial PRIMARY KEY,
-  certificate_id integer NOT NULL DEFAULT nextval('certificate_id_seq'),
+  certificate_id integer NOT NULL DEFAULT nextval('iclass.certificate_id_seq'),
   version integer NOT NULL,
   ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
   company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,

@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS iclass.ms_lines (
 CREATE TABLE IF NOT EXISTS iclass.survey_checklists (
   id bigserial PRIMARY KEY,
   survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
+  survey_line_id integer REFERENCES iclass.survey_lines(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
   result varchar(2) REFERENCES iclass.checklist_results(code),
@@ -111,6 +112,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_checklists (
 CREATE TABLE IF NOT EXISTS iclass.audit_checklists ( 
   id bigserial PRIMARY KEY,
   audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
+  audit_line_id integer REFERENCES iclass.audit_lines(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
   result varchar(2) REFERENCES iclass.checklist_results(code),

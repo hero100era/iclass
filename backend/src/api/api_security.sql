@@ -193,12 +193,12 @@ FROM iclass.checklist_items;
 
 CREATE OR REPLACE VIEW api.survey_checklists AS
 SELECT
-  id, survey_audit_id, survey_job_id, item_id, result, particulars, report_by, report_at
+  id, survey_line_id, survey_audit_id, survey_job_id, item_id, result, particulars, report_by, report_at
 FROM iclass.survey_checklists;
 
 CREATE OR REPLACE VIEW api.audit_checklists AS
 SELECT
-  id, survey_audit_id, audit_job_id, item_id, result, particulars, report_by, report_at
+  id, audit_line_id, survey_audit_id, audit_job_id, item_id, result, particulars, report_by, report_at
 FROM iclass.audit_checklists;
 
 CREATE OR REPLACE VIEW api.checklist_results AS

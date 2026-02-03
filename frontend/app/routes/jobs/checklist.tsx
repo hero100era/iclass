@@ -40,12 +40,12 @@ export default function JobChecklist() {
         ...(Array.isArray(auditLines) ? auditLines.map((l: any) => ({ ...l, type: "audit" })) : [])
     ];
 
-    const [activeLineId, setActiveLineId] = useState<number | null>(allLines.length > 0 ? allLines[0].survey_audit_id : null);
+    const [activeLineId, setActiveLineId] = useState<number | null>(allLines.length > 0 ? allLines[0].id : null);
     const [activeType, setActiveType] = useState<"survey" | "audit">(allLines.length > 0 ? allLines[0].type : "survey");
 
     const checklists = activeType === "survey" ? surveyChecklists : auditChecklists;
     const currentChecklist = (Array.isArray(checklists) ? checklists : []).filter(
-        (c: any) => c.survey_audit_id === activeLineId
+        (c: any) => (activeType === "survey" ? c.survey_line_id : c.audit_line_id) === activeLineId
     );
 
     // Group by sections
@@ -100,14 +100,14 @@ export default function JobChecklist() {
                     <div className="text-[10px] font-bold text-slate-400 uppercase px-2 mb-1">Surveys in Scope</div>
                     {allLines.map((line: any) => (
                         <button
-                            key={`${line.type}-${line.survey_audit_id}`}
+                            key={`${line.type}-${line.id}`}
                             onClick={() => {
-                                setActiveLineId(line.survey_audit_id);
+                                setActiveLineId(line.id);
                                 setActiveType(line.type);
                             }}
                             className={cn(
                                 "w-full text-left p-3 rounded-lg border transition-all flex flex-col gap-1 shadow-sm",
-                                activeLineId === line.survey_audit_id && activeType === line.type
+                                activeLineId === line.id && activeType === line.type
                                     ? "bg-white border-primary border-2 ring-1 ring-primary/20"
                                     : "bg-white border-slate-200 hover:border-slate-300"
                             )}
@@ -118,8 +118,12 @@ export default function JobChecklist() {
                             )}>
                                 {line.type}
                             </span>
-                            <span className="text-xs font-bold text-slate-700 line-clamp-2">{line.survey_audits?.description}</span>
-                            <span className="text-[10px] font-mono text-slate-400">{line.survey_audits?.cert_code}</span>
+                            <span className="text-xs font-bold text-slate-700 line-clamp-2">
+                                {line.survey_audits?.description || line.survey_pool?.name}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">
+                                {line.survey_audits?.cert_code || line.survey_pool?.code}
+                            </span>
                         </button>
                     ))}
                 </aside>
@@ -156,22 +160,64 @@ export default function JobChecklist() {
                                                                 </div>
                                                             )}
 
-                                                            {/* Particulars Field - Shown under description if needed */}
-                                                            {item.checklist_items?.particulars && Object.keys(item.checklist_items.particulars).length > 0 && (
-                                                                <div className="pt-1">
-                                                                    <textarea
-                                                                        placeholder="Add particulars or remarks..."
-                                                                        className="w-full max-w-2xl bg-slate-50 border border-slate-200 rounded px-2 py-1 text-[11px] outline-none focus:bg-white focus:ring-1 focus:ring-primary/20 h-10 resize-y"
-                                                                        defaultValue={item.particulars ? JSON.stringify(item.particulars, null, 2) : ""}
-                                                                        onBlur={(e) => {
-                                                                            const formData = new FormData();
-                                                                            formData.append("intent", "update_particulars");
-                                                                            formData.append("id", item.id.toString());
-                                                                            formData.append("particulars", e.target.value || "{}");
-                                                                            formData.append("type", activeType);
-                                                                            submit(formData, { method: "post" });
-                                                                        }}
-                                                                    />
+                                                            {/* Particulars Dynamic Form */}
+                                                            {item.particulars && Array.isArray(item.particulars) && item.particulars.length > 0 && (
+                                                                <div className="pt-2 space-y-3 bg-slate-50/50 p-3 rounded-lg border border-slate-100 max-w-2xl">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <Info size={12} className="text-primary/60" />
+                                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Required Particulars</span>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 gap-3">
+                                                                        {item.particulars.map((p: any, idx: number) => (
+                                                                            <div key={p.key || idx} className="flex flex-col gap-1">
+                                                                                <label className="text-[10px] font-medium text-slate-600 ml-0.5">{p.title}</label>
+                                                                                {p.type === "boolean" ? (
+                                                                                    <div className="flex gap-4 items-center h-8">
+                                                                                        {["Yes", "No"].map((opt) => (
+                                                                                            <label key={opt} className="flex items-center gap-1.5 cursor-pointer group">
+                                                                                                <input
+                                                                                                    type="radio"
+                                                                                                    name={`particular-${item.id}-${idx}`}
+                                                                                                    value={opt}
+                                                                                                    checked={p.result === opt}
+                                                                                                    onChange={(e) => {
+                                                                                                        const updated = [...item.particulars];
+                                                                                                        updated[idx] = { ...p, result: e.target.value };
+                                                                                                        const formData = new FormData();
+                                                                                                        formData.append("intent", "update_particulars");
+                                                                                                        formData.append("id", item.id.toString());
+                                                                                                        formData.append("particulars", JSON.stringify(updated));
+                                                                                                        formData.append("type", activeType);
+                                                                                                        submit(formData, { method: "post" });
+                                                                                                    }}
+                                                                                                    className="w-3 h-3 text-primary border-slate-300 focus:ring-primary/20"
+                                                                                                />
+                                                                                                <span className="text-xs text-slate-700 group-hover:text-primary transition-colors">{opt}</span>
+                                                                                            </label>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <input
+                                                                                        type={p.type === "number" ? "number" : p.type === "date" ? "date" : "text"}
+                                                                                        defaultValue={p.result || ""}
+                                                                                        placeholder={`Enter ${p.title.toLowerCase()}...`}
+                                                                                        onBlur={(e) => {
+                                                                                            if (e.target.value === p.result) return;
+                                                                                            const updated = [...item.particulars];
+                                                                                            updated[idx] = { ...p, result: e.target.value };
+                                                                                            const formData = new FormData();
+                                                                                            formData.append("intent", "update_particulars");
+                                                                                            formData.append("id", item.id.toString());
+                                                                                            formData.append("particulars", JSON.stringify(updated));
+                                                                                            formData.append("type", activeType);
+                                                                                            submit(formData, { method: "post" });
+                                                                                        }}
+                                                                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>

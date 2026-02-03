@@ -42,8 +42,8 @@ export async function getChecklistData({ params, request }: any) {
 
     // 2. Get survey/audit lines to know which surveys are in scope
     const [surveyLinesRes, auditLinesRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code)`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,cert_code)`) : dummyRes()
+        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`) : dummyRes(),
+        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`) : dummyRes()
     ]);
 
     const [surveyLines, auditLines] = await Promise.all([
@@ -53,8 +53,8 @@ export async function getChecklistData({ params, request }: any) {
 
     // 3. Get checklists and results
     const [surveyChecklistsRes, auditChecklistsRes, checklistResultsRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,checklist_items(*,checklist_sections(*))`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,checklist_items(*,checklist_sections(*))`) : dummyRes(),
+        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*))`) : dummyRes(),
+        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*))`) : dummyRes(),
         ApiGET(request, `${host}/checklist_results`)
     ]);
 
