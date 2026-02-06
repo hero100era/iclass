@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS iclass.finding_comments(
   postponed_due_date date,
   postponed_expiry_survey_audits text,
   mms_reference varchar(20),
+  subject varchar(500) NOT NULL,
   text varchar(10000) NOT NULL,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,

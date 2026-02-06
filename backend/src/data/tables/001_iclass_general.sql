@@ -119,11 +119,12 @@ CREATE TABLE IF NOT EXISTS iclass.comment_types(
 --recommend only use char in "M C S N D O" for code.
 INSERT INTO iclass.comment_types(code, name)
   VALUES ('M', 'Memorandum'),
-('C', 'Condition of Class'),
+('C', 'Class Condition'),
 ('S', 'Statutory Condition'),
 ('N', 'Non-conformity'),
 ('D', 'Deficiency'),
-('O', 'Observation')
+('O', 'Observation'),
+('R', 'Retroactive Requirement')
 ON CONFLICT
   DO NOTHING;
 
@@ -276,11 +277,9 @@ INSERT INTO iclass.certificate_survey_pool(code, description, is_statutory, is_a
 ('Bo3', 'Boiler Survey(No.3)', FALSE, FALSE, FALSE, TRUE),
 ('Bo4', 'Boiler Survey(No.4)', FALSE, FALSE, FALSE, TRUE),
 ('Bo5', 'Boiler Survey(No.5)', FALSE, FALSE, FALSE, TRUE),
-('Bo6', 'Boiler Survey(No.6)', FALSE, FALSE, FALSE, TRUE),
+('Bo6', 'Boiler Survey(No.6)', FALSE, FALSE, FALSE, TRUE),        
 ('BOT', 'Bottom survey', TRUE, FALSE, FALSE, TRUE),
-('REFCS','Refrigerated Cargo System', FALSE, FALSE, FALSE, TRUE),
-('DS', 'Damage Survey', FALSE, FALSE, FALSE, FALSE),
-('COF', 'Change of Flag', FALSE, FALSE, FALSE, FALSE)
+('REFCS','Refrigerated Cargo System', FALSE, FALSE, FALSE, TRUE)
 ON CONFLICT
   DO NOTHING;
 
