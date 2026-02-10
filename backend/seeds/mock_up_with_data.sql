@@ -202,28 +202,28 @@ ON CONFLICT DO NOTHING;
 -- Finding Comments
 INSERT INTO iclass.finding_comments (
   ship_id, company_id, comment_type, priviate, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
-  status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, text
+  status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
 )
 VALUES
   (
     (SELECT id FROM iclass.ships WHERE imo_number = '9345678'), NULL, 'M', FALSE, 'CERT-JH-001',
     CURRENT_DATE - INTERVAL '1 month', 'Shanghai', CURRENT_DATE + INTERVAL '1 month', 'Next Annual', 'A',
-    NULL, NULL, 'MMS-2024-001', 'Liferaft service due soon.'
+    NULL, NULL, 'MMS-2024-001', 'Liferaft service due soon.', 'Liferaft service  to be serviced by competent company within 1 month.'
   ),
   (
     (SELECT id FROM iclass.ships WHERE imo_number = '9123456'), NULL, 'C', FALSE, 'CERT-OT-002',
     CURRENT_DATE - INTERVAL '2 months', 'Singapore', CURRENT_DATE + INTERVAL '4 months', 'Next Renewal', 'A',
-    CURRENT_DATE + INTERVAL '6 months', 'Extended to Final', 'MMS-2024-002', 'Slight corrosion observed on main deck plating.'
+    CURRENT_DATE + INTERVAL '6 months', 'Extended to Final', 'MMS-2024-002', 'Slight corrosion observed on main deck plating.', 'Slight corrosion observed on main deck plating.'
   ),
   (
     (SELECT id FROM iclass.ships WHERE imo_number = '9234567'), NULL, 'N', TRUE, 'CERT-SV-003',
     CURRENT_DATE - INTERVAL '5 days', 'Panama', CURRENT_DATE + INTERVAL '25 days', NULL, 'A',
-    NULL, NULL, NULL, 'Fire drill records incomplete.'
+    NULL, NULL, NULL, 'Fire drill records incomplete.','Fire drill records incomplete. '
   ),
   (
     NULL, (SELECT id FROM iclass.organizations WHERE imo_number = '1234567'), 'O', FALSE, 'CERT-DOC-001',
     CURRENT_DATE - INTERVAL '1 year', 'Singapore', NULL, NULL, 'A',
-    NULL, NULL, 'MMS-2024-003', 'Company maintenance system well organized.'
+    NULL, NULL, 'MMS-2024-003', 'Company maintenance system well organized.','Company maintenance system well organized. '
   )
 ON CONFLICT DO NOTHING;
 

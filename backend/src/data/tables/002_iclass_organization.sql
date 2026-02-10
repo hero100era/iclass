@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS ltree;
 -- 1. ORGANIZATIONS TABLE
 -- Top-level organization/tenant information
 -- =============================================
-CREATE TABLE organizations (
+CREATE TABLE IF NOT EXISTS organizations (
     id serial PRIMARY KEY,
     tenant_id VARCHAR(100) UNIQUE,  -- Microsoft 365 Tenant ID
     name VARCHAR(255) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE organizations (
 -- Department/Division structure
 -- =============================================
 
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS departments (
     id serial PRIMARY KEY,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     parent_department_id integer REFERENCES departments(id) ON DELETE SET NULL,
@@ -52,7 +52,7 @@ CREATE TABLE departments (
 -- 3. LOCATIONS TABLE
 -- Office locations
 -- =============================================
-CREATE TABLE locations (
+CREATE TABLE IF NOT EXISTS locations (
     id serial PRIMARY KEY,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE locations (
 -- 4. JOB TITLES TABLE
 -- Standard job titles/positions
 -- =============================================
-CREATE TABLE job_titles (
+CREATE TABLE IF NOT EXISTS job_titles (
     id serial PRIMARY KEY,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE job_titles (
 -- 6. EMPLOYEES TABLE
 -- Core employee/user information
 -- =============================================
-CREATE TABLE employees (
+CREATE TABLE IF NOT EXISTS employees (
     id serial PRIMARY KEY,
     user_id integer REFERENCES auth.users(id) ON DELETE CASCADE,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -152,7 +152,7 @@ CREATE TABLE employees (
 -- 5. Contract History TABLE
 -- Record contract details with our Organization(for customers, flags and empoyee)
 -- =============================================
-CREATE TABLE contract_history (
+CREATE TABLE IF NOT EXISTS contract_history (
     id serial PRIMARY KEY,
     organization_id integer REFERENCES organizations(id) ON DELETE CASCADE,
     employee_id integer REFERENCES employees(id) ON DELETE CASCADE,
@@ -169,7 +169,7 @@ CREATE TABLE contract_history (
 -- 7. MANAGER HISTORY TABLE
 -- Track manager changes over time
 -- =============================================
-CREATE TABLE manager_history (
+CREATE TABLE IF NOT EXISTS manager_history (
     id serial PRIMARY KEY,
     employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     manager_id integer REFERENCES employees(id) ON DELETE SET NULL,
@@ -184,7 +184,7 @@ CREATE TABLE manager_history (
 -- 8. DEPARTMENT MEMBERSHIP HISTORY
 -- Track department changes
 -- =============================================
-CREATE TABLE department_history (
+CREATE TABLE IF NOT EXISTS department_history (
     id serial PRIMARY KEY,
     employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     department_id integer NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
@@ -198,10 +198,10 @@ CREATE TABLE department_history (
 -- 9. DOTTED LINE RELATIONSHIPS
 -- For matrix organization structures
 -- =============================================
-CREATE TABLE dotted_line_relationships (
+CREATE TABLE IF NOT EXISTS dotted_line_relationships (
     id serial PRIMARY KEY,
-    employee_id serial NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    dotted_line_manager_id serial NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    dotted_line_manager_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     relationship_type VARCHAR(100),  -- e.g., 'Project Manager', 'Functional Manager'
     description TEXT,
     start_date DATE,
@@ -218,7 +218,7 @@ CREATE TABLE dotted_line_relationships (
 -- 10. TEAMS INTEGRATION TABLE
 -- Microsoft Teams specific data
 -- =============================================
-CREATE TABLE teams_presence (
+CREATE TABLE IF NOT EXISTS teams_presence (
     id serial PRIMARY KEY,
     employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     availability VARCHAR(50),  -- Available, Busy, Away, DoNotDisturb, Offline
@@ -234,7 +234,7 @@ CREATE TABLE teams_presence (
 -- 11. ORGANIZATIONAL ROLES
 -- Special roles beyond job titles
 -- =============================================
-CREATE TABLE organizational_roles (
+CREATE TABLE IF NOT EXISTS organizational_roles (
     id serial PRIMARY KEY,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -243,7 +243,7 @@ CREATE TABLE organizational_roles (
     is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE employee_organizational_roles (
+CREATE TABLE IF NOT EXISTS employee_organizational_roles (
     id serial PRIMARY KEY,
     employee_id integer NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     role_id integer NOT NULL REFERENCES organizational_roles(id) ON DELETE CASCADE,
@@ -260,7 +260,7 @@ CREATE TABLE employee_organizational_roles (
 -- 12. SYNC LOG TABLE
 -- Track synchronization with Microsoft 365
 -- =============================================
-CREATE TABLE sync_logs (
+CREATE TABLE IF NOT EXISTS sync_logs (
     id serial PRIMARY KEY,
     organization_id integer NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     sync_type VARCHAR(50) NOT NULL,  -- 'full', 'incremental', 'user', 'department'
@@ -280,27 +280,27 @@ CREATE TABLE sync_logs (
 -- =============================================
 
 -- Employees indexes
-CREATE INDEX idx_employees_organization ON employees(organization_id);
-CREATE INDEX idx_employees_manager ON employees(manager_id);
-CREATE INDEX idx_employees_department ON employees(department_id);
-CREATE INDEX idx_employees_location ON employees(location_id);
-CREATE INDEX idx_employees_azure_ad ON employees(azure_ad_id);
-CREATE INDEX idx_employees_email ON employees(email);
-CREATE INDEX idx_employees_display_name ON employees(display_name);
-CREATE INDEX idx_employees_active ON employees(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_employees_organization ON employees(organization_id);
+CREATE INDEX IF NOT EXISTS idx_employees_manager ON employees(manager_id);
+CREATE INDEX IF NOT EXISTS idx_employees_department ON employees(department_id);
+CREATE INDEX IF NOT EXISTS idx_employees_location ON employees(location_id);
+CREATE INDEX IF NOT EXISTS idx_employees_azure_ad ON employees(azure_ad_id);
+CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(email);
+CREATE INDEX IF NOT EXISTS idx_employees_display_name ON employees(display_name);
+CREATE INDEX IF NOT EXISTS idx_employees_active ON employees(is_active) WHERE is_active = TRUE;
 
 -- Departments indexes
-CREATE INDEX idx_departments_organization ON departments(organization_id);
-CREATE INDEX idx_departments_parent ON departments(parent_department_id);
-CREATE INDEX idx_departments_path ON departments USING GIST (path);
+CREATE INDEX IF NOT EXISTS idx_departments_organization ON departments(organization_id);
+CREATE INDEX IF NOT EXISTS idx_departments_parent ON departments(parent_department_id);
+CREATE INDEX IF NOT EXISTS idx_departments_path ON departments USING GIST (path);
 
 -- Manager history indexes
-CREATE INDEX idx_manager_history_employee ON manager_history(employee_id);
-CREATE INDEX idx_manager_history_dates ON manager_history(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_manager_history_employee ON manager_history(employee_id);
+CREATE INDEX IF NOT EXISTS idx_manager_history_dates ON manager_history(start_date, end_date);
 
 -- Dotted line relationships indexes
-CREATE INDEX idx_dotted_line_employee ON dotted_line_relationships(employee_id);
-CREATE INDEX idx_dotted_line_manager ON dotted_line_relationships(dotted_line_manager_id);
+CREATE INDEX IF NOT EXISTS idx_dotted_line_employee ON dotted_line_relationships(employee_id);
+CREATE INDEX IF NOT EXISTS idx_dotted_line_manager ON dotted_line_relationships(dotted_line_manager_id);
 
 -- =============================================
 -- VIEWS FOR COMMON QUERIES
@@ -479,26 +479,31 @@ $$ LANGUAGE plpgsql;
 -- =============================================
 
 -- Auto-update updated_at timestamp
+DROP TRIGGER IF EXISTS update_organizations_updated_at ON organizations;
 CREATE TRIGGER update_organizations_updated_at
     BEFORE UPDATE ON organizations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_employees_updated_at ON employees;
 CREATE TRIGGER update_employees_updated_at
     BEFORE UPDATE ON employees
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_departments_updated_at ON departments;
 CREATE TRIGGER update_departments_updated_at
     BEFORE UPDATE ON departments
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_locations_updated_at ON locations;
 CREATE TRIGGER update_locations_updated_at
     BEFORE UPDATE ON locations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_titles_updated_at ON job_titles;
 CREATE TRIGGER update_job_titles_updated_at
     BEFORE UPDATE ON job_titles
     FOR EACH ROW
@@ -524,6 +529,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS track_employee_manager_change ON employees;
 CREATE TRIGGER track_employee_manager_change
     AFTER UPDATE ON employees
     FOR EACH ROW

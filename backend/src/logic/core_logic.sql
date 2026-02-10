@@ -39,9 +39,14 @@ $$ LANGUAGE plpgsql;
 -- 3. Trigger to auto-update next_due_date on survey insertion/update
 CREATE OR REPLACE FUNCTION iclass.trigger_update_survey_due_date()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_type varchar(2);
 BEGIN
-  IF NEW.last_held_date IS NOT NULL AND NEW.type IS NOT NULL THEN
-    NEW.next_due_date := iclass.calculate_next_due_date(NEW.last_held_date, NEW.type);
+  IF NEW.last_held_date IS NOT NULL AND NEW.pool_id IS NOT NULL THEN
+    SELECT type INTO v_type FROM iclass.survey_pool WHERE id = NEW.pool_id;
+    IF v_type IS NOT NULL THEN
+      NEW.next_due_date := iclass.calculate_next_due_date(NEW.last_held_date, v_type);
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -49,6 +54,6 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_update_survey_due_date ON iclass.survey_audits;
 CREATE TRIGGER trg_update_survey_due_date
-BEFORE INSERT OR UPDATE OF last_held_date, type ON iclass.survey_audits
+BEFORE INSERT OR UPDATE OF last_held_date, pool_id ON iclass.survey_audits
 FOR EACH ROW
 EXECUTE FUNCTION iclass.trigger_update_survey_due_date();

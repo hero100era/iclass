@@ -14,7 +14,7 @@ ON CONFLICT
   DO NOTHING;
 
 
-CREATE TABLE iclass.class_status(
+CREATE TABLE IF NOT EXISTS iclass.class_status(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
 );
@@ -97,6 +97,21 @@ INSERT INTO iclass.certificate_internal_categories(code, name, description)
 ON CONFLICT
   DO NOTHING;
 
+
+CREATE TABLE IF NOT EXISTS iclass.certificate_actions (
+  code varchar(3) PRIMARY KEY,
+  name varchar(100) NOT NULL
+);
+
+INSERT INTO iclass.certificate_actions (code, name) VALUES
+('I','Issued'),
+('EN', 'Endorsed'),
+('S', 'Statement for Endorsement'),
+('W', 'Withdrawn'),
+('EX', 'Extended'),
+('RI', 'Registered')
+ON CONFLICT DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS iclass.survey_audit_status(
   code varchar(2) PRIMARY KEY,
   name varchar(100) NOT NULL
@@ -142,11 +157,14 @@ ON CONFLICT
   DO NOTHING;
 
 -- Create enum for certificates applicability
-CREATE TYPE iclass.certificates_applicability_enum AS ENUM(
-  'Vessel',
-  'Company'
-);
-
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificates_applicability_enum') THEN
+        CREATE TYPE iclass.certificates_applicability_enum AS ENUM(
+          'Vessel',
+          'Company'
+        );
+    END IF;
+END $$;
 
 -- Create table for Classification Societies reference
 CREATE TABLE IF NOT EXISTS iclass.classification_societies(
@@ -304,21 +322,25 @@ INSERT INTO iclass.survey_audit_types(code, name, is_scheduled)
 ON CONFLICT
   DO NOTHING;
 
-CREATE TYPE iclass.task_status_enum AS ENUM (
-    'draft',
-    'submitted',
-    'accepted',
-    'partial',
-    'assigned',
-    'scheduled',
-    'planning',
-    'executing',
-    'pending_review',
-    'approved',
-    'completed',
-    'cancelled',
-    'rejected'
-);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status_enum') THEN
+        CREATE TYPE iclass.task_status_enum AS ENUM (
+            'draft',
+            'submitted',
+            'accepted',
+            'partial',
+            'assigned',
+            'scheduled',
+            'planning',
+            'executing',
+            'pending_review',
+            'approved',
+            'completed',
+            'cancelled',
+            'rejected'
+        );
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS iclass.flags(
   code varchar(3) PRIMARY KEY,
@@ -404,13 +426,25 @@ VALUES ('N', 'Not inspected (item will be listed as "pending" in the Ship Status
 ON CONFLICT
   DO NOTHING;
 
-CREATE TABLE iclass.checklist_sections (
+CREATE TABLE IF NOT EXISTS iclass.checklist_sections (
     id serial PRIMARY KEY,
     survey_id integer REFERENCES iclass.survey_pool(id),
     code varchar(50) NOT NULL,
     section_number VARCHAR(20) NOT NULL, -- e.g., '1.1.1', '2.2.2'
     title TEXT NOT NULL, -- e.g., 'Examination of plans and designs'
     is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.component_library (
+  id SERIAL PRIMARY KEY,
+  code varchar(20) NOT NULL,
+  name varchar(100) NOT NULL,
+  duty varchar(20),
+  description text,
+  properties jsonb,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_items (
@@ -421,6 +455,7 @@ CREATE TABLE IF NOT EXISTS iclass.checklist_items (
   content varchar(1000),
   description text,
   particulars jsonb,
+  component_library_id integer REFERENCES iclass.component_library(id),
   reg_reference text,
   referenced_item_id integer REFERENCES iclass.checklist_items(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
@@ -428,19 +463,24 @@ CREATE TABLE IF NOT EXISTS iclass.checklist_items (
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.component_library (
+CREATE TABLE IF NOT EXISTS iclass.flag_cert_authorizations (
   id SERIAL PRIMARY KEY,
-  code varchar(20) NOT NULL,
-  name varchar(100) NOT NULL,
-  duty varchar(20),
-  description text,
-  properties JSONB,
+  flag_code varchar(3)  NOT NULL REFERENCES iclass.flags(code) ON DELETE CASCADE,
+  cert_code varchar(10) NOT NULL REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
+  validity_type varchar(2) REFERENCES iclass.certificate_validity_types(code),
+  category varchar(3) REFERENCES iclass.certificate_categories(code),
+  internal_category varchar(2) REFERENCES iclass.certificate_internal_categories(code),
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
 );
 
-
-
-
-
+CREATE TABLE IF NOT EXISTS iclass.flag_survey_authorizations (
+  id SERIAL PRIMARY KEY,
+  flag_code varchar(3) NOT NULL REFERENCES iclass.flags(code) ON DELETE CASCADE,
+  cert_code varchar(10) NOT NULL REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
+  survey_type varchar(2) REFERENCES iclass.survey_audit_types(code),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);

@@ -1,24 +1,3 @@
--- status is now calculated dynamically in api.survey_audits view
-CREATE TABLE IF NOT EXISTS iclass.survey_audits(
-  id serial PRIMARY KEY,
-  cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE SET NULL,
-  certificate_id integer REFERENCES iclass.certificates(id) ON DELETE CASCADE,
-  pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
-  description varchar(120) NOT NULL,
-  last_held_date date NOT NULL,
-  place_held varchar(50) NOT NULL,
-  next_due_date date,
-  postponement_date date,
-  task_status iclass.task_status_enum,
-  range_from_date date,
-  range_to_date date,
-  fee DECIMAL(9, 2),
-  is_ordered boolean DEFAULT FALSE,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE
-);
-
 CREATE TABLE IF NOT EXISTS iclass.jobs (
   id serial PRIMARY KEY,
   file_path_report varchar(255),
@@ -54,6 +33,16 @@ CREATE TABLE IF NOT EXISTS iclass.audit_jobs (
   initialized boolean DEFAULT FALSE
 );
 
+CREATE TABLE IF NOT EXISTS iclass.ms_jobs (
+  id serial PRIMARY KEY,
+  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
+  company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
+  issued_by integer REFERENCES iclass.employees(id),
+  reviewed_by integer REFERENCES iclass.employees(id),
+  initialized boolean DEFAULT FALSE   
+);
+
 CREATE TABLE IF NOT EXISTS iclass.job_participants (
   id serial PRIMARY KEY,
   survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
@@ -63,14 +52,18 @@ CREATE TABLE IF NOT EXISTS iclass.job_participants (
   is_trainee boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.ms_jobs (
-  id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
+CREATE TABLE IF NOT EXISTS iclass.certificate_lines (
+  id serial PRIMARY kEY,
+  survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
+  audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
+  ms_job_id integer REFERENCES iclass.ms_jobs(id) on DELETE CASCADE,
+  certificate_id integer REFERENCES iclass.certificates(id) ON DELETE SET NULL,
+  action_code varchar(3) REFERENCES iclass.certificate_actions(code) NOT NULL,
   issued_by integer REFERENCES iclass.employees(id),
-  reviewed_by integer REFERENCES iclass.employees(id),
-  initialized boolean DEFAULT FALSE
+  issue_date date,
+  extended_date date,
+  file_path_draft varchar(255),
+  file_path_cert varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS iclass.survey_lines (
@@ -103,6 +96,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_checklists (
   survey_line_id integer REFERENCES iclass.survey_lines(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
+  ship_component_id integer REFERENCES iclass.ship_component_tree(id) ON DELETE CASCADE,
   result varchar(2) REFERENCES iclass.checklist_results(code),
   particulars jsonb,
   report_by integer REFERENCES iclass.employees(id),
@@ -115,8 +109,18 @@ CREATE TABLE IF NOT EXISTS iclass.audit_checklists (
   audit_line_id integer REFERENCES iclass.audit_lines(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
+  ship_component_id integer REFERENCES iclass.ship_component_tree(id) ON DELETE CASCADE,
   result varchar(2) REFERENCES iclass.checklist_results(code),
   particulars jsonb,
   report_by integer REFERENCES iclass.employees(id),
   report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create table for linking Finding/Comments to Jobs (Reporting Scope)
+CREATE TABLE IF NOT EXISTS iclass.comment_lines(
+  id serial PRIMARY KEY,
+  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
+  finding_comment_id integer REFERENCES iclass.finding_comments(id) ON DELETE CASCADE,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

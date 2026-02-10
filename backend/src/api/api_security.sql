@@ -1,6 +1,7 @@
 -- Secure views for API schema
 -- These views will automatically respect RLS because they refer to the underlying tables
 
+DROP VIEW IF EXISTS api.ships CASCADE;
 CREATE OR REPLACE VIEW api.ships AS
 SELECT 
   id, name, imo_number, previous_names, build_date, commissioning_date, keel_laid_date,
@@ -18,6 +19,7 @@ SELECT
   created_at, updated_at, is_active
 FROM iclass.ships;
 
+DROP VIEW IF EXISTS api.certificates CASCADE;
 CREATE OR REPLACE VIEW api.certificates AS
 SELECT
   id, certificate_id, version, ship_id, company_id, certifiate_template_code,
@@ -27,6 +29,7 @@ SELECT
   created_at, updated_at, is_active
 FROM iclass.certificates;
 
+DROP VIEW IF EXISTS api.survey_audits CASCADE;
 CREATE OR REPLACE VIEW api.survey_audits AS
 SELECT
   s.id, s.certificate_id, s.pool_id, s.description,
@@ -47,12 +50,14 @@ FROM iclass.survey_audits s
 LEFT JOIN iclass.survey_pool p ON s.pool_id = p.id
 LEFT JOIN iclass.certificates c ON s.certificate_id = c.id;
 
+DROP VIEW IF EXISTS api.documents CASCADE;
 CREATE OR REPLACE VIEW api.documents AS
 SELECT
   id, ship_id, company_id, name, type, file_path,
   upload_date, expiry_date, status, created_at, updated_at, is_active
 FROM iclass.documents;
 
+DROP VIEW IF EXISTS api.finding_comments CASCADE;
 CREATE OR REPLACE VIEW api.finding_comments AS
 SELECT
   id, ship_id, company_id, comment_type, priviate, certificates,
@@ -61,6 +66,7 @@ SELECT
   created_at, updated_at, is_active
 FROM iclass.finding_comments;
 
+DROP VIEW IF EXISTS api.me CASCADE;
 CREATE OR REPLACE VIEW api.me AS
 SELECT 
     u.id, 
@@ -81,6 +87,7 @@ SELECT
 FROM auth.users u
 WHERE u.id = iclass.get_auth_user_id();
 
+DROP VIEW IF EXISTS api.survey_requests CASCADE;
 CREATE OR REPLACE VIEW api.survey_requests AS
 SELECT
   id, ship_id, company_id, ordered_by_id, location, estimated_date,
@@ -89,54 +96,64 @@ SELECT
   is_assigned, comments, file_path, status, created_at, updated_at, is_active
 FROM iclass.survey_requests;
 
+DROP VIEW IF EXISTS api.survey_request_carts CASCADE;
 CREATE OR REPLACE VIEW api.survey_request_carts AS
 SELECT
   id, ship_id, company_id, survey_request_id, survey_audit_id, comment_id, occ_survey_code
 FROM iclass.survey_request_carts;
 
+DROP VIEW IF EXISTS api.survey_pool CASCADE;
 CREATE OR REPLACE VIEW api.survey_pool AS
 SELECT
   id, code, name, description, fee, is_active, is_mandatory, cert_code
 FROM iclass.survey_pool
 WHERE is_active = TRUE;
 
+DROP VIEW IF EXISTS api.jobs CASCADE;
 CREATE OR REPLACE VIEW api.jobs AS
 SELECT
   id, file_path_report, file_path_draft, comments, additional,
   location, fee, job_status, created_at, updated_at, is_active
 FROM iclass.jobs;
 
+DROP VIEW IF EXISTS api.survey_jobs CASCADE;
 CREATE OR REPLACE VIEW api.survey_jobs AS
 SELECT
   id, job_id, ship_id, surveyor_id, reviewer_id, initialized
 FROM iclass.survey_jobs;
 
+DROP VIEW IF EXISTS api.audit_jobs CASCADE;
 CREATE OR REPLACE VIEW api.audit_jobs AS
 SELECT
   id, job_id, ship_id, company_id, auditor_id, reviewer_id, initialized
 FROM iclass.audit_jobs;
 
+DROP VIEW IF EXISTS api.survey_lines CASCADE;
 CREATE OR REPLACE VIEW api.survey_lines AS
 SELECT
   id, job_id, survey_audit_id, pool_id, initialized, credit_periodical
 FROM iclass.survey_lines;
 
+DROP VIEW IF EXISTS api.audit_lines CASCADE;
 CREATE OR REPLACE VIEW api.audit_lines AS
 SELECT
   id, job_id, survey_audit_id, pool_id, initialized, credit_periodical
 FROM iclass.audit_lines;
 
+DROP VIEW IF EXISTS api.job_participants CASCADE;
 CREATE OR REPLACE VIEW api.job_participants AS
 SELECT
   id, survey_job_id, audit_job_id, employee_id, is_monitor, is_trainee
 FROM iclass.job_participants;
 
+DROP VIEW IF EXISTS api.comment_lines CASCADE;
 CREATE OR REPLACE VIEW api.comment_lines AS
 SELECT
   id, job_id, finding_comment_id, created_at, updated_at
 FROM iclass.comment_lines;
 
 -- Consolidated view for surveyor's job list
+DROP VIEW IF EXISTS api.surveyor_jobs CASCADE;
 CREATE OR REPLACE VIEW api.surveyor_jobs AS
 SELECT
     j.id,
@@ -171,36 +188,43 @@ JOIN iclass.audit_jobs aj ON j.id = aj.job_id
 LEFT JOIN iclass.ships s ON aj.ship_id = s.id
 LEFT JOIN iclass.organizations o ON aj.company_id = o.id;
 
+DROP VIEW IF EXISTS api.employees CASCADE;
 CREATE OR REPLACE VIEW api.employees AS
 SELECT
   id, user_id, first_name, last_name, display_name, email, job_title_id, department_id, location_id, is_active
 FROM iclass.employees;
 
+DROP VIEW IF EXISTS api.organizations CASCADE;
 CREATE OR REPLACE VIEW api.organizations AS
 SELECT
   id, name, display_name, domain, imo_number, is_active
 FROM iclass.organizations;
 
+DROP VIEW IF EXISTS api.checklist_sections CASCADE;
 CREATE OR REPLACE VIEW api.checklist_sections AS
 SELECT
   id, survey_id, code, section_number, title, is_active
 FROM iclass.checklist_sections;
 
+DROP VIEW IF EXISTS api.checklist_items CASCADE;
 CREATE OR REPLACE VIEW api.checklist_items AS
 SELECT
-  id, code, item_number, section_id, content, description, particulars, reg_reference, referenced_item_id, created_at, updated_at, is_active
+  id, code, item_number, section_id, content, description, particulars, component_library_id, reg_reference, referenced_item_id, created_at, updated_at, is_active
 FROM iclass.checklist_items;
 
+DROP VIEW IF EXISTS api.survey_checklists CASCADE;
 CREATE OR REPLACE VIEW api.survey_checklists AS
 SELECT
-  id, survey_line_id, survey_audit_id, survey_job_id, item_id, result, particulars, report_by, report_at
+  id, survey_line_id, survey_audit_id, survey_job_id, item_id, ship_component_id, result, particulars, report_by, report_at
 FROM iclass.survey_checklists;
 
+DROP VIEW IF EXISTS api.audit_checklists CASCADE;
 CREATE OR REPLACE VIEW api.audit_checklists AS
 SELECT
-  id, audit_line_id, survey_audit_id, audit_job_id, item_id, result, particulars, report_by, report_at
+  id, audit_line_id, survey_audit_id, audit_job_id, item_id, ship_component_id, result, particulars, report_by, report_at
 FROM iclass.audit_checklists;
 
+DROP VIEW IF EXISTS api.checklist_results CASCADE;
 CREATE OR REPLACE VIEW api.checklist_results AS
 SELECT
   code, description

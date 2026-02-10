@@ -23,6 +23,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
 
     const vessels = await res.json();
+
     const contentRange = res.headers.get("Content-Range");
     let totalCount = 0;
     if (contentRange) {

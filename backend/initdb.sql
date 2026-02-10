@@ -1,0 +1,16 @@
+\i iclass/backend/src/utilities/create_db.sql
+\i iclass/backend/src/utilities/create_schemas.sql
+\i iclass/backend/src/auth/jwt.sql
+\i iclass/backend/src/data/tables/001_iclass_general.sql
+\i iclass/backend/src/data/tables/002_iclass_organization.sql
+\i iclass/backend/src/data/tables/003_iclass_other_users.sql
+\i iclass/backend/src/data/tables/004_iclass_ships.sql
+\i iclass/backend/src/data/tables/005_iclass_documents.sql
+\i iclass/backend/src/data/tables/006_iclass_survey_audit_jobs.sql
+\i iclass/backend/src/data/tables/007_iclass_survey_requests.sql
+\i iclass/backend/src/logic/rls_policies.sql
+\i iclass/backend/src/logic/triggers/checklist_triggers.sql
+\i iclass/backend/src/logic/triggers/survey_request_carts_triggers.sql
+\i iclass/backend/src/api/api_security.sql
+\i iclass/backend/src/api/functions/job_management.sql
+\i iclass/backend/seeds/mock_up_with_data.sql
