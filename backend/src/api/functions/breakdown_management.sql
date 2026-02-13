@@ -1,6 +1,22 @@
 -- ---------------------------------------------
 -- Apply template to a ship (deep copy)
 -- ---------------------------------------------
+-- CREATE TABLE iclass.breakdown_change_log (
+--     id              BIGSERIAL PRIMARY KEY,
+--     entity_type     VARCHAR(50)  NOT NULL,     -- 'TEMPLATE_NODE', 'SHIP_NODE', 'SHIP_BREAKDOWN'
+--     entity_id       INTEGER   NOT NULL,
+--     ship_id         INTEGER   REFERENCES iclass.ship(id),
+--     action          VARCHAR(20)  NOT NULL,     -- 'CREATE', 'UPDATE', 'DELETE', 'APPLY_TEMPLATE'
+
+--     old_values      JSONB,
+--     new_values      JSONB,
+--     change_reason   TEXT,
+
+--     changed_by      VARCHAR(100),
+--     changed_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- );
+
+--
 CREATE OR REPLACE FUNCTION api.fn_apply_template_to_ship(
     p_ship_id         INTEGER,
     p_template_id     INTEGER,
@@ -15,7 +31,7 @@ DECLARE
     v_id_map          JSONB := '{}';  -- maps template_node_id → ship_breakdown_node_id
 BEGIN
     -- Deactivate any existing active breakdown for this ship
-    UPDATE iclass.ship_breakdowns
+    UPDATE iclass.ship_breakdown
     SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
     WHERE ship_id = p_ship_id AND is_active = TRUE;
 
@@ -116,20 +132,20 @@ BEGIN
       AND v_id_map ? tna.template_node_id::text;
 
     -- Log the action
-    INSERT INTO iclass.breakdown_change_log (
-        entity_type, entity_id, ship_id, action,
-        new_values, changed_by
-    ) VALUES (
-        'SHIP_BREAKDOWN', v_breakdown_id, p_ship_id, 'APPLY_TEMPLATE',
-        jsonb_build_object(
-            'template_id', p_template_id,
-            'template_version', v_template_ver,
-            'nodes_copied', jsonb_array_length(
-                COALESCE((SELECT jsonb_agg(value) FROM jsonb_each_text(v_id_map)), '[]'::jsonb)
-            )
-        ),
-        p_applied_by
-    );
+    -- INSERT INTO iclass.breakdown_change_log (
+    --     entity_type, entity_id, ship_id, action,
+    --     new_values, changed_by
+    -- ) VALUES (
+    --     'SHIP_BREAKDOWN', v_breakdown_id, p_ship_id, 'APPLY_TEMPLATE',
+    --     jsonb_build_object(
+    --         'template_id', p_template_id,
+    --         'template_version', v_template_ver,
+    --         'nodes_copied', jsonb_array_length(
+    --             COALESCE((SELECT jsonb_agg(value) FROM jsonb_each_text(v_id_map)), '[]'::jsonb)
+    --         )
+    --     ),
+    --     p_applied_by
+    -- );
 
     RETURN v_breakdown_id;
 END;
@@ -137,10 +153,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION api.fn_apply_template_to_ship TO employees;
 
-
 CREATE OR REPLACE FUNCTION iclass.fn_add_ship_specific_node(
     p_ship_breakdown_id INTEGER,
-    p_parent_node_id    INTEGER,     -- NULL for root
+    p_parent_node_id    INTEGER,      -- NULL for root
     p_code              VARCHAR,
     p_name              VARCHAR,
     p_category          VARCHAR,
@@ -159,42 +174,49 @@ DECLARE
     v_level   INTEGER := 0;
     v_sort    INTEGER := 0;
 BEGIN
-    -- Determine level
+    -- 1. Determine level
+    -- If there is a parent, look up its level and add 1. If NULL, level stays 0.
     IF p_parent_node_id IS NOT NULL THEN
         SELECT level + 1 INTO v_level
-        FROM ship_breakdown_nodes WHERE id = p_parent_node_id;
+        FROM iclass.ship_breakdown_node
+        WHERE id = p_parent_node_id;
     END IF;
 
-    -- Determine sort order
+    -- 2. Determine sort order
+    -- Replaced uuid_nil() logic with `IS NOT DISTINCT FROM` to handle Integer NULLs correctly
     SELECT COALESCE(MAX(sort_order), 0) + 10 INTO v_sort
     FROM iclass.ship_breakdown_node
     WHERE ship_breakdown_id = p_ship_breakdown_id
-      AND COALESCE(parent_node_id, uuid_nil()) = COALESCE(p_parent_node_id, uuid_nil());
+      AND parent_node_id IS NOT DISTINCT FROM p_parent_node_id;
 
+    -- 3. Insert the new node
     INSERT INTO iclass.ship_breakdown_node (
         ship_breakdown_id, parent_node_id, source_template_node_id,
         code, name, description, category, node_type,
         level, sort_order, unit_of_measure, capacity,
-        is_from_template, is_modified, status, metadata
+        is_from_template, is_modified, is_active, metadata
     ) VALUES (
         p_ship_breakdown_id, p_parent_node_id, NULL,
         p_code, p_name, p_description, p_category, p_node_type,
         v_level, v_sort, p_unit, p_capacity,
-        FALSE, FALSE, 'ACTIVE', p_metadata
+        FALSE, FALSE, TRUE, p_metadata
     )
     RETURNING id INTO v_node_id;
 
-    -- Log
-    INSERT INTO iclass.breakdown_change_log (
-        entity_type, entity_id, ship_id, action,
-        new_values, changed_by
-    )
-    SELECT
-        'SHIP_NODE', v_node_id, sb.ship_id, 'CREATE',
-        jsonb_build_object('code', p_code, 'name', p_name, 'ship_specific', true),
-        p_added_by
-    FROM iclass.ship_breakdown sb WHERE sb.id = p_ship_breakdown_id;
+    -- 4. Log the change
+    -- INSERT INTO iclass.breakdown_change_log (
+    --     entity_type, entity_id, ship_id, action,
+    --     new_values, changed_by
+    -- )
+    -- SELECT
+    --     'SHIP_NODE', v_node_id, sb.ship_id, 'CREATE',
+    --     jsonb_build_object('code', p_code, 'name', p_name, 'ship_specific', true),
+    --     p_added_by
+    -- FROM iclass.ship_breakdown sb
+    -- WHERE sb.id = p_ship_breakdown_id;
 
     RETURN v_node_id;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION api.fn_add_ship_specific_node TO employees;
