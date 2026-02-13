@@ -1,7 +1,7 @@
 -- Table to store OAuth provider accounts linked to users
-CREATE TABLE IF NOT EXISTS auth.oauth_accounts (
+CREATE TABLE IF NOT EXISTS auth.oauth_account (
   id serial PRIMARY KEY,
-  user_id integer NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES auth.user(id) ON DELETE CASCADE,
   provider varchar(50) NOT NULL, -- 'github', 'discord', etc.
   provider_user_id varchar(255) NOT NULL, -- Unique ID from the provider
   provider_username varchar(255), -- Username from the provider (e.g., GitHub login, Discord username)
@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS auth.oauth_accounts (
 );
 
 -- Index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_id ON auth.oauth_accounts(user_id);
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider ON auth.oauth_accounts(provider);
-CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider_user_id ON auth.oauth_accounts(provider, provider_user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_id ON auth.oauth_account(user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider ON auth.oauth_account(provider);
+CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider_user_id ON auth.oauth_account(provider, provider_user_id);
 
 -- Trigger to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION auth.update_oauth_accounts_updated_at()
@@ -29,9 +29,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS update_oauth_accounts_updated_at ON auth.oauth_accounts;
+DROP TRIGGER IF EXISTS update_oauth_accounts_updated_at ON auth.oauth_account;
 CREATE TRIGGER update_oauth_accounts_updated_at
-  BEFORE UPDATE ON auth.oauth_accounts
+  BEFORE UPDATE ON auth.oauth_account
   FOR EACH ROW
   EXECUTE PROCEDURE auth.update_oauth_accounts_updated_at();
 
@@ -59,14 +59,14 @@ BEGIN
   BEGIN
     -- Try to find existing oauth_account
     SELECT ao.user_id INTO v_user_id
-    FROM auth.oauth_accounts ao
+    FROM auth.oauth_account ao
     WHERE ao.provider = oauth_login.provider
       AND ao.provider_user_id = oauth_login.provider_user_id;
 
     IF FOUND THEN
       -- OAuth account exists, get user info
       SELECT au.id, au.role, au.category INTO v_user_record
-      FROM auth.users au
+      FROM auth.user au
       WHERE id = v_user_id;
 
       IF NOT FOUND THEN
@@ -76,12 +76,12 @@ BEGIN
       -- No oauth_account found, check if email exists
       IF email IS NOT NULL THEN
         SELECT au.id INTO v_user_id
-        FROM auth.users au
+        FROM auth.user au
         WHERE au.email = oauth_login.email;
 
         IF FOUND THEN
           -- Email exists, link this OAuth account to the existing user
-          INSERT INTO auth.oauth_accounts (
+          INSERT INTO auth.oauth_account (
             user_id,
             provider,
             provider_user_id,
@@ -94,8 +94,8 @@ BEGIN
           );
         ELSE
           -- Email doesn't exist, create new user and oauth account
-          -- Insert into auth.users with default values
-          INSERT INTO auth.users (
+          -- Insert into auth.user with default values
+          INSERT INTO auth.user (
             email,
             password_hash, -- OAuth users don't need a password_hash, use random string
             role,
@@ -115,7 +115,7 @@ BEGIN
           -- WHERE id = v_user_id;
 
           -- Insert oauth_account
-          INSERT INTO auth.oauth_accounts (
+          INSERT INTO auth.oauth_account (
             user_id,
             provider,
             provider_user_id,
@@ -130,7 +130,7 @@ BEGIN
 
         -- Get the final user record
         SELECT au.id, au.role, au.category INTO v_user_record
-        FROM auth.users au
+        FROM auth.user au
         WHERE au.id = v_user_id;
       ELSE
         -- No email provided and no existing oauth_account
@@ -209,7 +209,7 @@ BEGIN
     oa.provider_user_id,
     oa.provider_email,
     oa.created_at
-  FROM auth.oauth_accounts oa
+  FROM auth.oauth_account oa
   WHERE oa.user_id = p_user_id;
 END;
 $$;
@@ -226,7 +226,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  DELETE FROM auth.oauth_accounts
+  DELETE FROM auth.oauth_account
   WHERE user_id = p_user_id
     AND provider = provider;
 

@@ -5,21 +5,21 @@ SELECT plan(8);
 -- 1. Check if auth schema exists
 SELECT has_schema('auth', 'Schema auth should exist');
 
--- 2. Check if auth.users table exists
-SELECT has_table('auth', 'users', 'Table auth.users should exist');
+-- 2. Check if auth.user table exists
+SELECT has_table('auth', 'users', 'Table auth.user should exist');
 
--- 3. Check columns in auth.users
-SELECT has_column('auth', 'users', 'id', 'Column auth.users.id should exist');
-SELECT has_column('auth', 'users', 'email', 'Column auth.users.email should exist');
-SELECT has_column('auth', 'users', 'password_hash', 'Column auth.users.password_hash should exist');
+-- 3. Check columns in auth.user
+SELECT has_column('auth', 'users', 'id', 'Column auth.user.id should exist');
+SELECT has_column('auth', 'users', 'email', 'Column auth.user.email should exist');
+SELECT has_column('auth', 'users', 'password_hash', 'Column auth.user.password_hash should exist');
 
 -- 4. Test password encryption trigger
 -- We need to insert a user and check if the password is encrypted (not equal to the input)
-INSERT INTO auth.users (email, password_hash, role, category) 
+INSERT INTO auth.user (email, password_hash, role, category) 
 VALUES ('test@example.com', 'mypassword', 'employees', 'internal');
 
 SELECT isnt(    
-    (SELECT password_hash FROM auth.users WHERE email = 'test@example.com'),
+    (SELECT password_hash FROM auth.user WHERE email = 'test@example.com'),
     'mypassword',
     'Password should be encrypted by the trigger'
 );
@@ -27,7 +27,7 @@ SELECT isnt(
 -- 5. Test auth.user_profile function
 SELECT results_eq(
     'SELECT id, role, category FROM auth.user_profile(''test@example.com'', ''mypassword'')',
-    'SELECT id, role, category FROM auth.users WHERE email = ''test@example.com''',
+    'SELECT id, role, category FROM auth.user WHERE email = ''test@example.com''',
     'auth.user_profile should return correct user data for valid credentials'
 );
 

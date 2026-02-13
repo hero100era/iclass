@@ -1,5 +1,5 @@
 import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData } from "react-router";
-import { ApiGET, ApiPOST, ApiPATCH } from "~/.server/lib/api";
+import { ApiGET, ApiPOST, ApiPATCH, ApiDELETE } from "~/.server/lib/api";
 import { useState, useEffect } from "react";
 import { Plus, Trash2, ChevronRight, ListChecks, Settings2 } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -8,14 +8,16 @@ export const handle = { fluid: true };
 
 export async function loader({ request }: any) {
     const host = process.env.API_URL || "http://localhost:2000";
-    const [surveysRes, resultsRes] = await Promise.all([
+    const [surveysRes, resultsRes, componentLibraryRes] = await Promise.all([
         ApiGET(request, `${host}/survey_pool?select=*,checklist_sections(*,checklist_items(*))`),
-        ApiGET(request, `${host}/checklist_results`)
+        ApiGET(request, `${host}/checklist_results`),
+        ApiGET(request, `${host}/component_library?select=id,code,name&order=name.asc`)
     ]);
 
     return {
         surveys: await surveysRes.json(),
-        results: await resultsRes.json()
+        results: await resultsRes.json(),
+        componentLibrary: await componentLibraryRes.json()
     };
 }
 
@@ -28,6 +30,23 @@ export async function action({ request }: any) {
         const id = formData.get("id");
         const particulars = JSON.parse(formData.get("particulars") as string);
         const res = await ApiPATCH(request, `${host}/checklist_items?id=eq.${id}`, { particulars });
+        return { success: res.ok };
+    }
+
+    if (intent === "update_item") {
+        const id = formData.get("id");
+        const content = formData.get("content");
+        const component_library_id = formData.get("component_library_id") || null;
+        const res = await ApiPATCH(request, `${host}/checklist_items?id=eq.${id}`, {
+            content,
+            component_library_id: component_library_id === "null" ? null : component_library_id
+        });
+        return { success: res.ok };
+    }
+
+    if (intent === "delete_item") {
+        const id = formData.get("id");
+        const res = await ApiDELETE(request, `${host}/checklist_items?id=eq.${id}`);
         return { success: res.ok };
     }
 
@@ -52,13 +71,18 @@ export async function action({ request }: any) {
 }
 
 export default function AdminChecklists() {
-    const { surveys, results } = useLoaderData<typeof loader>();
+    const { surveys, results, componentLibrary } = useLoaderData<typeof loader>();
     const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
     const [addingToSection, setAddingToSection] = useState<number | null>(null);
     const [newItemContent, setNewItemContent] = useState("");
     const [isAddingSection, setIsAddingSection] = useState(false);
     const [newSectionTitle, setNewSectionTitle] = useState("");
     const [newSectionNumber, setNewSectionNumber] = useState("");
+
+    // Edit item state
+    const [editingItemId, setEditingItemId] = useState<number | null>(null);
+    const [editFormContent, setEditFormContent] = useState("");
+    const [editFormComponentLibraryId, setEditFormComponentLibraryId] = useState<string>("");
 
     const submit = useSubmit();
     const navigation = useNavigation();
@@ -134,6 +158,24 @@ export default function AdminChecklists() {
         setIsAddingSection(false);
         setNewSectionTitle("");
         setNewSectionNumber("");
+    };
+
+    const handleUpdateItem = (id: number) => {
+        const formData = new FormData();
+        formData.append("intent", "update_item");
+        formData.append("id", id.toString());
+        formData.append("content", editFormContent);
+        formData.append("component_library_id", editFormComponentLibraryId || "null");
+        submit(formData, { method: "post" });
+        setEditingItemId(null);
+    };
+
+    const handleDeleteItem = (id: number) => {
+        if (!confirm("Are you sure you want to delete this item?")) return;
+        const formData = new FormData();
+        formData.append("intent", "delete_item");
+        formData.append("id", id.toString());
+        submit(formData, { method: "post" });
     };
 
     return (
@@ -290,13 +332,84 @@ export default function AdminChecklists() {
 
                                                 <div className="divide-y divide-slate-100">
                                                     {section.checklist_items.sort((a: any, b: any) => a.item_number - b.item_number).map((item: any) => (
-                                                        <div key={item.id} className="px-2 py-2 space-y-2">
-                                                            <div className="flex items-start gap-2">
-                                                                <span className="text-[9px] font-mono font-bold text-slate-300 mt-0.5">{item.item_number}.</span>
-                                                                <div className="flex-1">
-                                                                    <p className="text-[11px] font-medium text-slate-800 leading-tight">{item.content}</p>
+                                                        <div key={item.id} className="px-2 py-2 space-y-2 group/item">
+                                                            {editingItemId === item.id ? (
+                                                                <div className="bg-slate-50 p-2 rounded border border-slate-200 space-y-2">
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Item Content</label>
+                                                                        <textarea
+                                                                            value={editFormContent}
+                                                                            onChange={(e) => setEditFormContent(e.target.value)}
+                                                                            className="w-full text-[11px] px-2 py-1.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none min-h-[60px]"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Component Library Link</label>
+                                                                        <select
+                                                                            value={editFormComponentLibraryId}
+                                                                            onChange={(e) => setEditFormComponentLibraryId(e.target.value)}
+                                                                            className="w-full text-[11px] px-2 py-1.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                        >
+                                                                            <option value="">None</option>
+                                                                            {componentLibrary.map((comp: any) => (
+                                                                                <option key={comp.id} value={comp.id}>{comp.name} ({comp.code})</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <button
+                                                                            onClick={() => setEditingItemId(null)}
+                                                                            className="px-2 py-1 text-[10px] font-bold text-slate-500 hover:text-slate-700"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleUpdateItem(item.id)}
+                                                                            className="px-2 py-1 text-[10px] font-bold bg-primary text-white rounded hover:bg-primary/90"
+                                                                        >
+                                                                            Save Changes
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            ) : (
+                                                                <div className="flex items-start gap-2">
+                                                                    <span className="text-[9px] font-mono font-bold text-slate-300 mt-0.5">{item.item_number}.</span>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-start justify-between gap-2">
+                                                                            <div>
+                                                                                <p className="text-[11px] font-medium text-slate-800 leading-tight">{item.content}</p>
+                                                                                {item.component_library_id && (
+                                                                                    <div className="mt-1 flex items-center gap-1">
+                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter">
+                                                                                            Linked: {componentLibrary.find((c: any) => c.id === item.component_library_id)?.name || item.component_library_id}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setEditingItemId(item.id);
+                                                                                        setEditFormContent(item.content);
+                                                                                        setEditFormComponentLibraryId(item.component_library_id?.toString() || "");
+                                                                                    }}
+                                                                                    className="p-1 text-slate-400 hover:text-primary transition-colors"
+                                                                                    title="Edit Item"
+                                                                                >
+                                                                                    <Settings2 size={12} />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteItem(item.id)}
+                                                                                    className="p-1 text-slate-400 hover:text-destructive transition-colors"
+                                                                                    title="Delete Item"
+                                                                                >
+                                                                                    <Trash2 size={12} />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
                                                             {/* Particulars Template Editor */}
                                                             <div className="ml-4 space-y-1.5">

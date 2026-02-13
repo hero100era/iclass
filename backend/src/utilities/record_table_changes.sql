@@ -1,6 +1,6 @@
 SET search_path TO 'iclass, public';
 
-CREATE TABLE IF NOT EXISTS table_data_changes(
+CREATE TABLE IF NOT EXISTS table_data_change(
   id bigserial,
   changed_by varchar(64) NOT NULL,
   table_name varchar(64) NOT NULL,
@@ -13,16 +13,16 @@ CREATE TABLE IF NOT EXISTS table_data_changes(
 PARTITION BY RANGE (changed_at);
 
 -- Create a default partition
-CREATE TABLE IF NOT EXISTS table_data_changes_default PARTITION OF table_data_changes DEFAULT;
+CREATE TABLE IF NOT EXISTS table_data_change_default PARTITION OF table_data_change DEFAULT;
 
 -- Create indexes to improve query performance
-CREATE INDEX IF NOT EXISTS idx_table_data_changes_table_name ON table_data_changes(table_name, changed_at);
+CREATE INDEX IF NOT EXISTS idx_table_data_change_table_name ON table_data_change(table_name, changed_at);
 
-CREATE INDEX IF NOT EXISTS idx_table_data_changes_row_id ON table_data_changes(row_id, changed_at);
+CREATE INDEX IF NOT EXISTS idx_table_data_change_row_id ON table_data_change(row_id, changed_at);
 
-CREATE INDEX IF NOT EXISTS idx_table_data_changes_changed_by ON table_data_changes(changed_by, changed_at);
+CREATE INDEX IF NOT EXISTS idx_table_data_change_changed_by ON table_data_change(changed_by, changed_at);
 
--- Create a trigger function to log changes to the table_data_changes table
+-- Create a trigger function to log changes to the table_data_change table
 CREATE OR REPLACE FUNCTION log_table_changes()
   RETURNS TRIGGER
   AS $$
@@ -60,7 +60,7 @@ ELSIF TG_OP = 'INSERT' THEN
     END IF;
     -- Only log if there are actual changes (for updates)
     IF TG_OP != 'UPDATE' OR changed_data IS NOT NULL THEN
-      INSERT INTO table_data_changes(changed_by, opr_type, table_name, row_id, changed_data)
+      INSERT INTO table_data_change(changed_by, opr_type, table_name, row_id, changed_data)
         VALUES (CURRENT_USER, TG_OP, TG_TABLE_NAME, row_id, changed_data);
       END IF;
       IF TG_OP = 'DELETE' THEN
@@ -95,8 +95,8 @@ CREATE OR REPLACE FUNCTION create_audit_partition(year int)
   AS $$
 BEGIN
   EXECUTE format('
-    CREATE TABLE IF NOT EXISTS table_data_changes_%s
-    PARTITION OF table_data_changes
+    CREATE TABLE IF NOT EXISTS table_data_change_%s
+    PARTITION OF table_data_change
     FOR VALUES FROM (%L) TO (%L);
   ', year, year || '-01-01 00:00:00',(year + 1) || '-01-01 00:00:00');
 END;

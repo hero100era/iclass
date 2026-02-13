@@ -53,8 +53,8 @@ export async function getChecklistData({ params, request }: any) {
 
     // 3. Get checklists and results
     const [surveyChecklistsRes, auditChecklistsRes, checklistResultsRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*))`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*))`) : dummyRes(),
+        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*),component_library(*)),ship_component_tree(*)`) : dummyRes(),
+        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*),component_library(*)),ship_component_tree(*)`) : dummyRes(),
         ApiGET(request, `${host}/checklist_results`)
     ]);
 
@@ -97,5 +97,20 @@ export async function updateChecklistParticulars({ request }: any, { id, particu
 
     const res = await ApiPATCH(request, `${host}/${endpoint}?id=eq.${id}`, { particulars });
     if (!res.ok) throw new Error("Failed to update particulars");
+    return { success: true };
+}
+
+export async function updateShipComponentProperties({ request }: any, { id, propertiesJson }: any) {
+    const host = process.env.API_URL || "http://localhost:2000";
+
+    let properties = [];
+    try {
+        properties = JSON.parse(propertiesJson as string);
+    } catch (e) {
+        throw new Error("Invalid JSON format for properties");
+    }
+
+    const res = await ApiPATCH(request, `${host}/ship_component_tree?id=eq.${id}`, { properties });
+    if (!res.ok) throw new Error("Failed to update component properties");
     return { success: true };
 }

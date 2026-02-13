@@ -11,8 +11,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     // 1. Get the job info
     const jobRes = await ApiGET(request, `${host}/jobs?id=eq.${id}`);
+    console.log("jobRes:", jobRes);
     if (!jobRes.ok) throw new Response("Job not found", { status: 404 });
     const jobs = await jobRes.json();
+
     if (jobs.length === 0) throw new Response("Job not found", { status: 404 });
     const job = jobs[0];
 

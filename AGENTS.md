@@ -112,7 +112,7 @@ const postRes = await ApiPOST(request, `${host}/endpoint`, { data: "value" });
 - RLS policies on underlying tables
 
 ### Naming
-- Tables: snake_case singular (`auth.users`, `iclass.ships`)
+- Tables: snake_case singular (`auth.user`, `iclass.ship`)
 - Columns: snake_case (`password_hash`, `created_at`)
 - Functions: snake_case with schema prefix (`api.user_profile`, `auth.check_role_exists`)
 - Roles: lowercase with underscores (`admingrp`, `employees`)

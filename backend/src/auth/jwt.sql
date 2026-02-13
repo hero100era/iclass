@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS auth.users(
+CREATE TABLE IF NOT EXISTS auth.user(
   id serial PRIMARY KEY,
   email text CHECK (email ~* '^.+@.+\..+$') UNIQUE NOT NULL,
   password_hash varchar(512) NOT NULL,
@@ -30,9 +30,9 @@ END
 $$
 LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS ensure_users_role_exists ON auth.users;
+DROP TRIGGER IF EXISTS ensure_users_role_exists ON auth.user;
 CREATE CONSTRAINT TRIGGER ensure_users_role_exists
-  AFTER INSERT OR UPDATE ON auth.users FOR EACH ROW
+  AFTER INSERT OR UPDATE ON auth.user FOR EACH ROW
   EXECUTE PROCEDURE auth.check_role_exists();
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA auth;
@@ -49,9 +49,9 @@ END
 $$
 LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS encrypt_password_hash ON auth.users;
+DROP TRIGGER IF EXISTS encrypt_password_hash ON auth.user;
 CREATE TRIGGER encrypt_password_hash
-  BEFORE INSERT OR UPDATE ON auth.users FOR EACH ROW
+  BEFORE INSERT OR UPDATE ON auth.user FOR EACH ROW
   EXECUTE PROCEDURE auth.encrypt_password_hash();
 
 CREATE OR REPLACE FUNCTION auth.user_profile(email text, password text)
@@ -68,7 +68,7 @@ BEGIN
     u.role,
     u.category
   FROM
-    auth.users u
+    auth.user u
   WHERE
     u.email = user_profile.email
     AND u.password_hash = auth.crypt(user_profile.password, u.password_hash);

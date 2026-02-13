@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION iclass.update_certificate_status()
 RETURNS void AS $$
 BEGIN
   -- Set status to 'W' (Withdrawn/Expired) if expiry_date has passed
-  UPDATE iclass.certificates
+  UPDATE iclass.certificate
   SET status = 'W'
   WHERE status = 'V' AND expiry_date < CURRENT_DATE;
 
@@ -52,8 +52,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_update_survey_due_date ON iclass.survey_audits;
+DROP TRIGGER IF EXISTS trg_update_survey_due_date ON iclass.survey_audit;
 CREATE TRIGGER trg_update_survey_due_date
-BEFORE INSERT OR UPDATE OF last_held_date, pool_id ON iclass.survey_audits
+BEFORE INSERT OR UPDATE OF last_held_date, pool_id ON iclass.survey_audit
 FOR EACH ROW
 EXECUTE FUNCTION iclass.trigger_update_survey_due_date();

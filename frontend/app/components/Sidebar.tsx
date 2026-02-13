@@ -5,9 +5,12 @@ import {
     FileBadge,
     Calendar,
     ClipboardList,
-    Briefcase,
     LogOut,
-    User
+    User,
+    Library,
+    Network,
+    ShieldAlert,
+    Briefcase
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -49,9 +52,9 @@ const navItems = [
         roles: ["admingrp", "employees"]
     },
     {
-        icon: ClipboardList,
+        icon: ShieldAlert,
         label: "Admin",
-        to: "/admin/checklists",
+        to: "/admin",
         roles: ["admingrp"]
     },
 ];

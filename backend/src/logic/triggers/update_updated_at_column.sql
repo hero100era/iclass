@@ -9,32 +9,32 @@ END;
 $$
 LANGUAGE 'plpgsql';
 -- Create updated_at triggers for all tables
-DROP TRIGGER IF EXISTS update_ships_updated_at ON iclass.ships;
+DROP TRIGGER IF EXISTS update_ships_updated_at ON iclass.ship;
 CREATE TRIGGER update_ships_updated_at
-  BEFORE UPDATE ON iclass.ships
+  BEFORE UPDATE ON iclass.ship
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_organizations_updated_at_trigger ON iclass.organizations;
+DROP TRIGGER IF EXISTS update_organizations_updated_at_trigger ON iclass.organization;
 CREATE TRIGGER update_organizations_updated_at_trigger
-  BEFORE UPDATE ON iclass.organizations
+  BEFORE UPDATE ON iclass.organization
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_certificates_updated_at_trigger ON iclass.certificates;
+DROP TRIGGER IF EXISTS update_certificates_updated_at_trigger ON iclass.certificate;
 CREATE TRIGGER update_certificates_updated_at_trigger
-  BEFORE UPDATE ON iclass.certificates
+  BEFORE UPDATE ON iclass.certificate
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_survey_audits_updated_at_trigger ON iclass.survey_audits;
+DROP TRIGGER IF EXISTS update_survey_audits_updated_at_trigger ON iclass.survey_audit;
 CREATE TRIGGER update_survey_audits_updated_at_trigger
-  BEFORE UPDATE ON iclass.survey_audits
+  BEFORE UPDATE ON iclass.survey_audit
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_findings_updated_at_trigger ON iclass.finding_comments;
+DROP TRIGGER IF EXISTS update_findings_updated_at_trigger ON iclass.finding_comment;
 CREATE TRIGGER update_findings_updated_at_trigger
-  BEFORE UPDATE ON iclass.finding_comments
+  BEFORE UPDATE ON iclass.finding_comment
   FOR EACH ROW
   EXECUTE FUNCTION iclass.update_updated_at_column();

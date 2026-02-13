@@ -1,7 +1,7 @@
 -- Create table for ships
 CREATE SEQUENCE IF NOT EXISTS iclass.class_number_seq START WITH 200000;
 
-CREATE TABLE IF NOT EXISTS iclass.ships(
+CREATE TABLE IF NOT EXISTS iclass.ship(
   id serial PRIMARY KEY,
   class_number integer NOT NULL DEFAULT nextval('iclass.class_number_seq'),
   name varchar(40) NOT NULL,
@@ -12,17 +12,17 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   contract_date date,
   class_entry_date date,
   imo_number varchar(7) UNIQUE,
-  administration_types varchar(2) REFERENCES iclass.administration_types(code) NOT NULL DEFAULT 'C',
+  administration_types varchar(2) REFERENCES iclass.administration_type(code) NOT NULL DEFAULT 'C',
   administration_country char(3),
-  classed_by varchar(20) REFERENCES iclass.classification_societies(code),
+  classed_by varchar(20) REFERENCES iclass.classification_society(code),
   port_of_registry varchar(50),
   date_of_registry date,
   registry_number varchar(20),
   call_sign varchar(10),
   official_number varchar(10),
-  type_iacs varchar(2) REFERENCES iclass.vessel_types_iacs(code) NOT NULL,
+  type_iacs varchar(2) REFERENCES iclass.vessel_type_iacs(code) NOT NULL,
   type_other varchar(50),
-  type_mms varchar(2) REFERENCES iclass.vessel_types_mms(code),
+  type_mms varchar(2) REFERENCES iclass.vessel_type_mms(code),
   class_status varchar(2) REFERENCES iclass.class_status(code),
   ship_status varchar(2) REFERENCES iclass.ship_status(code),
   class_notation varchar(500),
@@ -32,10 +32,10 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   gross_tons DECIMAL(9, 2),
   national_tons DECIMAL(9, 2),
   deadweight integer,
-  registered_owner_id integer REFERENCES iclass.organizations(id),
-  ism_owner_id integer REFERENCES iclass.organizations(id),
-  mlc_owner_id integer REFERENCES iclass.organizations(id),
-  flag_code varchar(3) REFERENCES iclass.flags(code),
+  registered_owner_id integer REFERENCES iclass.organization(id),
+  ism_owner_id integer REFERENCES iclass.organization(id),
+  mlc_owner_id integer REFERENCES iclass.organization(id),
+  flag_code varchar(3) REFERENCES iclass.flag(code),
   registration_port varchar(30),
   mmsi_number varchar(10),
   main_class varchar(30),
@@ -50,43 +50,114 @@ CREATE TABLE IF NOT EXISTS iclass.ships(
   moulded_breadth DECIMAL(9, 2),
   moulded_draft DECIMAL(9, 2),
   design_draft DECIMAL(9, 2),
-  dual_class varchar(20) REFERENCES iclass.classification_societies(code),
+  dual_class varchar(20) REFERENCES iclass.classification_society(code),
   singal_letter varchar(10),
+  breakdown_template_id integer,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.ship_component_tree (
-  id serial PRIMARY KEY,
-  ship_id integer REFERENCES iclass.ships(id),  
-  parent_id integer REFERENCES iclass.ship_component_tree(id),
-  lib_id integer REFERENCES iclass.component_library(id),
-  custom_name varchar(100),
-  sequencer integer,
-  position_description text,
-  properties jsonb,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE
+-- ---------------------------------------------
+-- Ship Breakdown (header - links ship ↔ template)
+-- ---------------------------------------------
+CREATE TABLE iclass.ship_breakdown (
+    id              serial PRIMARY KEY,
+    ship_id         integer   NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+    template_id integer  REFERENCES iclass.breakdown_template(id),  -- which template was used
+    name            VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
+    description     TEXT,
+    revision        INTEGER      NOT NULL DEFAULT 1,
+    is_active       BOOLEAN      NOT NULL DEFAULT TRUE,   -- only one active breakdown per ship
+    applied_at      TIMESTAMPTZ,                           -- when template was applied
+    applied_by      VARCHAR(100),
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Ensure only one active breakdown per ship
+    CONSTRAINT uq_ship_active_breakdowns UNIQUE (ship_id, is_active)
+        -- Note: This only works if is_active is always TRUE/FALSE (no NULLs)
+        -- For partial unique, see the index below
+);
+
+-- ---------------------------------------------
+-- Ship Breakdown Node (ship-specific component tree)
+-- ---------------------------------------------
+CREATE TABLE iclass.ship_breakdown_node (
+    id                  serial PRIMARY KEY,
+    ship_id             integer  NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+    ship_breakdown_id   integer  NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
+    parent_node_id      integer  REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+
+    -- Traceability back to template
+    template_node_id integer   REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
+
+    -- Identification (can be customized per ship)
+    code                VARCHAR(50)  NOT NULL,
+    name                VARCHAR(200) NOT NULL,
+    description         TEXT,
+
+    -- Classification
+    category            VARCHAR(50),
+    node_type           VARCHAR(50),
+
+    -- Hierarchy & ordering
+    level           INTEGER      NOT NULL DEFAULT 0,
+    sort_order      INTEGER      NOT NULL DEFAULT 0,
+    -- path            LTREE,
+
+    -- Customization tracking
+    is_from_template    BOOLEAN      NOT NULL DEFAULT TRUE,   -- FALSE if added ship-specifically
+    is_modified         BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE if template values were changed
+    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+
+    -- Flexible properties (ship-specific overrides)
+    metadata            JSONB        DEFAULT '{}', -- JSONB data type for flexible properties
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_ship_node_code UNIQUE (ship_breakdown_id, code),
+    CONSTRAINT chk_no_self_parent_ship CHECK (id != parent_node_id)
+);
+
+-- ---------------------------------------------
+-- Ship Node Attributes (ship-specific key-value)
+-- ---------------------------------------------
+CREATE TABLE iclass.ship_breakdown_node_particular (
+    id serial PRIMARY KEY,
+    ship_breakdown_node_id integer NOT NULL REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+    -- Traceability
+    template_particular_id integer REFERENCES iclass.breakdown_template_node_particular(id) ON DELETE SET NULL,
+
+    attr_key           VARCHAR(100) NOT NULL,
+    attr_title         VARCHAR(200) NOT NULL,
+    attr_value         TEXT,
+    selection_options  JSONB,
+    data_type          iclass.data_type_enum    DEFAULT 'text',
+    unit               VARCHAR(20),
+    is_modified        BOOLEAN      NOT NULL DEFAULT FALSE,
+    sort_order         INTEGER      NOT NULL DEFAULT 0,
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_snode_attr UNIQUE (ship_breakdown_node_id, attr_key)
 );
 
 CREATE SEQUENCE IF NOT EXISTS iclass.certificate_id_seq;
 
-CREATE TABLE IF NOT EXISTS iclass.certificates(
+CREATE TABLE IF NOT EXISTS iclass.certificate(
   id serial PRIMARY KEY,
   certificate_id integer NOT NULL DEFAULT nextval('iclass.certificate_id_seq'),
   version integer NOT NULL,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
-  certifiate_template_code varchar(10) REFERENCES iclass.certificate_templates(code) ON DELETE SET NULL,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
+  certifiate_template_code varchar(10) REFERENCES iclass.certificate_template(code) ON DELETE SET NULL,
   status varchar(2) REFERENCES iclass.certificate_status(code) NOT NULL,
   remark varchar(2) NOT NULL,
-  issued_by varchar(20) REFERENCES iclass.classification_societies(code) NOT NULL,
+  issued_by varchar(20) REFERENCES iclass.classification_society(code) NOT NULL,
   cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) NOT NULL,
-  validity_type varchar(2) REFERENCES iclass.certificate_validity_types(code) NOT NULL,
-  category varchar(3) REFERENCES iclass.certificate_categories(code) NOT NULL,
-  internal_category varchar(3) REFERENCES iclass.certificate_internal_categories(code) NOT NULL,
+  validity_type varchar(2) REFERENCES iclass.certificate_validity_type(code) NOT NULL,
+  category varchar(3) REFERENCES iclass.certificate_category(code) NOT NULL,
+  internal_category varchar(3) REFERENCES iclass.certificate_internal_category(code) NOT NULL,
   description varchar(120),
   issue_date date NOT NULL,
   expiry_date date,
@@ -102,11 +173,11 @@ CREATE TABLE IF NOT EXISTS iclass.certificates(
 );
 
 -- Create table for Findings/Comments
-CREATE TABLE IF NOT EXISTS iclass.finding_comments(
+CREATE TABLE IF NOT EXISTS iclass.finding_comment(
   id serial PRIMARY KEY,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE CASCADE,
-  comment_type varchar(2) REFERENCES iclass.comment_types(code) NOT NULL,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE CASCADE,
+  comment_type varchar(2) REFERENCES iclass.comment_type(code) NOT NULL,
   priviate boolean DEFAULT false,
   certificates varchar(500),
   date_issued date NOT NULL,
@@ -125,10 +196,10 @@ CREATE TABLE IF NOT EXISTS iclass.finding_comments(
 );
 
 -- status is now calculated dynamically in api.survey_audits view
-CREATE TABLE IF NOT EXISTS iclass.survey_audits(
+CREATE TABLE IF NOT EXISTS iclass.survey_audit(
   id serial PRIMARY KEY,
   cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) ON DELETE SET NULL,
-  certificate_id integer REFERENCES iclass.certificates(id) ON DELETE CASCADE,
+  certificate_id integer REFERENCES iclass.certificate(id) ON DELETE CASCADE,
   pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   description varchar(120) NOT NULL,
   last_held_date date NOT NULL,

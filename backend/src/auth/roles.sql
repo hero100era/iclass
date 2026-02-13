@@ -8,6 +8,7 @@ CREATE ROLE admingrp WITH NOLOGIN CREATEDB CREATEROLE REPLICATION;
 GRANT anonymous TO authenticator;
 
 GRANT admingrp TO authenticator;
+GRANT employees TO admingrp;
 
 --Create group roles for different user types and with minimum permissions.
 CREATE ROLE employees WITH NOLOGIN NOCREATEDB NOCREATEROLE NOREPLICATION;

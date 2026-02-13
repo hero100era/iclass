@@ -1,5 +1,5 @@
-GRANT SELECT, INSERT, UPDATE, DELETE ON iclass.documents TO employees;
-GRANT SELECT ON iclass.documents TO customers;
+GRANT SELECT, INSERT, UPDATE, DELETE ON iclass.document TO employees;
+GRANT SELECT ON iclass.document TO customers;
 
 -- Grant access to employees
-GRANT SELECT, INSERT, UPDATE, DELETE ON iclass.comment_lines TO employees;
+GRANT SELECT, INSERT, UPDATE, DELETE ON iclass.comment_line TO employees;

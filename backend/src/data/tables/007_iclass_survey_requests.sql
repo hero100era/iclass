@@ -1,8 +1,8 @@
-CREATE TABLE IF NOT EXISTS iclass.survey_requests (
+CREATE TABLE IF NOT EXISTS iclass.survey_request (
   id serial PRIMARY KEY,
-  ship_id integer REFERENCES iclass.ships(id),
-  company_id integer REFERENCES iclass.organizations(id),
-  ordered_by_id integer REFERENCES auth.users(id),
+  ship_id integer REFERENCES iclass.ship(id),
+  company_id integer REFERENCES iclass.organization(id),
+  ordered_by_id integer REFERENCES auth.user(id),
   location varchar(100),
   estimated_date date,
   contact_person varchar(50),
@@ -22,12 +22,12 @@ CREATE TABLE IF NOT EXISTS iclass.survey_requests (
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.survey_request_carts ( 
+CREATE TABLE IF NOT EXISTS iclass.survey_request_cart ( 
   id serial PRIMARY KEY,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE CASCADE,
-  survey_request_id integer REFERENCES iclass.survey_requests(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
-  comment_id integer REFERENCES iclass.finding_comments(id) ON DELETE SET NULL,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE CASCADE,
+  survey_request_id integer REFERENCES iclass.survey_request(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
+  comment_id integer REFERENCES iclass.finding_comment(id) ON DELETE SET NULL,
   occ_survey_code varchar(10) REFERENCES iclass.survey_pool(code) ON DELETE SET NULL
 );

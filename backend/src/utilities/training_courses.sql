@@ -5,7 +5,7 @@ CREATE TYPE iclass.staff_role_type_enum AS ENUM ('TS', 'FS', 'AD', 'BOTH');
 -- AD: Support staff
 
 -- RO Modules Table (The Elementary Modules)
-CREATE TABLE iclass.ro_modules (
+CREATE TABLE iclass.ro_module (
     code VARCHAR(5) PRIMARY KEY, -- e.g., '1A', '2A', '4B'
     name VARCHAR(100) NOT NULL,
     category VARCHAR(50), -- 'Management', 'Technical', 'Survey', 'Qualifications'
@@ -17,10 +17,10 @@ CREATE TABLE iclass.ro_modules (
 
 -- Training Courses (The "Rules" Engine)
 -- It links a Certificate Code-> Module -> Specific Role -> Specific Topic.
-CREATE TABLE iclass.training_courses (
+CREATE TABLE iclass.training_course (
     id SERIAL PRIMARY KEY,
     survey_code VARCHAR(10) REFERENCES iclass.certificate_survey_pool(code),
-    module_code VARCHAR(5) REFERENCES iclass.ro_modules(code),
+    module_code VARCHAR(5) REFERENCES iclass.ro_module(code),
     target_role iclass.staff_role_type_enum NOT NULL, -- Is this training for TS, FS, or BOTH?
     description TEXT NOT NULL,
     objectives TEXT NOT NULL,
@@ -35,15 +35,15 @@ CREATE TABLE iclass.training_courses (
     is_mandatory boolean DEFAULT true,
     is_active boolean DEFAULT true, 
     version varchar(10),
-    created_by integer REFERENCES auth.users(id),
+    created_by integer REFERENCES auth.user(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Training sessions (scheduled instances of courses)
-CREATE TABLE iclass.training_sessions (
+CREATE TABLE iclass.training_session (
     id SERIAL PRIMARY KEY,
-    course_id integer REFERENCES iclass.training_courses(id),
+    course_id integer REFERENCES iclass.training_course(id),
     session_code VARCHAR(50) UNIQUE,
     session_name VARCHAR(255),
     start_date DATE NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE iclass.training_sessions (
     physical_location VARCHAR(255),
     virtual_meeting_url VARCHAR(500),
     virtual_meeting_id VARCHAR(100),
-    instructor_id integer REFERENCES auth.users(id),
+    instructor_id integer REFERENCES auth.user(id),
     external_instructor_name VARCHAR(255),
     external_instructor_org VARCHAR(255),
     capacity INTEGER,
@@ -67,15 +67,15 @@ CREATE TABLE iclass.training_sessions (
     cost_per_participant DECIMAL(10,2),
     currency_code VARCHAR(3) DEFAULT 'USD',
     notes TEXT,
-    created_by integer REFERENCES auth.users(id),
+    created_by integer REFERENCES auth.user(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Session dates (for multi-day sessions)
-CREATE TABLE iclass.session_dates (
+CREATE TABLE iclass.session_date (
     id serial PRIMARY KEY,
-    session_id integer REFERENCES iclass.training_sessions(id) ON DELETE CASCADE,
+    session_id integer REFERENCES iclass.training_session(id) ON DELETE CASCADE,
     training_date DATE NOT NULL,
     start_time TIME,
     end_time TIME,
@@ -84,17 +84,17 @@ CREATE TABLE iclass.session_dates (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE iclass.training_enrollments (
+CREATE TABLE iclass.training_enrollment (
     id serial PRIMARY KEY,
-    user_id integer REFERENCES auth.users(id) NOT NULL,
-    course_id integer REFERENCES iclass.training_courses(id) NOT NULL,
-    session_id integer REFERENCES iclass.training_sessions(id),
+    user_id integer REFERENCES auth.user(id) NOT NULL,
+    course_id integer REFERENCES iclass.training_course(id) NOT NULL,
+    session_id integer REFERENCES iclass.training_session(id),
     enrollment_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     enrollment_source VARCHAR(50) CHECK (enrollment_source IN (
         'self_enrolled', 'manager_assigned', 'hr_assigned', 
         'system_assigned', 'mandatory', 'external'
     )),
-    enrolled_by integer REFERENCES auth.users(id),
+    enrolled_by integer REFERENCES auth.user(id),
     status VARCHAR(30) DEFAULT 'enrolled' CHECK (status IN (
         'pending_approval', 'enrolled', 'waitlisted', 
         'in_progress', 'completed', 'failed', 
@@ -103,7 +103,7 @@ CREATE TABLE iclass.training_enrollments (
     approval_status VARCHAR(20) CHECK (approval_status IN (
         'pending', 'approved', 'rejected', 'not_required'
     )),
-    approved_by integer REFERENCES auth.users(id),
+    approved_by integer REFERENCES auth.user(id),
     approval_date TIMESTAMP WITH TIME ZONE,
     approval_notes TEXT,
     due_date DATE,
@@ -113,12 +113,12 @@ CREATE TABLE iclass.training_enrollments (
 );
 
 -- Training completion records
-CREATE TABLE iclass.training_completions (
+CREATE TABLE iclass.training_completion (
     id serial PRIMARY KEY,
-    enrollment_id integer REFERENCES iclass.training_enrollments(id),
-    user_id integer REFERENCES auth.users(id) NOT NULL,
-    course_id integer REFERENCES iclass.training_courses(id) NOT NULL,
-    session_id integer REFERENCES iclass.training_sessions(id),
+    enrollment_id integer REFERENCES iclass.training_enrollment(id),
+    user_id integer REFERENCES auth.user(id) NOT NULL,
+    course_id integer REFERENCES iclass.training_course(id) NOT NULL,
+    session_id integer REFERENCES iclass.training_session(id),
     completion_date DATE NOT NULL,
     completion_status VARCHAR(20) NOT NULL CHECK (completion_status IN (
         'completed', 'passed', 'failed', 'incomplete'
@@ -128,7 +128,7 @@ CREATE TABLE iclass.training_completions (
     certificate_file_path VARCHAR(255),
     certificate_issued_date DATE,
     certificate_expiry_date DATE,
-    verified_by integer REFERENCES auth.users(id),
+    verified_by integer REFERENCES auth.user(id),
     verification_date TIMESTAMP WITH TIME ZONE,
     verification_method VARCHAR(50),
     external_provider VARCHAR(255),
@@ -139,12 +139,12 @@ CREATE TABLE iclass.training_completions (
 );
 
 -- Ship Types (Rows for the Class Matrix)
-CREATE TABLE iclass.ref_ship_types (
+CREATE TABLE iclass.ref_ship_type (
     code VARCHAR(10) PRIMARY KEY,
     description VARCHAR(100)
 );
 
-INSERT INTO iclass.ref_ship_types (code, description) VALUES
+INSERT INTO iclass.ref_ship_type (code, description) VALUES
 ('GEN', 'General Cargo'),
 ('OTHER', 'Other Ship Types'), -- Corrected typo "OHTER" from source
 ('BULK', 'Bulk Carrier'),
@@ -157,12 +157,12 @@ INSERT INTO iclass.ref_ship_types (code, description) VALUES
 
 -- Class Actions (Columns for the Class Matrix)
 -- Covers New Building (Hull/Mach) and Fleet in Service (Ann/Int/Spec)
-CREATE TABLE iclass.ref_class_actions (
+CREATE TABLE iclass.ref_class_action (
     code VARCHAR(10) PRIMARY KEY,
     description VARCHAR(100) -- 'New Building' or 'Fleet In Service'
 );
 
-INSERT INTO iclass.ref_class_actions (code, description) VALUES
+INSERT INTO iclass.ref_class_action (code, description) VALUES
 ('NB_H', 'New Building - Hull'),
 ('NB_M', 'New Building - Machinery'),
 ('FIS_ANN', 'Fleet In Service - Annual'),
@@ -170,12 +170,12 @@ INSERT INTO iclass.ref_class_actions (code, description) VALUES
 ('FIS_S', 'Fleet In Service - Special');
 
 -- Special Modules (Rows for Class Specific Modules)
-CREATE TABLE iclass.ref_special_modules (
+CREATE TABLE iclass.ref_special_module (
     code VARCHAR(20) PRIMARY KEY,
     description VARCHAR(100)
 );
 
-INSERT INTO iclass.ref_special_modules (code, description) VALUES
+INSERT INTO iclass.ref_special_module (code, description) VALUES
 ('Bo', 'Boiler Survey'),
 ('T', 'Propeller Shaft Survey'),
 ('B', 'Dry Docking'),
@@ -186,9 +186,9 @@ INSERT INTO iclass.ref_special_modules (code, description) VALUES
 -- Links Personnel -> Ship Type -> Survey Type (e.g., Bob -> Bulk -> NB Hull)
 CREATE TABLE iclass.qual_class_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.users(id),
-    ship_type_code VARCHAR(10) REFERENCES iclass.ref_ship_types(code),
-    action_code VARCHAR(20) REFERENCES iclass.ref_class_actions(code),
+    user_id INT REFERENCES auth.user(id),
+    ship_type_code VARCHAR(10) REFERENCES iclass.ref_ship_type(code),
+    action_code VARCHAR(20) REFERENCES iclass.ref_class_action(code),
     
     is_authorized BOOLEAN DEFAULT FALSE,
     authorized_date DATE,
@@ -202,8 +202,8 @@ CREATE TABLE iclass.qual_class_matrix (
 -- Links Personnel -> Special Module (e.g., Bob -> Boiler)
 CREATE TABLE iclass.qual_module_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.users(id),
-    module_code VARCHAR(20) REFERENCES iclass.ref_special_modules(code),
+    user_id INT REFERENCES auth.user(id),
+    module_code VARCHAR(20) REFERENCES iclass.ref_special_module(code),
     
     is_authorized BOOLEAN DEFAULT FALSE,
     authorized_date DATE,
@@ -214,9 +214,9 @@ CREATE TABLE iclass.qual_module_matrix (
 
 CREATE TABLE iclass.qual_statutory_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.users(id),
+    user_id INT REFERENCES auth.user(id),
     cert_code VARCHAR(10) REFERENCES iclass.certificate_survey_pool(code),
-    phase_code VARCHAR(2) REFERENCES iclass.survey_audit_types(code),
+    phase_code VARCHAR(2) REFERENCES iclass.survey_audit_type(code),
     
     is_authorized BOOLEAN DEFAULT FALSE,
     authorized_date DATE,

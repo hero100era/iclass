@@ -126,7 +126,7 @@ BEGIN
     u.role,
     u.category
   FROM
-    auth.users u
+    auth.user u
   WHERE
     u.email = user_profile.email
     AND u.pass = auth.crypt(user_profile.pass, u.pass);
@@ -142,7 +142,7 @@ SET default_table_access_method = heap;
 -- Name: users; Type: TABLE; Schema: auth; Owner: -
 --
 
-CREATE TABLE auth.users (
+CREATE TABLE auth.user (
     id integer NOT NULL,
     email text NOT NULL,
     pass character varying(512) NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE auth.users (
 -- Name: users_id_seq; Type: SEQUENCE; Schema: auth; Owner: -
 --
 
-CREATE SEQUENCE auth.users_id_seq
+CREATE SEQUENCE auth.user_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -171,7 +171,7 @@ CREATE SEQUENCE auth.users_id_seq
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: auth; Owner: -
 --
 
-ALTER SEQUENCE auth.users_id_seq OWNED BY auth.users.id;
+ALTER SEQUENCE auth.user_id_seq OWNED BY auth.user.id;
 
 
 --
@@ -187,14 +187,14 @@ CREATE TABLE public.schema_migrations (
 -- Name: users id; Type: DEFAULT; Schema: auth; Owner: -
 --
 
-ALTER TABLE ONLY auth.users ALTER COLUMN id SET DEFAULT nextval('auth.users_id_seq'::regclass);
+ALTER TABLE ONLY auth.user ALTER COLUMN id SET DEFAULT nextval('auth.user_id_seq'::regclass);
 
 
 --
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: auth; Owner: -
 --
 
-ALTER TABLE ONLY auth.users
+ALTER TABLE ONLY auth.user
     ADD CONSTRAINT users_email_key UNIQUE (email);
 
 
@@ -202,7 +202,7 @@ ALTER TABLE ONLY auth.users
 -- Name: users users_idey; Type: CONSTRAINT; Schema: auth; Owner: -
 --
 
-ALTER TABLE ONLY auth.users
+ALTER TABLE ONLY auth.user
     ADD CONSTRAINT users_idey PRIMARY KEY (id);
 
 
@@ -218,14 +218,14 @@ ALTER TABLE ONLY public.schema_migrations
 -- Name: users encrypt_pass; Type: TRIGGER; Schema: auth; Owner: -
 --
 
-CREATE TRIGGER encrypt_pass BEFORE INSERT OR UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION auth.encrypt_pass();
+CREATE TRIGGER encrypt_pass BEFORE INSERT OR UPDATE ON auth.user FOR EACH ROW EXECUTE FUNCTION auth.encrypt_pass();
 
 
 --
 -- Name: users ensure_users_role_exists; Type: TRIGGER; Schema: auth; Owner: -
 --
 
-CREATE CONSTRAINT TRIGGER ensure_users_role_exists AFTER INSERT OR UPDATE ON auth.users NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION auth.check_role_exists();
+CREATE CONSTRAINT TRIGGER ensure_users_role_exists AFTER INSERT OR UPDATE ON auth.user NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION auth.check_role_exists();
 
 
 --

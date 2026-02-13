@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS iclass.jobs (
+CREATE TABLE IF NOT EXISTS iclass.job (
   id serial PRIMARY KEY,
   file_path_report varchar(255),
   file_path_draft varchar(255),
@@ -11,116 +11,116 @@ CREATE TABLE IF NOT EXISTS iclass.jobs (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
 );
-   
-CREATE TABLE IF NOT EXISTS iclass.survey_jobs (
+
+CREATE TABLE IF NOT EXISTS iclass.survey_job(
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
-  surveyor_id integer REFERENCES iclass.employees(id),
-  reviewer_id integer REFERENCES iclass.employees(id),
+  job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
+  surveyor_id integer REFERENCES iclass.employee(id),
+  reviewer_id integer REFERENCES iclass.employee(id),
   description varchar(200),
   initialized boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.audit_jobs (
+CREATE TABLE IF NOT EXISTS iclass.audit_job (
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
-  auditor_id integer REFERENCES iclass.employees(id),
-  reviewer_id integer REFERENCES iclass.employees(id),
+  job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
+  auditor_id integer REFERENCES iclass.employee(id),
+  reviewer_id integer REFERENCES iclass.employee(id),
   description varchar(200),
   initialized boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.ms_jobs (
+CREATE TABLE IF NOT EXISTS iclass.ms_job (
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE SET NULL,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE SET NULL,
-  issued_by integer REFERENCES iclass.employees(id),
-  reviewed_by integer REFERENCES iclass.employees(id),
-  initialized boolean DEFAULT FALSE   
+  job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
+  issued_by integer REFERENCES iclass.employee(id),
+  reviewed_by integer REFERENCES iclass.employee(id),
+  initialized boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.job_participants (
+CREATE TABLE IF NOT EXISTS iclass.job_participant (
   id serial PRIMARY KEY,
-  survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  employee_id integer REFERENCES iclass.employees(id) ON DELETE SET NULL,
+  survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
+  audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
+  employee_id integer REFERENCES iclass.employee(id) ON DELETE SET NULL,
   is_monitor boolean DEFAULT FALSE,
   is_trainee boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.certificate_lines (
+CREATE TABLE IF NOT EXISTS iclass.certificate_line (
   id serial PRIMARY kEY,
-  survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  ms_job_id integer REFERENCES iclass.ms_jobs(id) on DELETE CASCADE,
-  certificate_id integer REFERENCES iclass.certificates(id) ON DELETE SET NULL,
-  action_code varchar(3) REFERENCES iclass.certificate_actions(code) NOT NULL,
-  issued_by integer REFERENCES iclass.employees(id),
+  survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
+  audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
+  ms_job_id integer REFERENCES iclass.ms_job(id) on DELETE CASCADE,
+  certificate_id integer REFERENCES iclass.certificate(id) ON DELETE SET NULL,
+  action_code varchar(3) REFERENCES iclass.certificate_action(code) NOT NULL,
+  issued_by integer REFERENCES iclass.employee(id),
   issue_date date,
   extended_date date,
   file_path_draft varchar(255),
   file_path_cert varchar(255)
 );
 
-CREATE TABLE IF NOT EXISTS iclass.survey_lines (
+CREATE TABLE IF NOT EXISTS iclass.survey_line (
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   initialized boolean DEFAULT FALSE,
   credit_periodical boolean DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.audit_lines (
+CREATE TABLE IF NOT EXISTS iclass.audit_line (
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
+  job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
   initialized boolean DEFAULT FALSE,
   credit_periodical boolean DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.ms_lines (
+CREATE TABLE IF NOT EXISTS iclass.ms_line (
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.ms_jobs(id) ON DELETE CASCADE,
+  job_id integer REFERENCES iclass.ms_job(id) ON DELETE CASCADE,
   initialized boolean DEFAULT FALSE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.survey_checklists (
+CREATE TABLE IF NOT EXISTS iclass.survey_checklist (
   id bigserial PRIMARY KEY,
-  survey_job_id integer REFERENCES iclass.survey_jobs(id) ON DELETE CASCADE,
-  survey_line_id integer REFERENCES iclass.survey_lines(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
-  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
-  ship_component_id integer REFERENCES iclass.ship_component_tree(id) ON DELETE CASCADE,
-  result varchar(2) REFERENCES iclass.checklist_results(code),
-  particulars jsonb,
-  report_by integer REFERENCES iclass.employees(id),
+  survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
+  survey_line_id integer REFERENCES iclass.survey_line(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
+  item_id integer REFERENCES iclass.checklist_item(id) ON DELETE SET NULL,
+  breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+  result varchar(2) REFERENCES iclass.checklist_result(code),
+  particulars jsonb, --for tracebilities.
+  report_by integer REFERENCES iclass.employee(id),
   report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS iclass.audit_checklists ( 
+CREATE TABLE IF NOT EXISTS iclass.audit_checklist (
   id bigserial PRIMARY KEY,
-  audit_job_id integer REFERENCES iclass.audit_jobs(id) ON DELETE CASCADE,
-  audit_line_id integer REFERENCES iclass.audit_lines(id) ON DELETE CASCADE,
-  survey_audit_id integer REFERENCES iclass.survey_audits(id) ON DELETE SET NULL,
-  item_id integer REFERENCES iclass.checklist_items(id) ON DELETE SET NULL,
-  ship_component_id integer REFERENCES iclass.ship_component_tree(id) ON DELETE CASCADE,
-  result varchar(2) REFERENCES iclass.checklist_results(code),
+  audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
+  audit_line_id integer REFERENCES iclass.audit_line(id) ON DELETE CASCADE,
+  survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
+  item_id integer REFERENCES iclass.checklist_item(id) ON DELETE SET NULL,
+  breakdown_template_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  result varchar(2) REFERENCES iclass.checklist_result(code),
   particulars jsonb,
-  report_by integer REFERENCES iclass.employees(id),
+  report_by integer REFERENCES iclass.employee(id),
   report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create table for linking Finding/Comments to Jobs (Reporting Scope)
-CREATE TABLE IF NOT EXISTS iclass.comment_lines(
+CREATE TABLE IF NOT EXISTS iclass.comment_line(
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.jobs(id) ON DELETE CASCADE,
-  finding_comment_id integer REFERENCES iclass.finding_comments(id) ON DELETE CASCADE,
+  job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  finding_comment_id integer REFERENCES iclass.finding_comment(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

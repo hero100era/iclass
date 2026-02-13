@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router";
-import { Ship, Scale, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, ChevronRight, Download, ExternalLink, Anchor, Flag, Lock, MessageSquare, Plus, Minus } from "lucide-react";
+import { Link, useLoaderData } from "react-router";
+import { Ship, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, ChevronRight, Download, ExternalLink, Anchor, Flag, Lock, MessageSquare, Plus, Minus, Network } from "lucide-react";
 import { ApiGET, ApiPOST } from "~/.server/lib/api";
 import type { Route } from "./+types/detail";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
@@ -126,9 +126,18 @@ function VesselDetailContent() {
                             </div>
                         </div>
                         <div className="flex-1">
-                            <div className="flex flex-wrap items-center gap-3 mb-2">
-                                <h1 className="text-3xl font-bold text-slate-900">{vessel.name}</h1>
-                                <StatusBadge status={vessel.status || "Active"} />
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-3xl font-bold text-slate-900">{vessel.name}</h1>
+                                    <StatusBadge status={vessel.status || "Active"} />
+                                </div>
+                                <Link
+                                    to={`/vessels/${vessel.id}/components`}
+                                    className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg shadow-sm hover:bg-slate-50 flex items-center gap-2 transition-all active:scale-95"
+                                >
+                                    <Network size={14} className="text-primary" />
+                                    Breakdown
+                                </Link>
                             </div>
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500">
                                 <span className="flex items-center gap-1.5">

@@ -1,8 +1,8 @@
 -- Create table for documents
-CREATE TABLE IF NOT EXISTS iclass.documents (
+CREATE TABLE IF NOT EXISTS iclass.document (
   id serial PRIMARY KEY,
-  ship_id integer REFERENCES iclass.ships(id) ON DELETE CASCADE,
-  company_id integer REFERENCES iclass.organizations(id) ON DELETE CASCADE,
+  ship_id integer REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  company_id integer REFERENCES iclass.organization(id) ON DELETE CASCADE,
   name varchar(255) NOT NULL,
   type varchar(50),
   file_path varchar(512),

@@ -3,7 +3,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         IF NEW.survey_audit_id IS NOT NULL THEN
-            UPDATE iclass.survey_audits
+            UPDATE iclass.survey_audit
             SET is_ordered = TRUE
             WHERE id = NEW.survey_audit_id;
         END IF;
@@ -11,10 +11,10 @@ BEGIN
         IF OLD.survey_audit_id IS NOT NULL THEN
             -- Only set back to false if it's not in any other cart
             IF NOT EXISTS (
-                SELECT 1 FROM iclass.survey_request_carts 
+                SELECT 1 FROM iclass.survey_request_cart 
                 WHERE survey_audit_id = OLD.survey_audit_id AND id != OLD.id
             ) THEN
-                UPDATE iclass.survey_audits
+                UPDATE iclass.survey_audit
                 SET is_ordered = FALSE
                 WHERE id = OLD.survey_audit_id;
             END IF;
@@ -24,8 +24,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_update_survey_audit_is_ordered ON iclass.survey_request_carts;
+DROP TRIGGER IF EXISTS trg_update_survey_audit_is_ordered ON iclass.survey_request_cart;
 CREATE TRIGGER trg_update_survey_audit_is_ordered
-AFTER INSERT OR DELETE ON iclass.survey_request_carts
+AFTER INSERT OR DELETE ON iclass.survey_request_cart
 FOR EACH ROW
 EXECUTE FUNCTION iclass.update_survey_audit_is_ordered();
