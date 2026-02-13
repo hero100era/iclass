@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_checklist (
   survey_line_id integer REFERENCES iclass.survey_line(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_item(id) ON DELETE SET NULL,
-  breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+  breakdown_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
   result varchar(2) REFERENCES iclass.checklist_result(code),
   particulars jsonb, --for tracebilities.
   report_by integer REFERENCES iclass.employee(id),

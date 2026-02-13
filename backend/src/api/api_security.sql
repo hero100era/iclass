@@ -206,6 +206,7 @@ SELECT
   id, survey_id, code, section_number, title, is_active
 FROM iclass.checklist_section;
 
+-- View: Full template tree with breadcrumb path
 CREATE OR REPLACE VIEW api.v_template_tree AS
 WITH RECURSIVE tree AS (
     SELECT
@@ -253,7 +254,7 @@ JOIN iclass.breakdown_template bt ON bt.id = t.template_id
 ORDER BY t.template_id, t.path_ids;
 
 -- View: Full ship breakdown tree
-CREATE OR REPLACE VIEW iclass.v_ship_breakdown_tree AS
+CREATE OR REPLACE VIEW api.v_ship_breakdown_tree AS
 WITH RECURSIVE tree AS (
     SELECT
         sn.id,

@@ -1,7 +1,7 @@
 insert into auth.user (email, password_hash, role, category) values ('eros.wang@qq.com', '123456', 'admingrp','surveyor');
 -- Flags
 INSERT INTO iclass.flag(code, name, fullname, email, tel, fax, contact, contract_file, contract_start, contract_end, is_hssc)
-VALUES 
+VALUES
   ('CN', 'China', 'People''s Republic of China', 'info@msa.gov.cn', '+86 10 1234 5678', '+86 10 1234 5679', 'MSA Headquarters', '/contracts/flags/cn_contract.pdf', '2024-01-01', '2029-12-31', TRUE),
   ('US', 'United States', 'United States of America', 'info@uscg.mil', '+1 202 555 0123', '+1 202 555 0124', 'USCG Headquarters', '/contracts/flags/us_contract.pdf', '2023-01-01', '2028-12-31', TRUE),
   ('SG', 'Singapore', 'Republic of Singapore', 'shipping@mpa.gov.sg', '+65 1234 5678', '+65 1234 5679', 'MPA Port Master', '/contracts/flags/sg_contract.pdf', '2022-01-01', '2027-12-31', TRUE),
@@ -11,23 +11,35 @@ ON CONFLICT DO NOTHING;
 
 -- organizations
 INSERT INTO iclass.organization (tenant_id, name, display_name, imo_number, doc_ships_types)
-VALUES 
+VALUES
 ('tenant-damoco-id','DAMICO', 'DAMICEO SPA', '7634567', 'BC OIL GEN'),
 ('tenant-zhouji-id','Zhouji', 'Zhou Ji Ship Management', '7634563', 'BC OIL GEN CHE')
 ON CONFLICT DO NOTHING;
 
--- Ship Component Templates
-INSERT INTO iclass.component_library (code, name, properties)
-VALUES 
-  ('ME', 'Main Engine', '{"maker": "MAN B&W", "model": "6S60MC-C", "power_kw": 12000}'),
-  ('AE', 'Auxiliary Engine', '{"maker": "Yanmar", "model": "6EY22LW", "power_kw": 1000}'),
-  ('BLR', 'Main Boiler', '{"maker": "Alfa Laval", "model": "Aalborg Mission OL", "capacity_kg_h": 25000}'),
-  ('ST', 'Steering Gear', '{"maker": "Rolls-Royce", "type": "Electro-hydraulic"}')
+-- Ship Breakdown Templates
+INSERT INTO iclass.breakdown_template (code, name)
+VALUES
+('TMPL-BULK-001', 'Bulk Carrier Standard Breakdown')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), NULL, '0', 'SHIP')
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+VALUES
+((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '0'), '2', 'HULL')
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '2'), '23', 'Cargo Hold')
+  ON CONFLICT DO NOTHING;
 
 -- Certificate Templates
 INSERT INTO iclass.certificate_template (code, name, version, cert_code, internal_category, file_path_xml, file_path_html, description)
-VALUES 
+VALUES
   ('CSS-T', 'Cargo Ship Safety Template', '1.0', 'CSS', 'ST', '/templates/css.rml', '/templates/css.html', 'Standard template for Cargo Ship Safety'),
   ('SMC-T', 'Safety Management Template', '2.1', 'SMC', 'ST', '/templates/smc.rml', '/templates/smc.html', 'Template for Safety Management Certificate'),
   ('LL-T', 'Load Line Template', '1.2', 'LL', 'ST', '/templates/ll.rml', '/templates/ll.html', 'Standard International Load Line Certificate'),
@@ -43,8 +55,8 @@ INSERT INTO iclass.ship(
   length, length_oa, length_bp, moulded_depth, moulded_breadth, moulded_draft, design_draft,
   dual_class, singal_letter, flag_code, registration_port, mmsi_number, main_class,
   registered_owner_id, ism_owner_id, mlc_owner_id
-) 
-VALUES 
+)
+VALUES
   (
     'JIA HE', '9345678', 'HUA MEI', '2010-05-15', '2010-07-20', '2009-11-10', '2009-08-01', '2010-06-01',
     'C', 'CHN', 'ABS', 'Shanghai', '2010-06-15', 'REG-CN-9345',
@@ -132,7 +144,7 @@ VALUES
     (SELECT id FROM iclass.organization WHERE imo_number = '2345678'),
     (SELECT id FROM iclass.organization WHERE imo_number = '2345678'),
     (SELECT id FROM iclass.organization WHERE imo_number = '2345678')
-  ) 
+  )
 ON CONFLICT DO NOTHING;
 
 -- Certificates
@@ -183,7 +195,7 @@ INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, p
 ('LL.A', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE),
 ('LL.R', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE),
 ('CL.R', 'Class Renewal', 'Class Renewal Survey', 5000, 'CL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE)
-ON CONFLICT DO NOTHING;  
+ON CONFLICT DO NOTHING;
 
 -- Survey Audits
 INSERT INTO iclass.survey_audit (certificate_id, pool_id, description, last_held_date, place_held, next_due_date, postponement_date, range_from_date, range_to_date, fee)
@@ -237,29 +249,22 @@ VALUES
   (NULL, (SELECT id FROM iclass.organization WHERE imo_number = '1234567'), 'Company SMS Manual', 'Manual', '/files/companies/1234567/sms-manual.pdf', '2026-12-31', 'Final')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.organization (name, display_name, imo_number, is_active) VALUES 
-('RINA', 'RINA SPA', '1234567', TRUE);
+INSERT INTO iclass.organization (name, display_name, imo_number, is_active) VALUES
+('RINA', 'RINA SPA', '1234567', TRUE)
+ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.employee (user_id, organization_id, employee_number, first_name, last_name,display_name, email, mobile_phone, hire_date, is_active) VALUES 
-(1, 1, '1234567', 'John', 'Doe','John Doe', 'eros.wang@qq.com', '123-456-7890', '2021-07-31', TRUE);
-
-
-INSERT INTO iclass.component_library (code, name) VALUES 
-('230.03', 'Cargo hold'),
-('230.06', 'Cargo/ballast hold/tank'),    
-('230.29', 'Ballast side tank with D.B.'),
-('230.33', 'FO top side tank'),
-('230.37', 'Ballast topside tank')
+INSERT INTO iclass.employee (user_id, organization_id, employee_number, first_name, last_name,display_name, email, mobile_phone, hire_date, is_active) VALUES
+(1, 1, '1234567', 'John', 'Doe','John Doe', 'eros.wang@qq.com', '123-456-7890', '2021-07-31', TRUE)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO iclass.checklist_section (survey_id, code, section_number, title) VALUES
-((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.1', 'examination of current certificates and other records'), 
+((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.1', 'examination of current certificates and other records'),
 ((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.2', 'load line annual survey'),
 ((SELECT id FROM iclass.survey_pool WHERE code='LL.A'),'LA', '1.2.3', 'completion of the annual survey'),
 ((SELECT id from iclass.survey_pool WHERE code='CL.R'), 'CR', '5.1', 'Tanks/Holds and other dry compartments inspections')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.checklist_item(code, section_id, item_number, content, component_library_id)
+INSERT INTO iclass.checklist_item(code, section_id, item_number, content, breakdown_template_node_id)
 VALUES
   ('LA.1.2.1.1',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 1, 'checking the validity, as appropriate, of the Cargo Ship Safety Equipment Certificate, the Cargo Ship Safety Radio Certificate and the Cargo Ship Safety Construction Certificate or the Cargo Ship Safety Certificate', null),
   ('LA.1.2.1.2',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 2, 'checking the validity of the Safety Management Certificate (SMC) and that a copy of the Document of Compliance (DOC) is on board', null),
@@ -270,8 +275,5 @@ VALUES
   ('LA.1.2.1.7',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 7, 'checking the certificate of class, if the ship is classed with a classification society', null),
   ('LA.1.2.1.8',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 8, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate', null),
   ('LA.1.2.1.9',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 9, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate', null),
-  ('CR.5.1.1', (select id from iclass.checklist_section where code = 'CR' and section_number = '5.1'), 1, 'overall and close up insepction of the tanks/spaces.', (select id from iclass.component_library where code = '230.37'))
+  ('CR.5.1.1', (select id from iclass.checklist_section where code = 'CR' and section_number = '5.1'), 1, 'overall and close up insepction of the cargo holds', (select id from iclass.breakdown_template_node where code = '23'))
 ON CONFLICT DO NOTHING;
-
-
-
