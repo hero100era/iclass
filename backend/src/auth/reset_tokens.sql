@@ -58,7 +58,7 @@ BEGIN
     -- Update the user's password
     -- Note: auth.user trigger encrypt_pass handles hashing
     UPDATE auth.user
-    SET pass = new_pass_arg
+    SET password_hash = new_pass_arg
     WHERE email = token_record.email;
 
     -- Mark token as used

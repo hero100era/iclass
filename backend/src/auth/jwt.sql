@@ -71,7 +71,8 @@ BEGIN
     auth.user u
   WHERE
     u.email = user_profile.email
-    AND u.password_hash = auth.crypt(user_profile.password, u.password_hash);
+    AND u.password_hash = auth.crypt(user_profile.password, u.password_hash)
+    AND u.is_active = TRUE;
 END;
 $$
 LANGUAGE plpgsql;

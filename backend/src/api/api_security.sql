@@ -408,7 +408,7 @@ FROM iclass.audit_checklist;
 DROP VIEW IF EXISTS api.survey_checklist_item_particulars CASCADE;
 CREATE OR REPLACE VIEW api.survey_checklist_item_particulars AS
 SELECT
-    id, survey_checklist_id, source_particular_id, attr_key, attr_title,
+    id, survey_checklist_id, source_particular_id, ship_breakdown_node_id, attr_key, attr_title,
     data_type, unit, selection_options, is_required, sort_order, attr_result,
     created_at, updated_at
 FROM iclass.survey_checklist_item_particular;
@@ -416,7 +416,7 @@ FROM iclass.survey_checklist_item_particular;
 DROP VIEW IF EXISTS api.audit_checklist_item_particulars CASCADE;
 CREATE OR REPLACE VIEW api.audit_checklist_item_particulars AS
 SELECT
-    id, audit_checklist_id, source_particular_id, attr_key, attr_title,
+    id, audit_checklist_id, source_particular_id, ship_breakdown_node_id, attr_key, attr_title,
     data_type, unit, selection_options, is_required, sort_order, attr_result,
     created_at, updated_at
 FROM iclass.audit_checklist_item_particular;

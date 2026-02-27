@@ -1,95 +1,61 @@
 import { ApiGET, ApiPATCH } from "~/.server/lib/api";
 
+const API_HOST = process.env.API_URL || "http://localhost:2000";
+
+async function fetchJson(res: any, label?: string) {
+    try {
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error(`API Parse Error [${label}]:`, e);
+        return [];
+    }
+}
+
+function mapParticulars(items: any[], sourceKey: string) {
+    return items.map((item: any) => ({
+        ...item,
+        particulars: (item[sourceKey] || []).map((p: any) => ({
+            ...p,
+            result: p.attr_result || "",
+            type: p.data_type,
+            title: p.attr_title
+        }))
+    }));
+}
+
 export async function getChecklistData({ params, request }: any) {
     const { id } = params;
-    const host = process.env.API_URL || "http://localhost:2000";
-
-    const fetchJson = async (res: any, label?: string) => {
-        try {
-            if (!res.ok) {
-                // console.error(`API Error [${label}]: ${res.status} ${res.statusText}`);
-                return [];
-            }
-            const data = await res.json();
-            // if (label) console.log(`API Success [${label}]:`, Array.isArray(data) ? data.length : 0, "items");
-            return Array.isArray(data) ? data : [];
-        } catch (e) {
-            console.error(`API Parse Error [${label}]:`, e);
-            return [];
-        }
-    };
-
-    const dummyRes = () => Promise.resolve({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => []
-    } as any);
 
     // 1. Get job and sub-jobs
-    const [surveyJobRes, auditJobRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_jobs?job_id=eq.${id}`),
-        ApiGET(request, `${host}/audit_jobs?job_id=eq.${id}`)
-    ]);
-
     const [surveyJobs, auditJobs] = await Promise.all([
-        fetchJson(surveyJobRes, "surveyJobs"),
-        fetchJson(auditJobRes, "auditJobs")
+        ApiGET(request, `${API_HOST}/survey_jobs?job_id=eq.${id}`).then(r => fetchJson(r, "surveyJobs")),
+        ApiGET(request, `${API_HOST}/audit_jobs?job_id=eq.${id}`).then(r => fetchJson(r, "auditJobs"))
     ]);
 
     const surveyJob = surveyJobs[0] || null;
     const auditJob = auditJobs[0] || null;
 
-    // 2. Get survey/audit lines to know which surveys are in scope
-    const [surveyLinesRes, auditLinesRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`) : dummyRes()
-    ]);
-
+    // 2. Get survey/audit lines
     const [surveyLines, auditLines] = await Promise.all([
-        fetchJson(surveyLinesRes, "surveyLines"),
-        fetchJson(auditLinesRes, "auditLines")
+        surveyJob ? ApiGET(request, `${API_HOST}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`).then(r => fetchJson(r, "surveyLines")) : [],
+        auditJob ? ApiGET(request, `${API_HOST}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`).then(r => fetchJson(r, "auditLines")) : []
     ]);
 
     // 3. Get checklists and results
-    const [surveyChecklistsRes, auditChecklistsRes, checklistResultsRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*)),ship_breakdown_nodes(*,ship_breakdown_node_particulars(*),children:ship_breakdown_nodes!parent_node_id(*,ship_breakdown_node_particulars(*))),survey_checklist_item_particulars(*)`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*)),ship_breakdown_nodes(*,ship_breakdown_node_particulars(*),children:ship_breakdown_nodes!parent_node_id(*,ship_breakdown_node_particulars(*))),audit_checklist_item_particulars(*)`) : dummyRes(),
-        ApiGET(request, `${host}/checklist_results`)
-    ]);
-
+    const checklistSelect = `*,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*))`;
     const [surveyChecklistsRaw, auditChecklistsRaw, checklistResults] = await Promise.all([
-        fetchJson(surveyChecklistsRes, "surveyChecklists"),
-        fetchJson(auditChecklistsRes, "auditChecklists"),
-        fetchJson(checklistResultsRes, "checklistResults")
+        surveyJob ? ApiGET(request, `${API_HOST}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=${checklistSelect},survey_checklist_item_particulars(*,ship_breakdown_nodes(name,code))`).then(r => fetchJson(r, "surveyChecklists")) : [],
+        auditJob ? ApiGET(request, `${API_HOST}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=${checklistSelect},audit_checklist_item_particulars(*,ship_breakdown_nodes(name,code))`).then(r => fetchJson(r, "auditChecklists")) : [],
+        ApiGET(request, `${API_HOST}/checklist_results`).then(r => fetchJson(r, "checklistResults"))
     ]);
-
-    // Map particulars to the format expected by the frontend
-    const surveyChecklists = surveyChecklistsRaw.map((sc: any) => ({
-        ...sc,
-        particulars: (sc.survey_checklist_item_particulars || []).map((p: any) => ({
-            ...p,
-            result: p.attr_result || "",
-            type: p.data_type,
-            title: p.attr_title
-        }))
-    }));
-
-    const auditChecklists = auditChecklistsRaw.map((ac: any) => ({
-        ...ac,
-        particulars: (ac.audit_checklist_item_particulars || []).map((p: any) => ({
-            ...p,
-            result: p.attr_result || "",
-            type: p.data_type,
-            title: p.attr_title
-        }))
-    }));
 
     return {
         surveyLines,
         auditLines,
-        surveyChecklists,
-        auditChecklists,
+        surveyChecklists: mapParticulars(surveyChecklistsRaw, "survey_checklist_item_particulars"),
+        auditChecklists: mapParticulars(auditChecklistsRaw, "audit_checklist_item_particulars"),
         checklistResults,
         surveyJobId: surveyJob?.id,
         auditJobId: auditJob?.id
@@ -97,16 +63,13 @@ export async function getChecklistData({ params, request }: any) {
 }
 
 export async function updateChecklistResult({ request }: any, { id, result, type }: any) {
-    const host = process.env.API_URL || "http://localhost:2000";
     const endpoint = type === "survey" ? "survey_checklists" : "audit_checklists";
-
-    const res = await ApiPATCH(request, `${host}/${endpoint}?id=eq.${id}`, { result });
+    const res = await ApiPATCH(request, `${API_HOST}/${endpoint}?id=eq.${id}`, { result });
     if (!res.ok) throw new Error("Failed to update result");
     return { success: true };
 }
 
 export async function updateChecklistParticulars({ request }: any, { id, particularsJson, type }: any) {
-    const host = process.env.API_URL || "http://localhost:2000";
     const endpoint = type === "survey" ? "survey_checklist_item_particulars" : "audit_checklist_item_particulars";
 
     let particulars = [];
@@ -116,33 +79,12 @@ export async function updateChecklistParticulars({ request }: any, { id, particu
         throw new Error("Invalid JSON format for particulars");
     }
 
-    // Update individual particulars
     for (const p of particulars) {
         if (p.id) {
-            await ApiPATCH(request, `${host}/${endpoint}?id=eq.${p.id}`, {
+            await ApiPATCH(request, `${API_HOST}/${endpoint}?id=eq.${p.id}`, {
                 attr_result: p.result
             });
         }
-    }
-
-    return { success: true };
-}
-
-export async function updateShipComponentProperties({ request }: any, { id, propertiesJson }: any) {
-    const host = process.env.API_URL || "http://localhost:2000";
-
-    let properties = [];
-    try {
-        properties = JSON.parse(propertiesJson as string);
-    } catch (e) {
-        throw new Error("Invalid JSON format for properties");
-    }
-
-    // Update individual particulars
-    for (const prop of properties) {
-        await ApiPATCH(request, `${host}/ship_breakdown_node_particulars?id=eq.${prop.id}`, {
-            attr_value: prop.attr_value
-        });
     }
 
     return { success: true };

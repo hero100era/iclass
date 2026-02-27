@@ -16,6 +16,8 @@ async function ApiGET<T = any>(request: Request, url = "", customHeaders: Record
   });
 
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`API GET failed: ${response.status} ${response.statusText} - Body: ${errorBody}`);
     throw new Error(`API GET failed: ${response.statusText}`);
   }
 

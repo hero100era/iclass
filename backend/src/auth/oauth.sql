@@ -103,7 +103,7 @@ BEGIN
           ) VALUES (
             email,
             encode(auth.gen_random_bytes(32), 'hex'), -- Random password hash
-            'authenticator', -- Default role, change as needed
+            'customers', -- Default role, change as needed
             'default' -- Default category, change as needed
           )
           RETURNING id INTO v_user_id;
@@ -226,9 +226,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  DELETE FROM auth.oauth_account
-  WHERE user_id = p_user_id
-    AND provider = provider;
+  DELETE FROM auth.oauth_account oa
+  WHERE oa.user_id = p_user_id
+    AND oa.provider = provider;
 
   RETURN FOUND;
 END;

@@ -42,10 +42,11 @@ BEGIN
             ORDER BY ci.id, sbn.id NULLS LAST
             RETURNING id, item_id, ship_breakdown_node_id
         )
-        -- Copy particulars from the checklist item template
+        -- Copy particulars from the checklist item template AND from child breakdown nodes
         INSERT INTO iclass.survey_checklist_item_particular (
             survey_checklist_id, source_particular_id, attr_key, attr_title, data_type, unit, selection_options, is_required, sort_order, attr_result, ship_breakdown_node_id
         )
+        -- 1. Copy template particulars (optionally duplicated for children if they exist)
         SELECT 
             ic.id,
             cip.id,
@@ -60,7 +61,26 @@ BEGIN
             COALESCE(c.id, ic.ship_breakdown_node_id)
         FROM inserted_checklists ic
         JOIN iclass.checklist_item_particular cip ON ic.item_id = cip.checklist_item_id
-        LEFT JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id;
+        LEFT JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id
+
+        UNION ALL
+
+        -- 2. Copy particulars from immediate children of the breakdown node
+        SELECT
+            ic.id,
+            NULL, -- source_particular_id
+            sbnp.attr_key,
+            sbnp.attr_title,
+            sbnp.data_type,
+            sbnp.unit,
+            sbnp.selection_options,
+            FALSE, -- is_required (not present in ship node particular)
+            sbnp.sort_order,
+            sbnp.attr_value,
+            c.id
+        FROM inserted_checklists ic
+        JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id
+        JOIN iclass.ship_breakdown_node_particular sbnp ON sbnp.ship_breakdown_node_id = c.id;
         
         RETURN NEW;
     ELSIF (TG_OP = 'DELETE') THEN
@@ -125,10 +145,11 @@ BEGIN
             ORDER BY ci.id, sbn.id NULLS LAST
             RETURNING id, item_id, ship_breakdown_node_id
         )
-        -- Copy particulars from the checklist item template
+        -- Copy particulars from the checklist item template AND from child breakdown nodes
         INSERT INTO iclass.audit_checklist_item_particular (
             audit_checklist_id, source_particular_id, attr_key, attr_title, data_type, unit, selection_options, is_required, sort_order, attr_result, ship_breakdown_node_id
         )
+        -- 1. Copy template particulars (optionally duplicated for children if they exist)
         SELECT 
             ic.id,
             cip.id,
@@ -143,7 +164,26 @@ BEGIN
             COALESCE(c.id, ic.ship_breakdown_node_id)
         FROM inserted_checklists ic
         JOIN iclass.checklist_item_particular cip ON ic.item_id = cip.checklist_item_id
-        LEFT JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id;
+        LEFT JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id
+
+        UNION ALL
+
+        -- 2. Copy particulars from immediate children of the breakdown node
+        SELECT
+            ic.id,
+            NULL, -- source_particular_id
+            sbnp.attr_key,
+            sbnp.attr_title,
+            sbnp.data_type,
+            sbnp.unit,
+            sbnp.selection_options,
+            FALSE, -- is_required (not present in ship node particular)
+            sbnp.sort_order,
+            sbnp.attr_value,
+            c.id
+        FROM inserted_checklists ic
+        JOIN iclass.ship_breakdown_node c ON c.parent_node_id = ic.ship_breakdown_node_id
+        JOIN iclass.ship_breakdown_node_particular sbnp ON sbnp.ship_breakdown_node_id = c.id;
         
         RETURN NEW;
     ELSIF (TG_OP = 'DELETE') THEN

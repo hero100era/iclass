@@ -1,6 +1,6 @@
-import { ClipboardCheck, CheckCircle2, XCircle, MinusCircle, Info, Save, ChevronRight, ListChecks } from "lucide-react";
-import { useLoaderData, Form, useActionData, useNavigation, useSubmit } from "react-router";
-import { getChecklistData, updateChecklistResult, updateChecklistParticulars, updateShipComponentProperties } from "./checklist.server";
+import { ClipboardCheck, Info, ListChecks } from "lucide-react";
+import { useLoaderData, useSubmit } from "react-router";
+import { getChecklistData, updateChecklistResult, updateChecklistParticulars } from "./checklist.server";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
 
@@ -26,19 +26,130 @@ export async function action(args: any) {
         return await updateChecklistParticulars(args, { id, particularsJson, type });
     }
 
-    if (intent === "update_component_properties") {
-        const id = formData.get("id");
-        const propertiesJson = formData.get("properties");
-        return await updateShipComponentProperties(args, { id, propertiesJson });
-    }
-
     return { error: "Unknown action" };
+}
+
+/** Renders the particulars table for a checklist item across all its instances. */
+function ParticularsTable({ particulars, activeType, submit }: {
+    particulars: any[];
+    activeType: "survey" | "audit";
+    submit: ReturnType<typeof useSubmit>;
+}) {
+    if (particulars.length === 0) return null;
+
+    // Group by node
+    const nodes: any[] = [];
+    const nodeMap: Record<string, any> = {};
+    const attrKeys: string[] = [];
+    const attrMap: Record<string, any> = {};
+
+    particulars.forEach((p: any) => {
+        const nodeId = p.ship_breakdown_node_id || "default";
+        if (!nodeMap[nodeId]) {
+            nodeMap[nodeId] = {
+                id: nodeId,
+                name: p.ship_breakdown_nodes?.name || "Shared",
+                code: p.ship_breakdown_nodes?.code || "",
+                particulars: {}
+            };
+            nodes.push(nodeMap[nodeId]);
+        }
+        nodeMap[nodeId].particulars[p.attr_key] = p;
+
+        if (!attrMap[p.attr_key]) {
+            attrMap[p.attr_key] = { key: p.attr_key, title: p.title, unit: p.unit, type: p.type };
+            attrKeys.push(p.attr_key);
+        }
+    });
+
+    const showNodeColumn = nodes.length > 1 || (nodes.length === 1 && nodes[0].id !== "default");
+
+    const submitParticular = (p: any, value: string) => {
+        const formData = new FormData();
+        formData.append("intent", "update_particulars");
+        formData.append("id", (p.survey_checklist_id || p.audit_checklist_id).toString());
+        formData.append("particulars", JSON.stringify([{ ...p, result: value }]));
+        formData.append("type", activeType);
+        submit(formData, { method: "post" });
+    };
+
+    return (
+        <div className="ml-6 pt-1">
+            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="px-3 py-1.5 bg-slate-50/50 border-b border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">Required Particulars</span>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[10px]">
+                        <thead className="bg-slate-50/80 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight text-[9px]">
+                            <tr>
+                                {showNodeColumn && <th className="px-3 py-1.5 border-r border-slate-100 min-w-[120px]">Component / Node</th>}
+                                {attrKeys.map(key => (
+                                    <th key={key} className="px-3 py-1.5 min-w-[100px] border-r border-slate-100 last:border-0">
+                                        {attrMap[key].title} {attrMap[key].unit && <span className="lowercase font-normal">({attrMap[key].unit})</span>}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {nodes.map((node) => (
+                                <tr key={node.id} className="hover:bg-slate-50/30 transition-colors">
+                                    {showNodeColumn && (
+                                        <td className="px-3 py-1.5 border-r border-slate-100 font-medium text-slate-700 align-middle">
+                                            <div className="flex flex-col">
+                                                <span>{node.name}</span>
+                                                {node.code && <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">{node.code}</span>}
+                                            </div>
+                                        </td>
+                                    )}
+                                    {attrKeys.map(key => {
+                                        const p = node.particulars[key];
+                                        if (!p) return <td key={key} className="px-3 py-1.5 bg-slate-50/20 border-r border-slate-100 last:border-0"></td>;
+                                        return (
+                                            <td key={key} className="px-3 py-1.5 border-r border-slate-100 last:border-0 align-middle">
+                                                {p.type === "boolean" ? (
+                                                    <div className="flex gap-2 items-center">
+                                                        {["Yes", "No"].map((opt) => (
+                                                            <label key={opt} className="flex items-center gap-1 cursor-pointer group">
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`particular-${p.id}`}
+                                                                    value={opt}
+                                                                    checked={p.result === opt}
+                                                                    onChange={(e) => submitParticular(p, e.target.value)}
+                                                                    className="w-2.5 h-2.5 text-primary border-slate-300 focus:ring-primary/20"
+                                                                />
+                                                                <span className="text-[9px] text-slate-600 group-hover:text-primary transition-colors">{opt}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type={p.type === "number" ? "number" : p.type === "date" ? "date" : "text"}
+                                                        defaultValue={p.result || ""}
+                                                        onBlur={(e) => {
+                                                            if (e.target.value !== p.result) submitParticular(p, e.target.value);
+                                                        }}
+                                                        placeholder="-"
+                                                        className="w-full bg-transparent border border-transparent rounded px-1 py-0.5 outline-none focus:bg-white focus:border-primary/20 hover:border-slate-200 transition-all text-slate-700"
+                                                    />
+                                                )}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default function JobChecklist() {
     const { surveyLines, auditLines, surveyChecklists, auditChecklists, checklistResults } = useLoaderData<typeof loader>();
     const submit = useSubmit();
-    const navigation = useNavigation();
 
     // Combine lines
     const allLines = [
@@ -60,10 +171,7 @@ export default function JobChecklist() {
         const sectionId = c.checklist_items?.section_id;
         if (!sectionId) return;
         if (!sections[sectionId]) {
-            sections[sectionId] = {
-                section: c.checklist_items.checklist_sections,
-                items: []
-            };
+            sections[sectionId] = { section: c.checklist_items.checklist_sections, items: [] };
         }
         sections[sectionId].items.push(c);
     });
@@ -73,24 +181,15 @@ export default function JobChecklist() {
         (a.section?.section_number || "").localeCompare(b.section?.section_number || "", undefined, { numeric: true })
     );
 
-    // Sort items within sections
+    // Sort items within sections, grouped by item_id
     sortedSections.forEach(s => {
-        // Group by item_id to handle multiple components per checklist item
-        const groupedItems: Record<number, any[]> = {};
+        const grouped: Record<number, any[]> = {};
         s.items.forEach(item => {
-            const itemId = item.item_id;
-            if (!groupedItems[itemId]) {
-                groupedItems[itemId] = [];
-            }
-            groupedItems[itemId].push(item);
+            (grouped[item.item_id] ||= []).push(item);
         });
-
-        // Convert grouped items to a list where each entry is a list of instances
-        const finalItems = Object.values(groupedItems).sort((a: any, b: any) =>
+        s.items = Object.values(grouped).sort((a: any, b: any) =>
             (a[0].checklist_items?.item_number || 0) - (b[0].checklist_items?.item_number || 0)
         );
-
-        s.items = finalItems;
     });
 
     const handleResultChange = (checklistId: number, result: string) => {
@@ -104,7 +203,7 @@ export default function JobChecklist() {
 
     return (
         <div className="flex flex-col h-full space-y-4 mx-auto">
-            {/* Header / Survey Selector */}
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-1">
                     <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -116,16 +215,13 @@ export default function JobChecklist() {
             </div>
 
             <div className="flex gap-4 items-start">
-                {/* Fixed survey list */}
+                {/* Sidebar */}
                 <aside className="w-64 shrink-0 space-y-2">
                     <div className="text-[10px] font-bold text-slate-400 uppercase px-2 mb-1">Surveys in Scope</div>
                     {allLines.map((line: any) => (
                         <button
                             key={`${line.type}-${line.id}`}
-                            onClick={() => {
-                                setActiveLineId(line.id);
-                                setActiveType(line.type);
-                            }}
+                            onClick={() => { setActiveLineId(line.id); setActiveType(line.type); }}
                             className={cn(
                                 "w-full text-left p-3 rounded-lg border transition-all flex flex-col gap-1 shadow-sm",
                                 activeLineId === line.id && activeType === line.type
@@ -168,9 +264,7 @@ export default function JobChecklist() {
                                     <div className="divide-y divide-slate-100">
                                         {sect.items.map((instances: any[]) => {
                                             const item = instances[0];
-                                            const isMultiple = instances.length > 1;
-                                            const hasBreakdownNode = item.ship_breakdown_nodes;
-
+                                            const allParticulars = instances.flatMap(inst => inst.particulars || []);
                                             return (
                                                 <div key={item.id} className="py-2 px-3 hover:bg-slate-50/30 transition-colors flex flex-col gap-2">
                                                     <div className="flex items-start gap-4">
@@ -179,7 +273,6 @@ export default function JobChecklist() {
                                                                 <span className="text-[10px] font-mono font-bold text-slate-400 py-0.5 shrink-0">{item.checklist_items?.item_number}.</span>
                                                                 <div className="flex-1 space-y-1.5">
                                                                     <p className="text-xs text-slate-800 leading-normal">{item.checklist_items?.content}</p>
-
                                                                     {item.checklist_items?.reg_reference && (
                                                                         <div className="flex items-center gap-1.5">
                                                                             <Info size={11} className="text-slate-300" />
@@ -193,207 +286,17 @@ export default function JobChecklist() {
                                                         <div className="w-20 shrink-0">
                                                             <select
                                                                 value={item.result || ""}
-                                                                onChange={(e) => {
-                                                                    instances.forEach(inst => handleResultChange(inst.id, e.target.value));
-                                                                }}
+                                                                onChange={(e) => instances.forEach(inst => handleResultChange(inst.id, e.target.value))}
                                                                 className="w-full bg-slate-100 border border-slate-200 rounded-md py-0.5 px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-primary/20 appearance-none text-center hover:bg-slate-200 transition-colors cursor-pointer"
                                                             >
                                                                 {(checklistResults || []).map((res: any) => (
-                                                                    <option key={res.code} value={res.code}>
-                                                                        {res.code}
-                                                                    </option>
+                                                                    <option key={res.code} value={res.code}>{res.code}</option>
                                                                 ))}
                                                             </select>
                                                         </div>
                                                     </div>
 
-                                                    {/* Particulars / Component Table */}
-                                                    {(hasBreakdownNode || (item.particulars && item.particulars.length > 0)) && (
-                                                        <div className="ml-6 pt-1">
-                                                            {hasBreakdownNode ? (
-                                                                <div className="space-y-4">
-                                                                    {instances.map((inst: any) => {
-                                                                        const node = inst.ship_breakdown_nodes;
-                                                                        const children = node?.children || [];
-                                                                        const particulars = node?.ship_breakdown_node_particulars || [];
-
-                                                                        if (children.length > 0) {
-                                                                            const allTitles = Array.from(new Set(
-                                                                                children.flatMap((c: any) => c.ship_breakdown_node_particulars?.map((p: any) => p.attr_title) || [])
-                                                                            )).sort() as string[];
-
-                                                                            return (
-                                                                                <div key={inst.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                                                                                    <div className="px-3 py-1.5 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <span className="font-bold text-slate-700 text-[10px]">{node.name}</span>
-                                                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-tighter">{node.code}</span>
-                                                                                        </div>
-                                                                                        <span className="text-[9px] font-bold text-primary/70 uppercase">Components Particulars</span>
-                                                                                    </div>
-                                                                                    <div className="overflow-x-auto">
-                                                                                        <table className="w-full text-left text-[10px]">
-                                                                                            <thead className="bg-slate-50/80 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight text-[9px]">
-                                                                                                <tr>
-                                                                                                    <th className="px-3 py-1.5 border-r border-slate-100 min-w-[120px]">Component Name</th>
-                                                                                                    {allTitles.map((title: string) => (
-                                                                                                        <th key={title} className="px-3 py-1.5 min-w-[100px] border-r border-slate-100 last:border-0">{title}</th>
-                                                                                                    ))}
-                                                                                                </tr>
-                                                                                            </thead>
-                                                                                            <tbody className="divide-y divide-slate-100">
-                                                                                                {children.map((child: any) => (
-                                                                                                    <tr key={child.id} className="hover:bg-slate-50/30 transition-colors">
-                                                                                                        <td className="px-3 py-1.5 border-r border-slate-100 font-medium text-slate-700 align-middle">
-                                                                                                            <div className="flex flex-col">
-                                                                                                                <span>{child.name}</span>
-                                                                                                                <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">{child.code}</span>
-                                                                                                            </div>
-                                                                                                        </td>
-                                                                                                        {allTitles.map((title: string) => {
-                                                                                                            const p = child.ship_breakdown_node_particulars?.find((x: any) => x.attr_title === title);
-                                                                                                            if (!p) return <td key={title} className="px-3 py-1.5 bg-slate-50/20 border-r border-slate-100 last:border-0"></td>;
-                                                                                                            return (
-                                                                                                                <td key={title} className="px-3 py-1.5 border-r border-slate-100 last:border-0 align-middle">
-                                                                                                                    <div className="flex items-center gap-1 group">
-                                                                                                                        <input
-                                                                                                                            type="text"
-                                                                                                                            defaultValue={p.attr_value || ""}
-                                                                                                                            onBlur={(e) => {
-                                                                                                                                if (e.target.value === p.attr_value) return;
-                                                                                                                                const formData = new FormData();
-                                                                                                                                formData.append("intent", "update_component_properties");
-                                                                                                                                formData.append("id", child.id.toString());
-                                                                                                                                formData.append("properties", JSON.stringify([{ id: p.id, attr_value: e.target.value }]));
-                                                                                                                                submit(formData, { method: "post" });
-                                                                                                                            }}
-                                                                                                                            placeholder="-"
-                                                                                                                            className="w-full bg-transparent border border-transparent rounded px-1 py-0.5 outline-none focus:bg-white focus:border-primary/20 hover:border-slate-200 transition-all text-slate-700"
-                                                                                                                        />
-                                                                                                                        {p.unit && <span className="text-[8px] text-slate-400 font-bold shrink-0">{p.unit}</span>}
-                                                                                                                    </div>
-                                                                                                                </td>
-                                                                                                            );
-                                                                                                        })}
-                                                                                                    </tr>
-                                                                                                ))}
-                                                                                            </tbody>
-                                                                                        </table>
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        }
-
-                                                                        return (
-                                                                            <div key={inst.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                                                                                <table className="w-full text-left text-[10px]">
-                                                                                    <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight text-[9px]">
-                                                                                        <tr>
-                                                                                            <th className="px-3 py-1.5 border-r border-slate-100 w-40">Breakdown Node</th>
-                                                                                            <th className="px-3 py-1.5">Technical Particulars</th>
-                                                                                        </tr>
-                                                                                    </thead>
-                                                                                    <tbody className="divide-y divide-slate-100">
-                                                                                        <tr className="align-top">
-                                                                                            <td className="px-3 py-2 border-r border-slate-100">
-                                                                                                <div className="flex flex-col text-[10px]">
-                                                                                                    <span className="font-bold text-slate-700">{node?.name}</span>
-                                                                                                    <span className="text-[9px] font-mono text-slate-400 lowercase">{node?.code}</span>
-                                                                                                </div>
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2">
-                                                                                                <div className="flex flex-col gap-2">
-                                                                                                    {(particulars || []).map((prop: any) => (
-                                                                                                        <div key={prop.id} className="flex items-center gap-2">
-                                                                                                            <span className="shrink-0 w-24 font-medium text-slate-600 truncate" title={prop.attr_title}>{prop.attr_title}:</span>
-                                                                                                            <input
-                                                                                                                type="text"
-                                                                                                                defaultValue={prop.attr_value || ""}
-                                                                                                                onBlur={(e) => {
-                                                                                                                    if (e.target.value === prop.attr_value) return;
-                                                                                                                    const formData = new FormData();
-                                                                                                                    formData.append("intent", "update_component_properties");
-                                                                                                                    formData.append("id", node.id.toString());
-                                                                                                                    formData.append("properties", JSON.stringify([{ id: prop.id, attr_value: e.target.value }]));
-                                                                                                                    submit(formData, { method: "post" });
-                                                                                                                }}
-                                                                                                                className="flex-1 bg-slate-50/50 border border-slate-200 rounded px-1.5 py-0.5 outline-none focus:bg-white focus:ring-1 focus:ring-primary/20 transition-all"
-                                                                                                                placeholder="Enter value..."
-                                                                                                            />
-                                                                                                            {prop.unit && <span className="text-[9px] text-slate-400 uppercase font-bold">{prop.unit}</span>}
-                                                                                                        </div>
-                                                                                                    ))}
-                                                                                                    {(particulars || []).length === 0 && <span className="text-slate-300 italic">No particulars</span>}
-                                                                                                </div>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="pt-2 space-y-3 bg-slate-50/50 p-3 rounded-lg border border-slate-100 max-w-2xl">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <Info size={12} className="text-primary/60" />
-                                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Required Particulars</span>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-1 gap-3">
-                                                                        {item.particulars.map((p: any, idx: number) => (
-                                                                            <div key={p.key || idx} className="flex flex-col gap-1">
-                                                                                <label className="text-[10px] font-medium text-slate-600 ml-0.5">{p.title}</label>
-                                                                                {p.type === "boolean" ? (
-                                                                                    <div className="flex gap-4 items-center h-8">
-                                                                                        {["Yes", "No"].map((opt) => (
-                                                                                            <label key={opt} className="flex items-center gap-1.5 cursor-pointer group">
-                                                                                                <input
-                                                                                                    type="radio"
-                                                                                                    name={`particular-${item.id}-${idx}`}
-                                                                                                    value={opt}
-                                                                                                    checked={p.result === opt}
-                                                                                                    onChange={(e) => {
-                                                                                                        const updated = [...item.particulars];
-                                                                                                        updated[idx] = { ...p, result: e.target.value };
-                                                                                                        const formData = new FormData();
-                                                                                                        formData.append("intent", "update_particulars");
-                                                                                                        formData.append("id", item.id.toString());
-                                                                                                        formData.append("particulars", JSON.stringify(updated));
-                                                                                                        formData.append("type", activeType);
-                                                                                                        submit(formData, { method: "post" });
-                                                                                                    }}
-                                                                                                    className="w-3 h-3 text-primary border-slate-300 focus:ring-primary/20"
-                                                                                                />
-                                                                                                <span className="text-xs text-slate-700 group-hover:text-primary transition-colors">{opt}</span>
-                                                                                            </label>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <input
-                                                                                        type={p.type === "number" ? "number" : p.type === "date" ? "date" : "text"}
-                                                                                        defaultValue={p.result || ""}
-                                                                                        placeholder={`Enter ${p.title.toLowerCase()}...`}
-                                                                                        onBlur={(e) => {
-                                                                                            if (e.target.value === p.result) return;
-                                                                                            const updated = [...item.particulars];
-                                                                                            updated[idx] = { ...p, result: e.target.value };
-                                                                                            const formData = new FormData();
-                                                                                            formData.append("intent", "update_particulars");
-                                                                                            formData.append("id", item.id.toString());
-                                                                                            formData.append("particulars", JSON.stringify(updated));
-                                                                                            formData.append("type", activeType);
-                                                                                            submit(formData, { method: "post" });
-                                                                                        }}
-                                                                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
-                                                                                    />
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                    <ParticularsTable particulars={allParticulars} activeType={activeType} submit={submit} />
                                                 </div>
                                             );
                                         })}
@@ -428,6 +331,6 @@ export default function JobChecklist() {
                     )}
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
