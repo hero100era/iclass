@@ -1,6 +1,10 @@
 -- Secure views for API schema
 -- These views will automatically respect RLS because they refer to the underlying tables
 
+-- Schema permissions
+GRANT USAGE ON SCHEMA api TO anonymous, authenticator, employees, customers, administrations, admingrp;
+GRANT USAGE ON SCHEMA iclass TO anonymous, authenticator, employees, customers, administrations, admingrp;
+
 DROP VIEW IF EXISTS api.ships CASCADE;
 CREATE OR REPLACE VIEW api.ships AS
 SELECT
@@ -206,7 +210,219 @@ SELECT
   id, survey_id, code, section_number, title, is_active
 FROM iclass.checklist_section;
 
+-- Breakdown Templates
+DROP VIEW IF EXISTS api.breakdown_templates CASCADE;
+CREATE OR REPLACE VIEW api.breakdown_templates AS
+SELECT
+    id, code, name, description, vessel_type, version, is_active, parent_template_id,
+    created_by, updated_by, created_at, updated_at
+FROM iclass.breakdown_template;
+
+DROP VIEW IF EXISTS api.breakdown_template_nodes CASCADE;
+CREATE OR REPLACE VIEW api.breakdown_template_nodes AS
+SELECT
+    id, template_id, parent_node_id, code, name, description, category, node_type,
+    level, sort_order, is_instantiable, default_quantity, is_active, metadata,
+    is_mandatory, is_leaf, created_at, updated_at
+FROM iclass.breakdown_template_node;
+
+-- DROP VIEW IF EXISTS api.breakdownnodes CASCADE;
+-- CREATE OR REPLACE VIEW api.breakdownnodes AS
+-- SELECT id, code, name, description, node_type, category
+-- FROM api.breakdown_template_nodes;
+
+DROP VIEW IF EXISTS api.breakdown_template_node_particulars CASCADE;
+CREATE OR REPLACE VIEW api.breakdown_template_node_particulars AS
+SELECT
+    p.id,
+    n.template_id,
+    p.template_node_id,
+    p.attr_key,
+    p.attr_title,
+    p.data_type,
+    p.default_value,
+    p.selection_options,
+    p.unit,
+    p.is_required,
+    p.sort_order,
+    p.created_at,
+    p.updated_at
+FROM iclass.breakdown_template_node_particular p
+JOIN iclass.breakdown_template_node n ON p.template_node_id = n.id;
+
+-- -----------------------------------------------------------------------------
+-- Function: api.fn_trig_breakdown_template_node_particulars_io
+-- Description: INSTEAD OF trigger function to make the particulars join view updatable.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION api.fn_trig_breakdown_template_node_particulars_io()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO iclass.breakdown_template_node_particular (
+            template_node_id, attr_key, attr_title, data_type, default_value, selection_options, unit, is_required, sort_order
+        ) VALUES (
+            NEW.template_node_id, NEW.attr_key, NEW.attr_title, NEW.data_type, NEW.default_value, NEW.selection_options, NEW.unit, COALESCE(NEW.is_required, FALSE), COALESCE(NEW.sort_order, 0)
+        ) RETURNING id, template_node_id, attr_key, attr_title, data_type, default_value, selection_options, unit, is_required, sort_order, created_at, updated_at
+        INTO NEW.id, NEW.template_node_id, NEW.attr_key, NEW.attr_title, NEW.data_type, NEW.default_value, NEW.selection_options, NEW.unit, NEW.is_required, NEW.sort_order, NEW.created_at, NEW.updated_at;
+        
+        -- We need to return template_id as well for the view consistency
+        SELECT template_id INTO NEW.template_id FROM iclass.breakdown_template_node WHERE id = NEW.template_node_id;
+        
+        RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
+        UPDATE iclass.breakdown_template_node_particular SET
+            template_node_id = NEW.template_node_id,
+            attr_key = NEW.attr_key,
+            attr_title = NEW.attr_title,
+            data_type = NEW.data_type,
+            default_value = NEW.default_value,
+            selection_options = NEW.selection_options,
+            unit = NEW.unit,
+            is_required = NEW.is_required,
+            sort_order = NEW.sort_order,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = OLD.id;
+        
+        -- Sync NEW with the updated state
+        SELECT * INTO NEW FROM api.breakdown_template_node_particulars WHERE id = OLD.id;
+        
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        DELETE FROM iclass.breakdown_template_node_particular WHERE id = OLD.id;
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger if exists
+DROP TRIGGER IF EXISTS tr_breakdown_template_node_particulars_io ON api.breakdown_template_node_particulars;
+
+CREATE TRIGGER tr_breakdown_template_node_particulars_io
+INSTEAD OF INSERT OR UPDATE OR DELETE ON api.breakdown_template_node_particulars
+FOR EACH ROW EXECUTE FUNCTION api.fn_trig_breakdown_template_node_particulars_io();
+
+-- Ship Breakdowns
+DROP VIEW IF EXISTS api.ship_breakdowns CASCADE;
+CREATE OR REPLACE VIEW api.ship_breakdowns AS
+SELECT
+    id, ship_id, template_id, name, description, revision, is_active,
+    applied_at, applied_by, created_at, updated_at
+FROM iclass.ship_breakdown;
+
+DROP VIEW IF EXISTS api.ship_breakdown_nodes CASCADE;
+CREATE OR REPLACE VIEW api.ship_breakdown_nodes AS
+SELECT
+    id, ship_id, ship_breakdown_id, parent_node_id, template_node_id,
+    code, name, description, category, node_type, level, sort_order,
+    is_from_template, is_modified, is_active, metadata, created_at, updated_at
+FROM iclass.ship_breakdown_node;
+
+DROP VIEW IF EXISTS api.ship_breakdown_node_particulars CASCADE;
+CREATE OR REPLACE VIEW api.ship_breakdown_node_particulars AS
+SELECT
+    p.id, 
+    p.ship_breakdown_node_id, 
+    p.template_particular_id, 
+    p.attr_key, 
+    p.attr_title,
+    p.attr_value, 
+    p.selection_options, 
+    p.data_type, 
+    p.unit, 
+    p.is_modified, 
+    p.sort_order,
+    p.created_at, 
+    p.updated_at,
+    n.ship_breakdown_id,
+    n.ship_id
+FROM iclass.ship_breakdown_node_particular p
+JOIN iclass.ship_breakdown_node n ON n.id = p.ship_breakdown_node_id;
+
+-- -----------------------------------------------------------------------------
+-- Function: api.fn_trig_ship_breakdown_node_particulars_io
+-- Description: INSTEAD OF trigger function to make the particulars join view updatable.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION api.fn_trig_ship_breakdown_node_particulars_io()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        UPDATE iclass.ship_breakdown_node_particular SET
+            attr_value = NEW.attr_value,
+            is_modified = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = OLD.id;
+        
+        -- Sync NEW with the updated state
+        SELECT * INTO NEW FROM api.ship_breakdown_node_particulars WHERE id = OLD.id;
+        
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add trigger
+DROP TRIGGER IF EXISTS tr_ship_breakdown_node_particulars_io ON api.ship_breakdown_node_particulars;
+CREATE TRIGGER tr_ship_breakdown_node_particulars_io
+INSTEAD OF UPDATE ON api.ship_breakdown_node_particulars
+FOR EACH ROW EXECUTE FUNCTION api.fn_trig_ship_breakdown_node_particulars_io();
+
+-- Checklists
+DROP VIEW IF EXISTS api.checklist_results CASCADE;
+CREATE OR REPLACE VIEW api.checklist_results AS
+SELECT code, description
+FROM iclass.checklist_result;
+
+DROP VIEW IF EXISTS api.checklist_items CASCADE;
+CREATE OR REPLACE VIEW api.checklist_items AS
+SELECT 
+    id, code, item_number, section_id, content, description,
+    breakdown_template_node_id,
+    reg_reference, referenced_item_id,
+    is_mandatory, sort_order, is_active
+FROM iclass.checklist_item;
+
+DROP VIEW IF EXISTS api.checklist_item_particulars CASCADE;
+CREATE OR REPLACE VIEW api.checklist_item_particulars AS
+SELECT
+    id, checklist_item_id, attr_key, attr_title, data_type, unit, 
+    default_value, selection_options, is_required, sort_order, description,
+    created_at, updated_at
+FROM iclass.checklist_item_particular;
+
+DROP VIEW IF EXISTS api.survey_checklists CASCADE;
+CREATE OR REPLACE VIEW api.survey_checklists AS
+SELECT
+    id, survey_job_id, survey_line_id, survey_audit_id, item_id, 
+    ship_breakdown_node_id, result, report_by, report_at
+FROM iclass.survey_checklist;
+
+DROP VIEW IF EXISTS api.audit_checklists CASCADE;
+CREATE OR REPLACE VIEW api.audit_checklists AS
+SELECT
+    id, audit_job_id, audit_line_id, survey_audit_id, item_id, 
+    ship_breakdown_node_id, result, report_by, report_at
+FROM iclass.audit_checklist;
+
+DROP VIEW IF EXISTS api.survey_checklist_item_particulars CASCADE;
+CREATE OR REPLACE VIEW api.survey_checklist_item_particulars AS
+SELECT
+    id, survey_checklist_id, source_particular_id, attr_key, attr_title,
+    data_type, unit, selection_options, is_required, sort_order, attr_result,
+    created_at, updated_at
+FROM iclass.survey_checklist_item_particular;
+
+DROP VIEW IF EXISTS api.audit_checklist_item_particulars CASCADE;
+CREATE OR REPLACE VIEW api.audit_checklist_item_particulars AS
+SELECT
+    id, audit_checklist_id, source_particular_id, attr_key, attr_title,
+    data_type, unit, selection_options, is_required, sort_order, attr_result,
+    created_at, updated_at
+FROM iclass.audit_checklist_item_particular;
+
 -- View: Full template tree with breadcrumb path
+DROP VIEW IF EXISTS api.v_template_tree CASCADE;
 CREATE OR REPLACE VIEW api.v_template_tree AS
 WITH RECURSIVE tree AS (
     SELECT
@@ -215,15 +431,14 @@ WITH RECURSIVE tree AS (
         tn.parent_node_id,
         tn.code,
         tn.name,
+        tn.description,
         tn.category,
         tn.node_type,
         tn.level,
         tn.sort_order,
-        tn.default_capacity,
-        tn.unit_of_measure,
         tn.name::TEXT AS breadcrumb,
         ARRAY[tn.id] AS path_ids
-    FROM iclass.template_nodes tn
+    FROM iclass.breakdown_template_node tn
     WHERE tn.parent_node_id IS NULL
 
     UNION ALL
@@ -234,15 +449,14 @@ WITH RECURSIVE tree AS (
         child.parent_node_id,
         child.code,
         child.name,
+        child.description,
         child.category,
         child.node_type,
         child.level,
         child.sort_order,
-        child.default_capacity,
-        child.unit_of_measure,
         tree.breadcrumb || ' > ' || child.name,
         tree.path_ids || child.id
-    FROM iclass.template_node child
+    FROM iclass.breakdown_template_node child
     JOIN tree ON child.parent_node_id = tree.id
 )
 SELECT
@@ -254,6 +468,7 @@ JOIN iclass.breakdown_template bt ON bt.id = t.template_id
 ORDER BY t.template_id, t.path_ids;
 
 -- View: Full ship breakdown tree
+DROP VIEW IF EXISTS api.v_ship_breakdown_tree CASCADE;
 CREATE OR REPLACE VIEW api.v_ship_breakdown_tree AS
 WITH RECURSIVE tree AS (
     SELECT
@@ -262,6 +477,7 @@ WITH RECURSIVE tree AS (
         sn.parent_node_id,
         sn.code,
         sn.name,
+        sn.description,
         sn.category,
         sn.node_type,
         sn.level,
@@ -283,6 +499,7 @@ WITH RECURSIVE tree AS (
         child.parent_node_id,
         child.code,
         child.name,
+        child.description,
         child.category,
         child.node_type,
         child.level,
@@ -340,5 +557,21 @@ GRANT SELECT ON api.surveyor_jobs TO employees;
 GRANT SELECT ON api.employees TO employees, admingrp;
 GRANT SELECT ON api.organizations TO employees, admingrp;
 
--- Customers can only read
--- (Actually, RLS handles the 'which' rows, GRANT handles the 'what' actions)
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.breakdown_templates TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.breakdown_template_nodes TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.breakdown_template_node_particulars TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.ship_breakdowns TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.ship_breakdown_nodes TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.ship_breakdown_node_particulars TO employees, admingrp;
+GRANT SELECT ON api.checklist_results TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.checklist_items TO employees, admingrp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON api.checklist_item_particulars TO employees, admingrp;
+GRANT SELECT, UPDATE ON api.survey_checklists TO employees, admingrp;
+GRANT SELECT, UPDATE ON api.audit_checklists TO employees, admingrp;
+GRANT SELECT, UPDATE ON api.survey_checklist_item_particulars TO employees, admingrp;
+GRANT SELECT, UPDATE ON api.audit_checklist_item_particulars TO employees, admingrp;
+GRANT SELECT ON api.v_template_tree TO employees, admingrp;
+GRANT SELECT ON api.v_ship_breakdown_tree TO employees, admingrp;
+
+GRANT EXECUTE ON FUNCTION api.fn_copy_breakdown_template_node(INTEGER, INTEGER) TO employees, admingrp;
+GRANT EXECUTE ON FUNCTION api.fn_copy_ship_breakdown_node(INTEGER, INTEGER) TO employees, admingrp;

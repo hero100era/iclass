@@ -160,7 +160,7 @@ ON CONFLICT
 
 -- Create enum for certificates applicability
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificates_applicability_enum') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificate_applicability_enum') THEN
         CREATE TYPE iclass.certificate_applicability_enum AS ENUM(
           'Vessel',
           'Company'
@@ -452,7 +452,7 @@ CREATE TABLE IF NOT EXISTS iclass.breakdown_template (
     version         VARCHAR(20)      NOT NULL DEFAULT '1.0',
     is_active       BOOLEAN   NOT NULL DEFAULT TRUE,
     -- Versioning / lineage
-    parent_template_id integer REFERENCES iclass.breakdown_template(id),  -- if cloned from another template
+    parent_template_id integer REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- if cloned from another template
 
     created_by      VARCHAR(100),
     updated_by      VARCHAR(100),
@@ -533,7 +533,7 @@ CREATE TABLE IF NOT EXISTS iclass.checklist_item (
   section_id integer REFERENCES iclass.checklist_section(id) ON DELETE CASCADE,
   content varchar(1000),
   description text,
-  breakdown_template_node_id integer REFERENCES iclass.breakdown_template_node(id),
+  breakdown_template_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
   reg_reference text,
   referenced_item_id integer REFERENCES iclass.checklist_item(id) ON DELETE CASCADE,
   is_mandatory BOOLEAN NOT NULL DEFAULT TRUE,

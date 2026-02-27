@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS iclass.ship(
 -- ---------------------------------------------
 -- Ship Breakdown (header - links ship ↔ template)
 -- ---------------------------------------------
-CREATE TABLE iclass.ship_breakdown (
+CREATE TABLE IF NOT EXISTS iclass.ship_breakdown (
     id              serial PRIMARY KEY,
     ship_id         integer   NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
-    template_id integer  REFERENCES iclass.breakdown_template(id),  -- which template was used
+    template_id integer  REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- which template was used
     name            VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
     description     TEXT,
     revision        INTEGER      NOT NULL DEFAULT 1,
@@ -72,17 +72,18 @@ CREATE TABLE iclass.ship_breakdown (
     applied_at      TIMESTAMPTZ,                           -- when template was applied
     applied_by      VARCHAR(100),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- Ensure only one active breakdown per ship
-    CONSTRAINT uq_ship_active_breakdowns UNIQUE (ship_id, is_active)
-        -- Note: This only works if is_active is always TRUE/FALSE (no NULLs)
-        -- For partial unique, see the index below
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Ensure only one active breakdown per ship
+-- Use a partial unique index to allow only one active breakdown per ship
+-- but allow multiple inactive ones.
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_ship_active_breakdown ON iclass.ship_breakdown(ship_id) WHERE (is_active = TRUE);
 
 -- ---------------------------------------------
 -- Ship Breakdown Node (ship-specific component tree)
 -- ---------------------------------------------
-CREATE TABLE iclass.ship_breakdown_node (
+CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node (
     id                  serial PRIMARY KEY,
     ship_id             integer  NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
     ship_breakdown_id   integer  NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
@@ -122,7 +123,7 @@ CREATE TABLE iclass.ship_breakdown_node (
 -- ---------------------------------------------
 -- Ship Node Attributes (ship-specific key-value)
 -- ---------------------------------------------
-CREATE TABLE iclass.ship_breakdown_node_particular (
+CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node_particular (
     id serial PRIMARY KEY,
     ship_breakdown_node_id integer NOT NULL REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
     -- Traceability

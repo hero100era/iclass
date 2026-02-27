@@ -5,7 +5,7 @@ export default [
     index("routes/home.tsx"),
     route("vessels", "routes/vessels/index.tsx"),
     route("vessels/:id", "routes/vessels/detail.tsx"),
-    route("vessels/:id/components", "routes/vessels/components.tsx"),
+    route("vessels/:id/breakdowns", "routes/vessels/breakdowns.tsx"),
     route("certificates", "routes/certificates/index.tsx"),
     route("surveys", "routes/surveys/index.tsx"),
     route("profile", "routes/profile.tsx"),
@@ -14,7 +14,8 @@ export default [
     route("jobs", "routes/jobs/index.tsx"),
     route("admin", "routes/admin/index.tsx"),
     route("admin/checklists", "routes/admin/checklists.tsx"),
-    route("admin/component-library", "routes/admin/component-library.tsx"),
+    route("admin/breakdown-templates", "routes/admin/breakdown-templates/index.tsx"),
+    route("admin/breakdown-templates/:id", "routes/admin/breakdown-templates/detail.tsx"),
   ]),
   route("jobs/:id", "routes/jobs/layout.tsx", [
     index("routes/jobs/overview.tsx"),

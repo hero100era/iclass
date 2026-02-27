@@ -13,12 +13,12 @@ export default function AdminDashboard() {
             bgColor: "bg-blue-50"
         },
         {
-            title: "Component Library",
-            description: "Define standard technical components and their required properties.",
-            icon: Library,
-            to: "/admin/component-library",
-            color: "text-purple-600",
-            bgColor: "bg-purple-50"
+            title: "Breakdown Templates",
+            description: "Manage hierarchical equipment breakdown templates for different vessel types.",
+            icon: Network,
+            to: "/admin/breakdown-templates",
+            color: "text-emerald-600",
+            bgColor: "bg-emerald-50"
         },
         {
             title: "User Permissions",

@@ -169,7 +169,7 @@ export default function JobChecklist() {
                                         {sect.items.map((instances: any[]) => {
                                             const item = instances[0];
                                             const isMultiple = instances.length > 1;
-                                            const hasComponent = item.checklist_items?.component_library_id;
+                                            const hasBreakdownNode = item.ship_breakdown_nodes;
 
                                             return (
                                                 <div key={item.id} className="py-2 px-3 hover:bg-slate-50/30 transition-colors flex flex-col gap-2">
@@ -191,14 +191,9 @@ export default function JobChecklist() {
                                                         </div>
 
                                                         <div className="w-20 shrink-0">
-                                                            {/* Result selector - if multiple, we use the first one's result or handle per instance? 
-                                                                Actually, if there are multiple instances, they usually have individual results. 
-                                                                But for this UI, we show one selector if they are synchronized or if it's the item result. */}
                                                             <select
                                                                 value={item.result || ""}
                                                                 onChange={(e) => {
-                                                                    // Update result for all instances? Or just the first one?
-                                                                    // Usually, if it's grouped, we might want to update all if they share the same check.
                                                                     instances.forEach(inst => handleResultChange(inst.id, e.target.value));
                                                                 }}
                                                                 className="w-full bg-slate-100 border border-slate-200 rounded-md py-0.5 px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-primary/20 appearance-none text-center hover:bg-slate-200 transition-colors cursor-pointer"
@@ -213,53 +208,130 @@ export default function JobChecklist() {
                                                     </div>
 
                                                     {/* Particulars / Component Table */}
-                                                    {(hasComponent || (item.particulars && item.particulars.length > 0)) && (
+                                                    {(hasBreakdownNode || (item.particulars && item.particulars.length > 0)) && (
                                                         <div className="ml-6 pt-1">
-                                                            {hasComponent ? (
-                                                                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                                                                    <table className="w-full text-left text-[10px]">
-                                                                        <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight">
-                                                                            <tr>
-                                                                                <th className="px-3 py-1.5">Component</th>
-                                                                                <th className="px-3 py-1.5">Position</th>
-                                                                                <th className="px-3 py-1.5">Properties & Results</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-slate-100">
-                                                                            {instances.map((inst) => (
-                                                                                <tr key={inst.id} className="align-top">
-                                                                                    <td className="px-3 py-2 font-bold text-slate-700">{inst.ship_component_tree?.custom_name || inst.checklist_items?.component_library?.name}</td>
-                                                                                    <td className="px-3 py-2 text-slate-500 italic">{inst.ship_component_tree?.position_description || "-"}</td>
-                                                                                    <td className="px-3 py-2">
-                                                                                        <div className="flex flex-col gap-2">
-                                                                                            {(inst.ship_component_tree?.properties || []).map((prop: any, pIdx: number) => (
-                                                                                                <div key={pIdx} className="flex items-center gap-2">
-                                                                                                    <span className="shrink-0 w-24 font-medium text-slate-600 truncate" title={prop.title}>{prop.title}:</span>
-                                                                                                    <input
-                                                                                                        type="text"
-                                                                                                        defaultValue={prop.result || ""}
-                                                                                                        onBlur={(e) => {
-                                                                                                            if (e.target.value === prop.result) return;
-                                                                                                            const updatedProps = [...inst.ship_component_tree.properties];
-                                                                                                            updatedProps[pIdx] = { ...prop, result: e.target.value };
-                                                                                                            const formData = new FormData();
-                                                                                                            formData.append("intent", "update_component_properties");
-                                                                                                            formData.append("id", inst.ship_component_tree.id.toString());
-                                                                                                            formData.append("properties", JSON.stringify(updatedProps));
-                                                                                                            submit(formData, { method: "post" });
-                                                                                                        }}
-                                                                                                        className="flex-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/20"
-                                                                                                        placeholder="Enter result..."
-                                                                                                    />
-                                                                                                </div>
-                                                                                            ))}
-                                                                                            {(inst.ship_component_tree?.properties || []).length === 0 && <span className="text-slate-300 italic">No properties</span>}
+                                                            {hasBreakdownNode ? (
+                                                                <div className="space-y-4">
+                                                                    {instances.map((inst: any) => {
+                                                                        const node = inst.ship_breakdown_nodes;
+                                                                        const children = node?.children || [];
+                                                                        const particulars = node?.ship_breakdown_node_particulars || [];
+
+                                                                        if (children.length > 0) {
+                                                                            const allTitles = Array.from(new Set(
+                                                                                children.flatMap((c: any) => c.ship_breakdown_node_particulars?.map((p: any) => p.attr_title) || [])
+                                                                            )).sort() as string[];
+
+                                                                            return (
+                                                                                <div key={inst.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                                                                                    <div className="px-3 py-1.5 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="font-bold text-slate-700 text-[10px]">{node.name}</span>
+                                                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-tighter">{node.code}</span>
                                                                                         </div>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
+                                                                                        <span className="text-[9px] font-bold text-primary/70 uppercase">Components Particulars</span>
+                                                                                    </div>
+                                                                                    <div className="overflow-x-auto">
+                                                                                        <table className="w-full text-left text-[10px]">
+                                                                                            <thead className="bg-slate-50/80 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight text-[9px]">
+                                                                                                <tr>
+                                                                                                    <th className="px-3 py-1.5 border-r border-slate-100 min-w-[120px]">Component Name</th>
+                                                                                                    {allTitles.map((title: string) => (
+                                                                                                        <th key={title} className="px-3 py-1.5 min-w-[100px] border-r border-slate-100 last:border-0">{title}</th>
+                                                                                                    ))}
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                                {children.map((child: any) => (
+                                                                                                    <tr key={child.id} className="hover:bg-slate-50/30 transition-colors">
+                                                                                                        <td className="px-3 py-1.5 border-r border-slate-100 font-medium text-slate-700 align-middle">
+                                                                                                            <div className="flex flex-col">
+                                                                                                                <span>{child.name}</span>
+                                                                                                                <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">{child.code}</span>
+                                                                                                            </div>
+                                                                                                        </td>
+                                                                                                        {allTitles.map((title: string) => {
+                                                                                                            const p = child.ship_breakdown_node_particulars?.find((x: any) => x.attr_title === title);
+                                                                                                            if (!p) return <td key={title} className="px-3 py-1.5 bg-slate-50/20 border-r border-slate-100 last:border-0"></td>;
+                                                                                                            return (
+                                                                                                                <td key={title} className="px-3 py-1.5 border-r border-slate-100 last:border-0 align-middle">
+                                                                                                                    <div className="flex items-center gap-1 group">
+                                                                                                                        <input
+                                                                                                                            type="text"
+                                                                                                                            defaultValue={p.attr_value || ""}
+                                                                                                                            onBlur={(e) => {
+                                                                                                                                if (e.target.value === p.attr_value) return;
+                                                                                                                                const formData = new FormData();
+                                                                                                                                formData.append("intent", "update_component_properties");
+                                                                                                                                formData.append("id", child.id.toString());
+                                                                                                                                formData.append("properties", JSON.stringify([{ id: p.id, attr_value: e.target.value }]));
+                                                                                                                                submit(formData, { method: "post" });
+                                                                                                                            }}
+                                                                                                                            placeholder="-"
+                                                                                                                            className="w-full bg-transparent border border-transparent rounded px-1 py-0.5 outline-none focus:bg-white focus:border-primary/20 hover:border-slate-200 transition-all text-slate-700"
+                                                                                                                        />
+                                                                                                                        {p.unit && <span className="text-[8px] text-slate-400 font-bold shrink-0">{p.unit}</span>}
+                                                                                                                    </div>
+                                                                                                                </td>
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                            </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+
+                                                                        return (
+                                                                            <div key={inst.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                                                                                <table className="w-full text-left text-[10px]">
+                                                                                    <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 uppercase tracking-tight text-[9px]">
+                                                                                        <tr>
+                                                                                            <th className="px-3 py-1.5 border-r border-slate-100 w-40">Breakdown Node</th>
+                                                                                            <th className="px-3 py-1.5">Technical Particulars</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="divide-y divide-slate-100">
+                                                                                        <tr className="align-top">
+                                                                                            <td className="px-3 py-2 border-r border-slate-100">
+                                                                                                <div className="flex flex-col text-[10px]">
+                                                                                                    <span className="font-bold text-slate-700">{node?.name}</span>
+                                                                                                    <span className="text-[9px] font-mono text-slate-400 lowercase">{node?.code}</span>
+                                                                                                </div>
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2">
+                                                                                                <div className="flex flex-col gap-2">
+                                                                                                    {(particulars || []).map((prop: any) => (
+                                                                                                        <div key={prop.id} className="flex items-center gap-2">
+                                                                                                            <span className="shrink-0 w-24 font-medium text-slate-600 truncate" title={prop.attr_title}>{prop.attr_title}:</span>
+                                                                                                            <input
+                                                                                                                type="text"
+                                                                                                                defaultValue={prop.attr_value || ""}
+                                                                                                                onBlur={(e) => {
+                                                                                                                    if (e.target.value === prop.attr_value) return;
+                                                                                                                    const formData = new FormData();
+                                                                                                                    formData.append("intent", "update_component_properties");
+                                                                                                                    formData.append("id", node.id.toString());
+                                                                                                                    formData.append("properties", JSON.stringify([{ id: prop.id, attr_value: e.target.value }]));
+                                                                                                                    submit(formData, { method: "post" });
+                                                                                                                }}
+                                                                                                                className="flex-1 bg-slate-50/50 border border-slate-200 rounded px-1.5 py-0.5 outline-none focus:bg-white focus:ring-1 focus:ring-primary/20 transition-all"
+                                                                                                                placeholder="Enter value..."
+                                                                                                            />
+                                                                                                            {prop.unit && <span className="text-[9px] text-slate-400 uppercase font-bold">{prop.unit}</span>}
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                    {(particulars || []).length === 0 && <span className="text-slate-300 italic">No particulars</span>}
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             ) : (
                                                                 <div className="pt-2 space-y-3 bg-slate-50/50 p-3 rounded-lg border border-slate-100 max-w-2xl">

@@ -132,7 +132,7 @@ function VesselDetailContent() {
                                     <StatusBadge status={vessel.status || "Active"} />
                                 </div>
                                 <Link
-                                    to={`/vessels/${vessel.id}/components`}
+                                    to={`/vessels/${vessel.id}/breakdowns`}
                                     className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg shadow-sm hover:bg-slate-50 flex items-center gap-2 transition-all active:scale-95"
                                 >
                                     <Network size={14} className="text-primary" />

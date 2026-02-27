@@ -1,6 +1,6 @@
 import { getSession } from "./sessions";
 
-async function ApiGET(request: Request, url = "", customHeaders: Record<string, string> = {}) {
+async function ApiGET<T = any>(request: Request, url = "", customHeaders: Record<string, string> = {}): Promise<T> {
   const session = await getSession(request.headers.get("Cookie"));
   const token = session.get("token");
   const headers = new Headers(request.headers);
@@ -14,10 +14,17 @@ async function ApiGET(request: Request, url = "", customHeaders: Record<string, 
     method: "GET",
     headers: headers,
   });
-  return response;
+
+  if (!response.ok) {
+    throw new Error(`API GET failed: ${response.statusText}`);
+  }
+
+  // Returning the raw response as any to maintain backward compatibility,
+  // but typed generic hints for newer code.
+  return response as any;
 }
 
-async function ApiPOST(request: Request, url = "", data = {}) {
+async function ApiPOST<T = any>(request: Request, url = "", data = {}): Promise<T> {
   const session = await getSession(request.headers.get("Cookie"));
   const token = session.get("token");
   let headers = {
@@ -34,10 +41,15 @@ async function ApiPOST(request: Request, url = "", data = {}) {
     headers: headers,
     body: JSON.stringify(data),
   });
-  return response;
+
+  if (!response.ok) {
+    throw new Error(`API POST failed: ${response.statusText}`);
+  }
+
+  return response as any;
 }
 
-async function ApiPATCH(request: Request, url = "", data = {}) {
+async function ApiPATCH<T = any>(request: Request, url = "", data = {}): Promise<T> {
   const session = await getSession(request.headers.get("Cookie"));
   const token = session.get("token");
   let headers = {
@@ -54,10 +66,15 @@ async function ApiPATCH(request: Request, url = "", data = {}) {
     headers: headers,
     body: JSON.stringify(data),
   });
-  return response;
+
+  if (!response.ok) {
+    throw new Error(`API PATCH failed: ${response.statusText}`);
+  }
+
+  return response as any;
 }
 
-async function ApiDELETE(request: Request, url = "") {
+async function ApiDELETE<T = any>(request: Request, url = ""): Promise<T> {
   const session = await getSession(request.headers.get("Cookie"));
   const token = session.get("token");
   let headers = {
@@ -73,7 +90,12 @@ async function ApiDELETE(request: Request, url = "") {
     method: "DELETE",
     headers: headers,
   });
-  return response;
+
+  if (!response.ok) {
+    throw new Error(`API DELETE failed: ${response.statusText}`);
+  }
+
+  return response as any;
 }
 
 export { ApiGET, ApiPOST, ApiPATCH, ApiDELETE };

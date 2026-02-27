@@ -11,7 +11,10 @@
 \i src/logic/rls_policies.sql
 \i src/logic/triggers/checklist_triggers.sql
 \i src/logic/triggers/survey_request_carts_triggers.sql
-\i src/api/api_security.sql
+\i src/api/functions/copy_breakdown_node.sql
+\i src/api/functions/copy_ship_node.sql
 \i src/api/functions/job_management.sql
 \i src/api/functions/breakdown_management.sql
+\i src/api/functions/breakdown_instantiation.sql
+\i src/api/api_security.sql
 \i seeds/mock_up_with_data.sql

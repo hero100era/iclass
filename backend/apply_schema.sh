@@ -34,6 +34,8 @@ log_info "Building SQL schema from $SRC_DIR..."
 # --- Build SQL File ---
 echo "BEGIN;" > "$TEMP_FILE"
 
+echo "SET ROLE admingrp;" > "$TEMP_FILE"
+
 # 1. Setup Schemas & Extensions
 log_info "  - Loading Setup (Schemas/Extensions)..."
 cat "$SRC_DIR/utilities/create_schemas.sql" >> "$TEMP_FILE"

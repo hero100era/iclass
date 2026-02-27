@@ -17,6 +17,7 @@
 -- );
 
 --
+DROP FUNCTION IF EXISTS api.fn_apply_template_to_ship(INTEGER, INTEGER, VARCHAR);
 CREATE OR REPLACE FUNCTION api.fn_apply_template_to_ship(
     p_ship_id         INTEGER,
     p_template_id     INTEGER,
@@ -28,24 +29,25 @@ AS $$
 DECLARE
     v_breakdown_id    INTEGER;
     v_template_name   VARCHAR;
+    v_template_ver    VARCHAR;
     v_id_map          JSONB := '{}';  -- maps template_node_id → ship_breakdown_node_id
 BEGIN
-    -- Deactivate any existing active breakdown for this ship
+    -- 1. Deactivate any existing active breakdown for this ship
     UPDATE iclass.ship_breakdown
     SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
     WHERE ship_id = p_ship_id AND is_active = TRUE;
 
-    -- Get template info
-    SELECT name, version INTO v_template_name
+    -- 2. Get template info
+    SELECT name, version INTO v_template_name, v_template_ver
     FROM iclass.breakdown_template WHERE id = p_template_id;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Template % not found', p_template_id;
     END IF;
 
-    -- Create ship breakdown header
+    -- 3. Create ship breakdown header
     INSERT INTO iclass.ship_breakdown(
-        ship_id, source_template_id,
+        ship_id, template_id,
         name, description, revision, is_active,
         applied_at, applied_by
     )
@@ -58,30 +60,30 @@ BEGIN
     FROM iclass.ship s WHERE s.id = p_ship_id
     RETURNING id INTO v_breakdown_id;
 
-    -- Deep copy nodes level by level (to maintain parent references)
+    -- 4. Deep copy nodes level by level (to maintain parent references)
     -- Level 0 (root nodes)
     WITH inserted AS (
         INSERT INTO iclass.ship_breakdown_node (
-            ship_breakdown_id, parent_node_id, source_template_node_id,
+            ship_id, ship_breakdown_id, parent_node_id, template_node_id,
             code, name, description, category, node_type,
-            level, sort_order, unit_of_measure, capacity,
-            is_from_template, is_modified, status, metadata
+            level, sort_order,
+            is_from_template, is_modified, is_active, metadata
         )
         SELECT
-            v_breakdown_id, NULL, tn.id,
+            p_ship_id, v_breakdown_id, NULL, tn.id,
             tn.code, tn.name, tn.description, tn.category, tn.node_type,
-            tn.level, tn.sort_order, tn.unit_of_measure, tn.default_capacity,
-            TRUE, FALSE, 'ACTIVE', tn.metadata
+            tn.level, tn.sort_order,
+            TRUE, FALSE, TRUE, tn.metadata
         FROM iclass.breakdown_template_node tn
         WHERE tn.template_id = p_template_id
           AND tn.parent_node_id IS NULL
-        RETURNING id, source_template_node_id
+        RETURNING id, template_node_id
     )
-    SELECT jsonb_object_agg(source_template_node_id::text, id::text)
+    SELECT jsonb_object_agg(template_node_id::text, id::text)
     INTO v_id_map
     FROM inserted;
 
-    -- Iterate remaining levels (up to 10 deep)
+    -- 5. Iterate remaining levels (up to 10 deep)
     FOR i IN 1..10 LOOP
         WITH nodes_at_level AS (
             SELECT tn.*
@@ -92,23 +94,23 @@ BEGIN
         ),
         inserted AS (
             INSERT INTO iclass.ship_breakdown_node (
-                ship_breakdown_id, parent_node_id, source_template_node_id,
+                ship_id, ship_breakdown_id, parent_node_id, template_node_id,
                 code, name, description, category, node_type,
-                level, sort_order, unit_of_measure, capacity,
-                is_from_template, is_modified, status, metadata
+                level, sort_order,
+                is_from_template, is_modified, is_active, metadata
             )
             SELECT
-                v_breakdown_id,
-                (v_id_map ->> nal.parent_node_id::text)::UUID,
+                p_ship_id, v_breakdown_id,
+                (v_id_map ->> nal.parent_node_id::text)::INTEGER,
                 nal.id,
                 nal.code, nal.name, nal.description, nal.category, nal.node_type,
-                nal.level, nal.sort_order, nal.unit_of_measure, nal.default_capacity,
-                TRUE, FALSE, 'ACTIVE', nal.metadata
+                nal.level, nal.sort_order,
+                TRUE, FALSE, TRUE, nal.metadata
             FROM nodes_at_level nal
             WHERE v_id_map ? nal.parent_node_id::text
-            RETURNING id, source_template_node_id
+            RETURNING id, template_node_id
         )
-        SELECT v_id_map || jsonb_object_agg(source_template_node_id::text, id::text)
+        SELECT v_id_map || COALESCE(jsonb_object_agg(template_node_id::text, id::text), '{}'::jsonb)
         INTO v_id_map
         FROM inserted;
 
@@ -116,36 +118,20 @@ BEGIN
         EXIT WHEN NOT FOUND OR v_id_map IS NULL;
     END LOOP;
 
-    -- Copy attributes
-    INSERT INTO iclass.ship_node_particular (
-        ship_breakdown_node_id, source_template_attr_id,
-        attribute_key, attribute_value, data_type, unit, is_modified, sort_order
+    -- 6. Copy particulars (attributes)
+    INSERT INTO iclass.ship_breakdown_node_particular (
+        ship_breakdown_node_id, template_particular_id,
+        attr_key, attr_title, attr_value, selection_options, data_type, unit, is_modified, sort_order
     )
     SELECT
-        (v_id_map ->> tna.template_node_id::text)::UUID,
-        tna.id,
-        tna.attribute_key, tna.attribute_value, tna.data_type, tna.unit,
-        FALSE, tna.sort_order
-    FROM iclass.template_node_particular tna
-    JOIN iclass.template_node tn ON tn.id = tna.template_node_id
+        (v_id_map ->> tp.template_node_id::text)::INTEGER,
+        tp.id,
+        tp.attr_key, tp.attr_title, tp.default_value, tp.selection_options, tp.data_type, tp.unit,
+        FALSE, tp.sort_order
+    FROM iclass.breakdown_template_node_particular tp
+    JOIN iclass.breakdown_template_node tn ON tn.id = tp.template_node_id
     WHERE tn.template_id = p_template_id
-      AND v_id_map ? tna.template_node_id::text;
-
-    -- Log the action
-    -- INSERT INTO iclass.breakdown_change_log (
-    --     entity_type, entity_id, ship_id, action,
-    --     new_values, changed_by
-    -- ) VALUES (
-    --     'SHIP_BREAKDOWN', v_breakdown_id, p_ship_id, 'APPLY_TEMPLATE',
-    --     jsonb_build_object(
-    --         'template_id', p_template_id,
-    --         'template_version', v_template_ver,
-    --         'nodes_copied', jsonb_array_length(
-    --             COALESCE((SELECT jsonb_agg(value) FROM jsonb_each_text(v_id_map)), '[]'::jsonb)
-    --         )
-    --     ),
-    --     p_applied_by
-    -- );
+      AND v_id_map ? tp.template_node_id::text;
 
     RETURN v_breakdown_id;
 END;
@@ -153,7 +139,11 @@ $$;
 
 GRANT EXECUTE ON FUNCTION api.fn_apply_template_to_ship TO employees;
 
-CREATE OR REPLACE FUNCTION iclass.fn_add_ship_specific_node(
+DROP FUNCTION IF EXISTS api.fn_add_ship_specific_node(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, JSONB);
+-- Compat with old signature
+DROP FUNCTION IF EXISTS api.fn_add_ship_specific_node(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, NUMERIC, VARCHAR, JSONB, VARCHAR);
+
+CREATE OR REPLACE FUNCTION api.fn_add_ship_specific_node(
     p_ship_breakdown_id INTEGER,
     p_parent_node_id    INTEGER,      -- NULL for root
     p_code              VARCHAR,
@@ -161,21 +151,21 @@ CREATE OR REPLACE FUNCTION iclass.fn_add_ship_specific_node(
     p_category          VARCHAR,
     p_node_type         VARCHAR DEFAULT NULL,
     p_description       TEXT DEFAULT NULL,
-    p_capacity          NUMERIC DEFAULT NULL,
-    p_unit              VARCHAR DEFAULT NULL,
-    p_metadata          JSONB DEFAULT '{}',
-    p_added_by          VARCHAR DEFAULT 'system'
+    p_metadata          JSONB DEFAULT '{}'
 )
 RETURNS INTEGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
     v_node_id INTEGER;
+    v_ship_id INTEGER;
     v_level   INTEGER := 0;
     v_sort    INTEGER := 0;
 BEGIN
+    -- 0. Get ship_id
+    SELECT ship_id INTO v_ship_id FROM iclass.ship_breakdown WHERE id = p_ship_breakdown_id;
+
     -- 1. Determine level
-    -- If there is a parent, look up its level and add 1. If NULL, level stays 0.
     IF p_parent_node_id IS NOT NULL THEN
         SELECT level + 1 INTO v_level
         FROM iclass.ship_breakdown_node
@@ -183,7 +173,6 @@ BEGIN
     END IF;
 
     -- 2. Determine sort order
-    -- Replaced uuid_nil() logic with `IS NOT DISTINCT FROM` to handle Integer NULLs correctly
     SELECT COALESCE(MAX(sort_order), 0) + 10 INTO v_sort
     FROM iclass.ship_breakdown_node
     WHERE ship_breakdown_id = p_ship_breakdown_id
@@ -191,32 +180,22 @@ BEGIN
 
     -- 3. Insert the new node
     INSERT INTO iclass.ship_breakdown_node (
-        ship_breakdown_id, parent_node_id, source_template_node_id,
+        ship_id, ship_breakdown_id, parent_node_id, template_node_id,
         code, name, description, category, node_type,
-        level, sort_order, unit_of_measure, capacity,
+        level, sort_order,
         is_from_template, is_modified, is_active, metadata
     ) VALUES (
-        p_ship_breakdown_id, p_parent_node_id, NULL,
+        v_ship_id, p_ship_breakdown_id, p_parent_node_id, NULL,
         p_code, p_name, p_description, p_category, p_node_type,
-        v_level, v_sort, p_unit, p_capacity,
+        v_level, v_sort,
         FALSE, FALSE, TRUE, p_metadata
     )
     RETURNING id INTO v_node_id;
 
-    -- 4. Log the change
-    -- INSERT INTO iclass.breakdown_change_log (
-    --     entity_type, entity_id, ship_id, action,
-    --     new_values, changed_by
-    -- )
-    -- SELECT
-    --     'SHIP_NODE', v_node_id, sb.ship_id, 'CREATE',
-    --     jsonb_build_object('code', p_code, 'name', p_name, 'ship_specific', true),
-    --     p_added_by
-    -- FROM iclass.ship_breakdown sb
-    -- WHERE sb.id = p_ship_breakdown_id;
-
     RETURN v_node_id;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION api.fn_add_ship_specific_node TO employees;
 
 GRANT EXECUTE ON FUNCTION api.fn_add_ship_specific_node TO employees;

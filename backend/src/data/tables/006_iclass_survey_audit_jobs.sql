@@ -96,9 +96,9 @@ CREATE TABLE IF NOT EXISTS iclass.survey_checklist (
   survey_line_id integer REFERENCES iclass.survey_line(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_item(id) ON DELETE SET NULL,
-  breakdown_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  ship_breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
   result varchar(2) REFERENCES iclass.checklist_result(code),
-  particulars jsonb, --for tracebilities.
+  metadata JSONB DEFAULT '{}',
   report_by integer REFERENCES iclass.employee(id),
   report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -109,11 +109,51 @@ CREATE TABLE IF NOT EXISTS iclass.audit_checklist (
   audit_line_id integer REFERENCES iclass.audit_line(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   item_id integer REFERENCES iclass.checklist_item(id) ON DELETE SET NULL,
-  breakdown_template_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  ship_breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
   result varchar(2) REFERENCES iclass.checklist_result(code),
-  particulars jsonb,
+  metadata JSONB DEFAULT '{}',
   report_by integer REFERENCES iclass.employee(id),
   report_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS iclass.survey_checklist_item_particular (
+    id  BIGSERIAL PRIMARY KEY,
+    survey_checklist_id  BIGINT  NOT NULL REFERENCES iclass.survey_checklist(id) ON DELETE CASCADE,
+    -- Traceability
+    source_particular_id integer REFERENCES iclass.checklist_item_particular(id) ON DELETE SET NULL,
+    ship_breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+    -- Snapshot fields (copied from checklist_item_particulars)
+    attr_key            VARCHAR(100)    NOT NULL,
+    attr_title          VARCHAR(300)    NOT NULL,
+    data_type           iclass.data_type_enum  NOT NULL DEFAULT 'text',
+    unit                VARCHAR(50),
+    selection_options    JSONB,
+    is_required         BOOLEAN         NOT NULL DEFAULT FALSE,
+    sort_order          INTEGER         NOT NULL DEFAULT 0,
+    attr_result         TEXT,
+    created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    UNIQUE (survey_checklist_id, attr_key, ship_breakdown_node_id)
+);
+
+CREATE TABLE IF NOT EXISTS iclass.audit_checklist_item_particular (
+    id  BIGSERIAL PRIMARY KEY,
+    audit_checklist_id  BIGINT  NOT NULL REFERENCES iclass.audit_checklist(id) ON DELETE CASCADE,
+    -- Traceability
+    source_particular_id integer REFERENCES iclass.checklist_item_particular(id) ON DELETE SET NULL,
+    ship_breakdown_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+    -- Snapshot fields (copied from checklist_item_particulars)
+    attr_key            VARCHAR(100)    NOT NULL,
+    attr_title          VARCHAR(300)    NOT NULL,
+    data_type           iclass.data_type_enum  NOT NULL DEFAULT 'text',
+    unit                VARCHAR(50),
+    selection_options    JSONB,
+    is_required         BOOLEAN         NOT NULL DEFAULT FALSE,
+    sort_order          INTEGER         NOT NULL DEFAULT 0,
+    attr_result         TEXT,
+    created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    UNIQUE (audit_checklist_id, attr_key, ship_breakdown_node_id)
 );
 
 -- Create table for linking Finding/Comments to Jobs (Reporting Scope)

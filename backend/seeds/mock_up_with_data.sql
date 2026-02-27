@@ -22,20 +22,52 @@ VALUES
 ('TMPL-BULK-001', 'Bulk Carrier Standard Breakdown')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
 VALUES
-  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), NULL, '0', 'SHIP')
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), NULL, '0', 'SHIP', 0)
   ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
 VALUES
-((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '0'), '2', 'HULL')
+((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '0'), '2', 'HULL', 1)
   ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name)
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
 VALUES
-  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '2'), '23', 'Cargo Hold')
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '2'), '23', 'Cargo Hold', 2)
   ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '23'), '23.01', 'Cargo Hold No.1', 3)
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '23'), '23.02', 'Cargo Hold No.2', 3)
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '23'), '23.03', 'Cargo Hold No.3', 3)
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node (template_id, parent_node_id, code, name, level)
+VALUES
+  ((select id from iclass.breakdown_template where code = 'TMPL-BULK-001'), (select id from iclass.breakdown_template_node where code = '23'), '23.04', 'Cargo Hold No.4', 3)
+  ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.breakdown_template_node_particular (template_node_id, attr_key, attr_title, data_type, sort_order)
+VALUES
+  ((select id from iclass.breakdown_template_node where code = '23.01'), 'adj_ht', 'Adjacent to heating tank', 'text', 1),
+  ((select id from iclass.breakdown_template_node where code = '23.02'), 'adj_ht', 'Adjacent to heating tank', 'text', 2),
+  ((select id from iclass.breakdown_template_node where code = '23.03'), 'adj_ht', 'Adjacent to heating tank', 'text', 3),
+  ((select id from iclass.breakdown_template_node where code = '23.04'), 'adj_ht', 'Adjacent to heating tank', 'text', 4),
+  ((select id from iclass.breakdown_template_node where code = '23.01'),   'coat_cond', 'Coating Condition', 'text', 1),
+  ((select id from iclass.breakdown_template_node where code = '23.02'), 'coat_cond', 'Coating Condition', 'text', 2),
+  ((select id from iclass.breakdown_template_node where code = '23.03'), 'coat_cond', 'Coating Condition', 'text', 3),
+  ((select id from iclass.breakdown_template_node where code = '23.04'), 'coat_cond', 'Coating Condition', 'text', 4)
+ON CONFLICT DO NOTHING;
 
 -- Certificate Templates
 INSERT INTO iclass.certificate_template (code, name, version, cert_code, internal_category, file_path_xml, file_path_html, description)
@@ -160,13 +192,13 @@ VALUES
     NULL, NULL, NULL, NULL
   ),
   (
-    1, (SELECT id FROM iclass.ship WHERE imo_number = '9123456'), NULL,
+    1, (SELECT id FROM iclass.ship WHERE imo_number = '9345678'), NULL,
     'V', 'OK', 'LR', 'CL', 'F', 'IC', 'CL',
     'Classification Certificate', CURRENT_DATE - INTERVAL '6 months', CURRENT_DATE + INTERVAL '4.5 years',
     NULL, NULL, NULL, NULL
   ),
   (
-     2, (SELECT id FROM iclass.ship WHERE imo_number = '9234567'), NULL,
+     2, (SELECT id FROM iclass.ship WHERE imo_number = '9345678'), NULL,
     'S', 'XX', 'BV', 'LL', 'F', 'IC', 'ST',
     'Load Line Certificate', CURRENT_DATE - INTERVAL '2 years', CURRENT_DATE + INTERVAL '3 years',
     NULL, NULL, 'PA', NULL
@@ -208,6 +240,11 @@ VALUES
   (
     (SELECT id FROM iclass.certificate WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'R'),
    'Load Line Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
+    CURRENT_DATE + INTERVAL '11 months', NULL, CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
+  ),
+  (
+  (SELECT id FROM iclass.certificate WHERE cert_code = 'CL' AND version = 1), (select id from iclass.survey_pool where cert_code='CL' and type = 'R'),
+   'Class Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL, CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   )
 ON CONFLICT DO NOTHING;

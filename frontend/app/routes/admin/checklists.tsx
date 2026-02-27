@@ -8,16 +8,16 @@ export const handle = { fluid: true };
 
 export async function loader({ request }: any) {
     const host = process.env.API_URL || "http://localhost:2000";
-    const [surveysRes, resultsRes, componentLibraryRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_pool?select=*,checklist_sections(*,checklist_items(*))`),
+    const [surveysRes, resultsRes, breakdownNodesRes] = await Promise.all([
+        ApiGET(request, `${host}/survey_pool?select=*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))`),
         ApiGET(request, `${host}/checklist_results`),
-        ApiGET(request, `${host}/component_library?select=id,code,name&order=name.asc`)
+        ApiGET(request, `${host}/breakdown_template_nodes?select=id,code,name&order=name.asc`)
     ]);
 
     return {
         surveys: await surveysRes.json(),
         results: await resultsRes.json(),
-        componentLibrary: await componentLibraryRes.json()
+        breakdownNodes: await breakdownNodesRes.json()
     };
 }
 
@@ -29,17 +29,36 @@ export async function action({ request }: any) {
     if (intent === "update_item_particulars") {
         const id = formData.get("id");
         const particulars = JSON.parse(formData.get("particulars") as string);
-        const res = await ApiPATCH(request, `${host}/checklist_items?id=eq.${id}`, { particulars });
-        return { success: res.ok };
+
+        // 1. Delete existing
+        await ApiDELETE(request, `${host}/checklist_item_particulars?checklist_item_id=eq.${id}`);
+
+        // 2. Insert new
+        if (particulars.length > 0) {
+            const toInsert = particulars.map((p: any) => ({
+                checklist_item_id: id,
+                attr_key: p.attr_key || p.key,
+                attr_title: p.attr_title || p.title,
+                data_type: p.data_type || p.type,
+                unit: p.unit || null,
+                default_value: p.default_value || null,
+                selection_options: p.selection_options || null,
+                is_required: p.is_required ?? true,
+                sort_order: p.sort_order ?? 0
+            }));
+            const res = await ApiPOST(request, `${host}/checklist_item_particulars`, toInsert);
+            return { success: res.ok };
+        }
+        return { success: true };
     }
 
     if (intent === "update_item") {
         const id = formData.get("id");
         const content = formData.get("content");
-        const component_library_id = formData.get("component_library_id") || null;
+        const breakdown_node_id = formData.get("breakdown_node_id") || null;
         const res = await ApiPATCH(request, `${host}/checklist_items?id=eq.${id}`, {
             content,
-            component_library_id: component_library_id === "null" ? null : component_library_id
+            breakdown_template_node_id: breakdown_node_id === "null" ? null : breakdown_node_id
         });
         return { success: res.ok };
     }
@@ -54,7 +73,7 @@ export async function action({ request }: any) {
         const section_id = formData.get("section_id");
         const item_number = formData.get("item_number");
         const content = formData.get("content");
-        const res = await ApiPOST(request, `${host}/checklist_items`, { section_id, item_number, content, particulars: [] });
+        const res = await ApiPOST(request, `${host}/checklist_items`, { section_id, item_number, content });
         return { success: res.ok };
     }
 
@@ -71,7 +90,7 @@ export async function action({ request }: any) {
 }
 
 export default function AdminChecklists() {
-    const { surveys, results, componentLibrary } = useLoaderData<typeof loader>();
+    const { surveys, results, breakdownNodes } = useLoaderData<typeof loader>();
     const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
     const [addingToSection, setAddingToSection] = useState<number | null>(null);
     const [newItemContent, setNewItemContent] = useState("");
@@ -82,7 +101,7 @@ export default function AdminChecklists() {
     // Edit item state
     const [editingItemId, setEditingItemId] = useState<number | null>(null);
     const [editFormContent, setEditFormContent] = useState("");
-    const [editFormComponentLibraryId, setEditFormComponentLibraryId] = useState<string>("");
+    const [editBreakdownNodeId, setEditBreakdownNodeId] = useState<string>("");
 
     const submit = useSubmit();
     const navigation = useNavigation();
@@ -96,12 +115,36 @@ export default function AdminChecklists() {
         }
     }, [actionData, navigation.state]);
 
-    // Sync local state with loader data when it updates (e.g. after revalidation)
     useEffect(() => {
         if (selectedSurvey?.id) {
             const fresh = surveys.find((s: any) => s.id === selectedSurvey.id);
             if (fresh) {
-                setSelectedSurvey(fresh);
+                setSelectedSurvey((prev: any) => {
+                    if (!prev || prev.id !== fresh.id) return fresh;
+
+                    // Preserve items that have temporary IDs (drafts)
+                    return {
+                        ...fresh,
+                        checklist_sections: fresh.checklist_sections?.map((freshSection: any) => {
+                            const prevSection = prev.checklist_sections?.find((s: any) => s.id === freshSection.id);
+                            if (!prevSection) return freshSection;
+
+                            return {
+                                ...freshSection,
+                                checklist_items: freshSection.checklist_items?.map((freshItem: any) => {
+                                    const prevItem = prevSection.checklist_items?.find((i: any) => i.id === freshItem.id);
+                                    if (!prevItem) return freshItem;
+
+                                    const hasTemp = prevItem.checklist_item_particulars?.some((p: any) => p.temp_id);
+                                    if (hasTemp) {
+                                        return { ...freshItem, checklist_item_particulars: prevItem.checklist_item_particulars };
+                                    }
+                                    return freshItem;
+                                })
+                            };
+                        })
+                    };
+                });
             }
         }
     }, [surveys]);
@@ -115,7 +158,7 @@ export default function AdminChecklists() {
                 ...section,
                 checklist_items: section.checklist_items.map((item: any) => {
                     if (item.id === itemId) {
-                        return { ...item, particulars: newParticulars };
+                        return { ...item, checklist_item_particulars: newParticulars };
                     }
                     return item;
                 })
@@ -125,10 +168,14 @@ export default function AdminChecklists() {
     };
 
     const handleSaveParticulars = (itemId: number, particulars: any) => {
+        // Validation: only save if all items have attr_key and attr_title
+        const validParticulars = particulars.filter((p: any) => (p.attr_key || p.key) && (p.attr_title || p.title));
+        if (validParticulars.length === 0 && particulars.length > 0) return; // Don't save if we added an empty one
+
         const formData = new FormData();
         formData.append("intent", "update_item_particulars");
         formData.append("id", itemId.toString());
-        formData.append("particulars", JSON.stringify(particulars));
+        formData.append("particulars", JSON.stringify(validParticulars));
         submit(formData, { method: "post" });
     };
 
@@ -165,7 +212,7 @@ export default function AdminChecklists() {
         formData.append("intent", "update_item");
         formData.append("id", id.toString());
         formData.append("content", editFormContent);
-        formData.append("component_library_id", editFormComponentLibraryId || "null");
+        formData.append("breakdown_node_id", editBreakdownNodeId || "null");
         submit(formData, { method: "post" });
         setEditingItemId(null);
     };
@@ -346,12 +393,12 @@ export default function AdminChecklists() {
                                                                     <div className="space-y-1">
                                                                         <label className="text-[9px] font-bold text-slate-400 uppercase">Component Library Link</label>
                                                                         <select
-                                                                            value={editFormComponentLibraryId}
-                                                                            onChange={(e) => setEditFormComponentLibraryId(e.target.value)}
+                                                                            value={editBreakdownNodeId}
+                                                                            onChange={(e) => setEditBreakdownNodeId(e.target.value)}
                                                                             className="w-full text-[11px] px-2 py-1.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
                                                                         >
                                                                             <option value="">None</option>
-                                                                            {componentLibrary.map((comp: any) => (
+                                                                            {breakdownNodes.map((comp: any) => (
                                                                                 <option key={comp.id} value={comp.id}>{comp.name} ({comp.code})</option>
                                                                             ))}
                                                                         </select>
@@ -378,10 +425,10 @@ export default function AdminChecklists() {
                                                                         <div className="flex items-start justify-between gap-2">
                                                                             <div>
                                                                                 <p className="text-[11px] font-medium text-slate-800 leading-tight">{item.content}</p>
-                                                                                {item.component_library_id && (
+                                                                                {item.breakdown_template_node_id && (
                                                                                     <div className="mt-1 flex items-center gap-1">
-                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter">
-                                                                                            Linked: {componentLibrary.find((c: any) => c.id === item.component_library_id)?.name || item.component_library_id}
+                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter" title={breakdownNodes.find((c: any) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}>
+                                                                                            Linked: {breakdownNodes.find((c: any) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
@@ -391,7 +438,7 @@ export default function AdminChecklists() {
                                                                                     onClick={() => {
                                                                                         setEditingItemId(item.id);
                                                                                         setEditFormContent(item.content);
-                                                                                        setEditFormComponentLibraryId(item.component_library_id?.toString() || "");
+                                                                                        setEditBreakdownNodeId(item.breakdown_template_node_id?.toString() || "");
                                                                                     }}
                                                                                     className="p-1 text-slate-400 hover:text-primary transition-colors"
                                                                                     title="Edit Item"
@@ -412,107 +459,172 @@ export default function AdminChecklists() {
                                                             )}
 
                                                             {/* Particulars Template Editor */}
-                                                            <div className="ml-4 space-y-1.5">
+                                                            <div className="ml-4 space-y-1.5 pt-2 border-t border-slate-50">
                                                                 <div className="flex items-center justify-between">
-                                                                    <h4 className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Particulars</h4>
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <h4 className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Particulars Template</h4>
+                                                                        <span className="text-[7px] text-slate-300 font-medium italic">(Defines required inputs for surveyors)</span>
+                                                                    </div>
                                                                     <button
                                                                         className="text-[9px] text-primary font-bold flex items-center gap-0.5 hover:underline"
                                                                         onClick={() => {
-                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                            const newParticulars = [...currentParticulars, { key: "", title: "", type: "text", result: "" }];
-                                                                            handleSaveParticulars(item.id, newParticulars);
+                                                                            const currentParticulars = Array.isArray(item.checklist_item_particulars) ? item.checklist_item_particulars : [];
+                                                                            const newParticulars = [...currentParticulars, {
+                                                                                temp_id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                                                attr_key: "",
+                                                                                attr_title: "",
+                                                                                data_type: "text",
+                                                                                sort_order: currentParticulars.length,
+                                                                                is_required: true
+                                                                            }];
+                                                                            handleLocalParticularsUpdate(item.id, newParticulars);
                                                                         }}
                                                                     >
-                                                                        <Plus size={10} /> Add
+                                                                        <Plus size={10} /> Add Field
                                                                     </button>
                                                                 </div>
 
-                                                                {item.particulars && item.particulars.length > 0 ? (
-                                                                    <div className="grid grid-cols-12 gap-1.5">
-                                                                        <div className="col-span-3 text-[8px] font-bold text-slate-400 px-1">Key</div>
-                                                                        <div className="col-span-4 text-[8px] font-bold text-slate-400 px-1">Title</div>
-                                                                        <div className="col-span-3 text-[8px] font-bold text-slate-400 px-1">Type</div>
-                                                                        <div className="col-span-2"></div>
+                                                                {item.checklist_item_particulars && item.checklist_item_particulars.length > 0 ? (
+                                                                    <div className="space-y-1.5">
+                                                                        <div className="grid grid-cols-12 gap-1 px-1">
+                                                                            <div className="col-span-2 text-[7px] font-bold text-slate-400 uppercase">Key</div>
+                                                                            <div className="col-span-3 text-[7px] font-bold text-slate-400 uppercase">Title / Label</div>
+                                                                            <div className="col-span-2 text-[7px] font-bold text-slate-400 uppercase">Type</div>
+                                                                            <div className="col-span-1 text-[7px] font-bold text-slate-400 uppercase">Unit</div>
+                                                                            <div className="col-span-1 text-[7px] font-bold text-slate-400 uppercase">Order</div>
+                                                                            <div className="col-span-2 text-[7px] font-bold text-slate-400 uppercase">Default</div>
+                                                                            <div className="col-span-1"></div>
+                                                                        </div>
 
-                                                                        {item.particulars.map((p: any, idx: number) => (
-                                                                            <div key={idx} className="col-span-12 grid grid-cols-12 gap-1.5 items-center group">
-                                                                                <div className="col-span-3">
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={p.key}
-                                                                                        onChange={(e) => {
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = [...currentParticulars];
-                                                                                            updated[idx] = { ...p, key: e.target.value };
-                                                                                            handleLocalParticularsUpdate(item.id, updated);
-                                                                                        }}
-                                                                                        onBlur={(e) => {
-                                                                                            if (e.target.value === p.key) return;
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = [...currentParticulars];
-                                                                                            updated[idx] = { ...p, key: e.target.value };
-                                                                                            handleSaveParticulars(item.id, updated);
-                                                                                        }}
-                                                                                        className="w-full text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
-                                                                                        placeholder="e.g. pressure_gauge"
-                                                                                    />
+                                                                        {item.checklist_item_particulars.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)).map((p: any, idx: number) => (
+                                                                            <div key={p.id || p.temp_id || `idx_${idx}`} className="space-y-1 p-1 rounded hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                                                                <div className="grid grid-cols-12 gap-1 items-center group/prow">
+                                                                                    <div className="col-span-2">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={p.attr_key || ""}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, attr_key: e.target.value.toLowerCase().replace(/\s+/g, '_') };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none font-mono"
+                                                                                            placeholder="key_name"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="col-span-3">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={p.attr_title || ""}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, attr_title: e.target.value };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                            placeholder="Display Label"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="col-span-2">
+                                                                                        <select
+                                                                                            value={p.data_type || "text"}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, data_type: e.target.value };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                                handleSaveParticulars(item.id, updated);
+                                                                                            }}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                        >
+                                                                                            <option value="text">Text</option>
+                                                                                            <option value="integer">Integer</option>
+                                                                                            <option value="decimal">Decimal</option>
+                                                                                            <option value="date">Date</option>
+                                                                                            <option value="boolean">Yes/No</option>
+                                                                                            <option value="selection">Selection</option>
+                                                                                            <option value="multi_select">Multi Select</option>
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <div className="col-span-1">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={p.unit || ""}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, unit: e.target.value };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                            placeholder="unit"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="col-span-1">
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            value={p.sort_order ?? 0}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, sort_order: parseInt(e.target.value) || 0 };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="col-span-2">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={p.default_value || ""}
+                                                                                            onChange={(e) => {
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, default_value: e.target.value };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                            placeholder="default"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="col-span-1 flex justify-end">
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                const updated = item.checklist_item_particulars.filter((_: any, i: number) => i !== idx);
+                                                                                                handleSaveParticulars(item.id, updated);
+                                                                                            }}
+                                                                                            className="p-0.5 text-slate-300 hover:text-destructive transition-colors opacity-0 group-hover/prow:opacity-100"
+                                                                                        >
+                                                                                            <Trash2 size={10} />
+                                                                                        </button>
+                                                                                    </div>
                                                                                 </div>
-                                                                                <div className="col-span-4">
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={p.title}
-                                                                                        onChange={(e) => {
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = [...currentParticulars];
-                                                                                            updated[idx] = { ...p, title: e.target.value };
-                                                                                            handleLocalParticularsUpdate(item.id, updated);
-                                                                                        }}
-                                                                                        onBlur={(e) => {
-                                                                                            if (e.target.value === p.title) return;
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = [...currentParticulars];
-                                                                                            updated[idx] = { ...p, title: e.target.value };
-                                                                                            handleSaveParticulars(item.id, updated);
-                                                                                        }}
-                                                                                        className="w-full text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
-                                                                                        placeholder="e.g. Pressure Gauge Serial"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="col-span-3">
-                                                                                    <select
-                                                                                        value={p.type}
-                                                                                        onChange={(e) => {
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = [...currentParticulars];
-                                                                                            updated[idx] = { ...p, type: e.target.value };
-                                                                                            handleSaveParticulars(item.id, updated);
-                                                                                        }}
-                                                                                        className="w-full text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
-                                                                                    >
-                                                                                        <option value="text">Text</option>
-                                                                                        <option value="number">Number</option>
-                                                                                        <option value="date">Date</option>
-                                                                                        <option value="boolean">Yes/No</option>
-                                                                                    </select>
-                                                                                </div>
-                                                                                <div className="col-span-2 flex justify-end">
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            const currentParticulars = Array.isArray(item.particulars) ? item.particulars : [];
-                                                                                            const updated = currentParticulars.filter((_: any, i: number) => i !== idx);
-                                                                                            handleSaveParticulars(item.id, updated);
-                                                                                        }}
-                                                                                        className="p-0.5 text-slate-300 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                                                                    >
-                                                                                        <Trash2 size={12} />
-                                                                                    </button>
-                                                                                </div>
+
+                                                                                {(p.data_type === "selection" || p.data_type === "multi_select") && (
+                                                                                    <div className="mt-1 pl-4 border-l-2 border-primary/20 space-y-1">
+                                                                                        <label className="text-[7px] font-bold text-primary uppercase">Selection Options (comma separated)</label>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            placeholder="Option 1, Option 2, Option 3"
+                                                                                            value={Array.isArray(p.selection_options) ? p.selection_options.join(", ") : (p.selection_options || "")}
+                                                                                            onChange={(e) => {
+                                                                                                const options = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
+                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                updated[idx] = { ...p, selection_options: options };
+                                                                                                handleLocalParticularsUpdate(item.id, updated);
+                                                                                            }}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            className="w-full text-[9px] px-1.5 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none bg-primary/5"
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         ))}
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="bg-slate-50 border border-slate-100 border-dashed rounded p-2 text-center">
-                                                                        <p className="text-[9px] text-slate-400 italic">No particulars defined</p>
+                                                                    <div className="bg-slate-50 border border-slate-100 border-dashed rounded p-3 text-center">
+                                                                        <p className="text-[9px] text-slate-400 italic">No particulars defined. Add fields to collect specific data for this item.</p>
                                                                     </div>
                                                                 )}
                                                             </div>

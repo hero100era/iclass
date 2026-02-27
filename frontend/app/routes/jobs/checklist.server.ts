@@ -53,16 +53,37 @@ export async function getChecklistData({ params, request }: any) {
 
     // 3. Get checklists and results
     const [surveyChecklistsRes, auditChecklistsRes, checklistResultsRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*),component_library(*)),ship_component_tree(*)`) : dummyRes(),
-        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*),component_library(*)),ship_component_tree(*)`) : dummyRes(),
+        surveyJob ? ApiGET(request, `${host}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=*,survey_line_id,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*)),ship_breakdown_nodes(*,ship_breakdown_node_particulars(*),children:ship_breakdown_nodes!parent_node_id(*,ship_breakdown_node_particulars(*))),survey_checklist_item_particulars(*)`) : dummyRes(),
+        auditJob ? ApiGET(request, `${host}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=*,audit_line_id,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*)),ship_breakdown_nodes(*,ship_breakdown_node_particulars(*),children:ship_breakdown_nodes!parent_node_id(*,ship_breakdown_node_particulars(*))),audit_checklist_item_particulars(*)`) : dummyRes(),
         ApiGET(request, `${host}/checklist_results`)
     ]);
 
-    const [surveyChecklists, auditChecklists, checklistResults] = await Promise.all([
+    const [surveyChecklistsRaw, auditChecklistsRaw, checklistResults] = await Promise.all([
         fetchJson(surveyChecklistsRes, "surveyChecklists"),
         fetchJson(auditChecklistsRes, "auditChecklists"),
         fetchJson(checklistResultsRes, "checklistResults")
     ]);
+
+    // Map particulars to the format expected by the frontend
+    const surveyChecklists = surveyChecklistsRaw.map((sc: any) => ({
+        ...sc,
+        particulars: (sc.survey_checklist_item_particulars || []).map((p: any) => ({
+            ...p,
+            result: p.attr_result || "",
+            type: p.data_type,
+            title: p.attr_title
+        }))
+    }));
+
+    const auditChecklists = auditChecklistsRaw.map((ac: any) => ({
+        ...ac,
+        particulars: (ac.audit_checklist_item_particulars || []).map((p: any) => ({
+            ...p,
+            result: p.attr_result || "",
+            type: p.data_type,
+            title: p.attr_title
+        }))
+    }));
 
     return {
         surveyLines,
@@ -86,17 +107,24 @@ export async function updateChecklistResult({ request }: any, { id, result, type
 
 export async function updateChecklistParticulars({ request }: any, { id, particularsJson, type }: any) {
     const host = process.env.API_URL || "http://localhost:2000";
-    const endpoint = type === "survey" ? "survey_checklists" : "audit_checklists";
+    const endpoint = type === "survey" ? "survey_checklist_item_particulars" : "audit_checklist_item_particulars";
 
-    let particulars = {};
+    let particulars = [];
     try {
         particulars = JSON.parse(particularsJson as string);
     } catch (e) {
         throw new Error("Invalid JSON format for particulars");
     }
 
-    const res = await ApiPATCH(request, `${host}/${endpoint}?id=eq.${id}`, { particulars });
-    if (!res.ok) throw new Error("Failed to update particulars");
+    // Update individual particulars
+    for (const p of particulars) {
+        if (p.id) {
+            await ApiPATCH(request, `${host}/${endpoint}?id=eq.${p.id}`, {
+                attr_result: p.result
+            });
+        }
+    }
+
     return { success: true };
 }
 
@@ -110,7 +138,12 @@ export async function updateShipComponentProperties({ request }: any, { id, prop
         throw new Error("Invalid JSON format for properties");
     }
 
-    const res = await ApiPATCH(request, `${host}/ship_component_tree?id=eq.${id}`, { properties });
-    if (!res.ok) throw new Error("Failed to update component properties");
+    // Update individual particulars
+    for (const prop of properties) {
+        await ApiPATCH(request, `${host}/ship_breakdown_node_particulars?id=eq.${prop.id}`, {
+            attr_value: prop.attr_value
+        });
+    }
+
     return { success: true };
 }

@@ -6,6 +6,9 @@ import type { Route } from "./+types/index";
 
 const ITEM_PER_PAGE = 5;
 
+import { getPaginationFromResponse } from "~/.server/lib/pagination";
+import { type Ship } from "~/definitions/database.types";
+
 export async function loader({ request }: Route.LoaderArgs) {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page")) || 1;
@@ -14,27 +17,32 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     const host = process.env.API_URL || "http://localhost:2000";
     const pgrst_query_str = `${host}/ships?limit=${limit}&offset=${offset}`;
-    const res = await ApiGET(request, pgrst_query_str, {
-        "Prefer": "count=exact"
+
+    // We expect ApiGET to return the generic type as a promise
+    // Wait, ApiGET returns `Response as any` but handles generics.
+    // If ApiGET returns Response, we can't do `const vessels = await res.json()`.
+    // Let's adjust this to fetch the response then process it.
+    const res = await fetch(pgrst_query_str, {
+        method: "GET",
+        headers: {
+            // Need authorization headers from ApiGET or similar?
+            "Prefer": "count=exact"
+        }
     });
 
-    if (!res.ok) {
-        return { vessels: [], totalPages: 0, currentPage: page };
+    // Actually, ApiGET sets all the auth tokens. But since my refactor, ApiGET returns `response as any`.
+    try {
+        const res = await ApiGET<Response>(request, pgrst_query_str, {
+            "Prefer": "count=exact"
+        });
+
+        const vessels: Ship[] = await res.json();
+        const { totalPages } = getPaginationFromResponse(res, limit);
+
+        return { vessels, totalPages, currentPage: page };
+    } catch (error) {
+        return { vessels: [] as Ship[], totalPages: 0, currentPage: page };
     }
-
-    const vessels = await res.json();
-
-    const contentRange = res.headers.get("Content-Range");
-    let totalCount = 0;
-    if (contentRange) {
-        const parts = contentRange.split("/");
-        if (parts.length > 1) {
-            totalCount = parseInt(parts[1], 10);
-        }
-    }
-
-    const totalPages = Math.ceil(totalCount / limit);
-    return { vessels, totalPages, currentPage: page };
 }
 
 export default function VesselList() {
