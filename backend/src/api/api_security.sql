@@ -346,7 +346,20 @@ JOIN iclass.ship_breakdown_node n ON n.id = p.ship_breakdown_node_id;
 CREATE OR REPLACE FUNCTION api.fn_trig_ship_breakdown_node_particulars_io()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'UPDATE' THEN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO iclass.ship_breakdown_node_particular (
+            ship_breakdown_node_id, template_particular_id, attr_key, attr_title, attr_value,
+            selection_options, data_type, unit, is_modified, sort_order
+        ) VALUES (
+            NEW.ship_breakdown_node_id, NEW.template_particular_id, NEW.attr_key, NEW.attr_title, NEW.attr_value,
+            NEW.selection_options, NEW.data_type, NEW.unit, COALESCE(NEW.is_modified, FALSE), COALESCE(NEW.sort_order, 0)
+        ) RETURNING id INTO NEW.id;
+        
+        -- Sync NEW with the inserted state
+        SELECT * INTO NEW FROM api.ship_breakdown_node_particulars WHERE id = NEW.id;
+        
+        RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
         UPDATE iclass.ship_breakdown_node_particular SET
             attr_value = NEW.attr_value,
             is_modified = TRUE,
@@ -357,6 +370,9 @@ BEGIN
         SELECT * INTO NEW FROM api.ship_breakdown_node_particulars WHERE id = OLD.id;
         
         RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        DELETE FROM iclass.ship_breakdown_node_particular WHERE id = OLD.id;
+        RETURN OLD;
     END IF;
     RETURN NULL;
 END;
@@ -365,7 +381,7 @@ $$ LANGUAGE plpgsql;
 -- Add trigger
 DROP TRIGGER IF EXISTS tr_ship_breakdown_node_particulars_io ON api.ship_breakdown_node_particulars;
 CREATE TRIGGER tr_ship_breakdown_node_particulars_io
-INSTEAD OF UPDATE ON api.ship_breakdown_node_particulars
+INSTEAD OF INSERT OR UPDATE OR DELETE ON api.ship_breakdown_node_particulars
 FOR EACH ROW EXECUTE FUNCTION api.fn_trig_ship_breakdown_node_particulars_io();
 
 -- Checklists
