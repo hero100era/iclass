@@ -74,8 +74,6 @@ export default function JobLayout() {
         }
     ];
 
-    const currentTitle = manual.flatMap(m => m.items).find(i => i.id === itemId)?.label || "Overview";
-
     return (
         <div className="flex bg-slate-50 h-screen overflow-hidden">
             {/* Sub Sidebar */}
