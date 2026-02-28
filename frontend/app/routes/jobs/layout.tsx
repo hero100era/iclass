@@ -41,6 +41,7 @@ export default function JobLayout() {
             id: "planning",
             title: "1. Planning",
             items: [
+                { id: "job-description", label: "1.0 Job description" },
                 { id: "register-scope", label: "1.1 Register survey scope" },
                 { id: "assign-surveyor", label: "1.2 Assign surveyor" },
                 { id: "print-pre-survey", label: "1.3 Print pre-survey" },
