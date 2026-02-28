@@ -9,34 +9,22 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const host = process.env.API_URL || "http://localhost:2000";
 
-    // 1. Get job and sub-jobs
-    const [jobRes, surveyJobRes, auditJobRes] = await Promise.all([
-        ApiGET(request, `${host}/jobs?id=eq.${id}`),
-        ApiGET(request, `${host}/survey_jobs?job_id=eq.${id}`),
-        ApiGET(request, `${host}/audit_jobs?job_id=eq.${id}`)
-    ]);
-
-    const jobs = await jobRes.json();
+    // 1. Get the survey_job by id
+    const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}`);
     const surveyJobs = await surveyJobRes.json();
-    const auditJobs = await auditJobRes.json();
-
-    const job = jobs[0];
     const surveyJob = surveyJobs[0] || null;
-    const auditJob = auditJobs[0] || null;
 
-    if (!job) throw new Response("Job not found", { status: 404 });
+    if (!surveyJob) throw new Response("Job not found", { status: 404 });
 
-    const shipId = surveyJob?.ship_id || auditJob?.ship_id;
+    const shipId = surveyJob.ship_id;
 
-    // 2. Get survey/audit lines and comment lines
-    const [surveyLinesRes, auditLinesRes, commentLinesRes] = await Promise.all([
-        surveyJob ? ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)`) : Promise.resolve({ json: () => [] }),
-        auditJob ? ApiGET(request, `${host}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,cert_code),survey_pool(code,description,cert_code)`) : Promise.resolve({ json: () => [] }),
-        ApiGET(request, `${host}/comment_lines?job_id=eq.${id}&select=*,finding_comments(*)`)
+    // 2. Get survey lines and comment lines
+    const [surveyLinesRes, commentLinesRes] = await Promise.all([
+        ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)`),
+        ApiGET(request, `${host}/comment_lines?job_id=eq.${surveyJob.job_id}&select=*,finding_comments(*)`)
     ]);
 
     const surveyLines = await (surveyLinesRes as any).json();
-    const auditLines = await (auditLinesRes as any).json();
     const commentLines = await (commentLinesRes as any).json();
 
     // 3. Get available surveys/findings for the ship to add to scope
@@ -56,7 +44,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const poolRes = await ApiGET(request, `${host}/survey_pool?is_active=eq.true`);
     const allPoolItems = await poolRes.json();
 
-    return { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings, allPoolItems };
+    return { surveyJob, surveyLines, commentLines, availableSurveys, availableFindings, allPoolItems };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -68,48 +56,40 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (intent === "add_survey") {
         const surveyAuditId = formData.get("survey_audit_id");
         const surveyJobId = formData.get("survey_job_id");
-        const auditJobId = formData.get("audit_job_id");
 
-        if (surveyJobId) {
-            const payload: any = { job_id: parseInt(surveyJobId as string) };
-            if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
-            if (formData.get("pool_id")) payload.pool_id = parseInt(formData.get("pool_id") as string);
+        const payload: any = { job_id: parseInt(surveyJobId as string) };
+        if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
+        if (formData.get("pool_id")) payload.pool_id = parseInt(formData.get("pool_id") as string);
 
-            const res = await ApiPOST(request, `${host}/survey_lines`, payload);
-            if (!res.ok) return { error: "Failed to add survey line" };
-        } else if (auditJobId) {
-            const payload: any = { job_id: parseInt(auditJobId as string) };
-            if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
-            if (formData.get("pool_id")) payload.pool_id = parseInt(formData.get("pool_id") as string);
-
-            const res = await ApiPOST(request, `${host}/audit_lines`, payload);
-            if (!res.ok) return { error: "Failed to add audit line" };
-        }
+        const res = await ApiPOST(request, `${host}/survey_lines`, payload);
+        if (!res.ok) return { error: "Failed to add survey line" };
         return { success: "Survey added to scope" };
     }
 
     if (intent === "remove_survey_line") {
         const lineId = formData.get("line_id");
-        const type = formData.get("type"); // survey or audit
-        const endpoint = type === "survey" ? "survey_lines" : "audit_lines";
-        const res = await ApiDELETE(request, `${host}/${endpoint}?id=eq.${lineId}`);
+        const res = await ApiDELETE(request, `${host}/survey_lines?id=eq.${lineId}`);
         if (!res.ok) return { error: "Failed to remove line" };
         return { success: "Line removed" };
     }
 
     if (intent === "toggle_credit") {
         const lineId = formData.get("line_id");
-        const type = formData.get("type");
         const credit = formData.get("credit") === "true";
-        const endpoint = type === "survey" ? "survey_lines" : "audit_lines";
-        const res = await ApiPATCH(request, `${host}/${endpoint}?id=eq.${lineId}`, { credit_periodical: !credit });
+        const res = await ApiPATCH(request, `${host}/survey_lines?id=eq.${lineId}`, { credit_periodical: !credit });
         if (!res.ok) return { error: "Failed to update credit" };
         return { success: "Updated" };
     }
 
     if (intent === "add_finding") {
         const findingId = formData.get("finding_id");
-        const res = await ApiPOST(request, `${host}/comment_lines`, { job_id: parseInt(id as string), finding_comment_id: parseInt(findingId as string) });
+        // link findings to the parent job_id
+        const surveyJobId = formData.get("survey_job_id");
+        const surveyJobRes = await ApiGET({ headers: request.headers } as any, `${host}/survey_jobs?id=eq.${surveyJobId}&select=job_id`);
+        const surveyJobs = await surveyJobRes.json();
+        const jobId = surveyJobs[0]?.job_id;
+        if (!jobId) return { error: "Could not find parent job" };
+        const res = await ApiPOST(request, `${host}/comment_lines`, { job_id: jobId, finding_comment_id: parseInt(findingId as string) });
         if (!res.ok) return { error: "Failed to add finding to scope" };
         return { success: "Finding added" };
     }
@@ -125,7 +105,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function RegisterScope() {
-    const { job, surveyJob, auditJob, surveyLines, auditLines, commentLines, availableSurveys, availableFindings, allPoolItems } = useLoaderData<typeof loader>();
+    const { surveyJob, surveyLines, commentLines, availableSurveys, availableFindings, allPoolItems } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const isSubmitting = navigation.state !== "idle";
@@ -134,7 +114,7 @@ export default function RegisterScope() {
     // Find the selected survey to get its pool_id
     const selectedSurvey = availableSurveys.find((s: any) => s.id.toString() === selectedSurveyId);
 
-    const allLines = [...surveyLines.map((l: any) => ({ ...l, type: "survey" })), ...auditLines.map((l: any) => ({ ...l, type: "audit" }))];
+    const allLines = surveyLines.map((l: any) => ({ ...l, type: "survey" }));
 
     // Filter available pool items: exclude those that are already in availableSurveys (by pool_id) or already in scope (by pool_id)
     const existingPoolIdsInAudits = new Set(availableSurveys.map((s: any) => s.pool_id).filter(Boolean));
@@ -248,7 +228,6 @@ export default function RegisterScope() {
                 <div className="p-3 bg-slate-50/50 border-t border-slate-100">
                     <Form method="post" className="flex items-end gap-2 max-w-lg">
                         <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
-                        <input type="hidden" name="audit_job_id" value={auditJob?.id || ""} />
                         <div className="flex-1 space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Survey to Scope</label>
                             <input type="hidden" name="pool_id" value={selectedSurvey?.pool_id || ""} />
@@ -282,7 +261,6 @@ export default function RegisterScope() {
                 <div className="p-3 bg-slate-50 border-t border-slate-200">
                     <Form method="post" className="flex items-end gap-2 max-w-lg">
                         <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
-                        <input type="hidden" name="audit_job_id" value={auditJob?.id || ""} />
                         <div className="flex-1 space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Or Add New Survey Type (Not in Ship's List)</label>
                             <select name="pool_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">

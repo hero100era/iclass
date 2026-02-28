@@ -8,7 +8,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const host = process.env.API_URL || "http://localhost:2000";
 
-    const res = await ApiGET(request, `${host}/jobs?id=eq.${id}`);
+    const res = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}`);
     if (!res.ok) throw new Response("Job not found", { status: 404 });
     const jobs = await res.json();
     if (jobs.length === 0) throw new Response("Job not found", { status: 404 });
@@ -19,12 +19,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export async function action({ request, params }: Route.ActionArgs) {
     const { id } = params;
     const formData = await request.formData();
-    const comments = formData.get("comments") as string;
+    const description = formData.get("description") as string;
     const host = process.env.API_URL || "http://localhost:2000";
 
-    const res = await ApiPATCH(request, `${host}/jobs?id=eq.${id}`, {
-        comments,
-        updated_at: new Date().toISOString()
+    const res = await ApiPATCH(request, `${host}/survey_jobs?id=eq.${id}`, {
+        description
     });
 
     if (!res.ok) {
@@ -69,15 +68,15 @@ export default function JobDescription() {
                 </div>
                 <Form method="post" className="p-6 space-y-4">
                     <div className="space-y-2">
-                        <label htmlFor="comments" className="text-xs font-bold text-slate-600 px-1">
-                            Main Purpose / Comments
+                        <label htmlFor="description" className="text-xs font-bold text-slate-600 px-1">
+                            Description
                         </label>
                         <textarea
-                            id="comments"
-                            name="comments"
+                            id="description"
+                            name="description"
                             rows={12}
-                            defaultValue={job.comments || ""}
-                            placeholder="Enter the job description here..."
+                            defaultValue={job.description || ""}
+                            placeholder="Enter the survey job description here..."
                             className="w-full bg-slate-50/50 border border-slate-200 rounded-md p-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
                         ></textarea>
                     </div>

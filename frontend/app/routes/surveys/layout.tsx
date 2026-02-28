@@ -9,31 +9,25 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const host = process.env.API_URL || "http://localhost:2000";
 
-    // 1. Get the job info
-    const jobRes = await ApiGET(request, `${host}/jobs?id=eq.${id}`);
+    // 1. Get the survey_job record (id is a survey_job id, not a parent job id)
+    const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}&select=*,ships(*)`);
+    if (!surveyJobRes.ok) throw new Response("Job not found", { status: 404 });
+    const surveyJobs = await surveyJobRes.json();
+    if (surveyJobs.length === 0) throw new Response("Job not found", { status: 404 });
+    const surveyJob = surveyJobs[0];
+
+    // 2. Load the parent job using surveyJob.job_id
+    const jobRes = await ApiGET(request, `${host}/jobs?id=eq.${surveyJob.job_id}`);
     if (!jobRes.ok) throw new Response("Job not found", { status: 404 });
     const jobs = await jobRes.json();
-
     if (jobs.length === 0) throw new Response("Job not found", { status: 404 });
     const job = jobs[0];
 
-    // 2. Try to get survey job or audit job info
-    const [surveyJobRes, auditJobRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_jobs?job_id=eq.${id}&select=*,ships(*)`),
-        ApiGET(request, `${host}/audit_jobs?job_id=eq.${id}&select=*,ships(*),organizations(*)`)
-    ]);
-
-    const surveyJobs = await surveyJobRes.json();
-    const auditJobs = await auditJobRes.json();
-
-    const surveyJob = surveyJobs.length > 0 ? surveyJobs[0] : null;
-    const auditJob = auditJobs.length > 0 ? auditJobs[0] : null;
-
-    return { job, surveyJob, auditJob };
+    return { job, surveyJob };
 }
 
 export default function JobLayout() {
-    const { job, surveyJob, auditJob } = useLoaderData<typeof loader>();
+    const { job, surveyJob } = useLoaderData<typeof loader>();
     const { id, itemId } = useParams();
 
     const manual = [
@@ -113,7 +107,7 @@ export default function JobLayout() {
                                         {section.items.map((item) => (
                                             <NavLink
                                                 key={item.id}
-                                                to={`/jobs/${id}/${item.id}`}
+                                                to={`/surveys/${id}/${item.id}`}
                                                 className={({ isActive }) => cn(
                                                     "w-full text-left px-3 py-1 text-[11px] rounded transition-all flex items-center gap-2 group",
                                                     isActive

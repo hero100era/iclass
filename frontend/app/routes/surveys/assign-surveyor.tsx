@@ -1,38 +1,29 @@
 import { UserPlus, Trash2, GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { Link, useLoaderData, Form, useActionData, useParams } from "react-router";
 import { ApiGET, ApiPOST, ApiDELETE } from "~/.server/lib/api";
-import type { Route } from "./+types/register-scope";
+import type { Route } from "./+types/assign-surveyor";
 import { cn } from "~/lib/utils";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const host = process.env.API_URL || "http://localhost:2000";
 
-    // 1. Get job details to find whether it's survey or audit
-    const [surveyJobRes, auditJobRes, employeesRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_jobs?job_id=eq.${id}`),
-        ApiGET(request, `${host}/audit_jobs?job_id=eq.${id}`),
+    const [surveyJobRes, employeesRes] = await Promise.all([
+        ApiGET(request, `${host}/survey_jobs?id=eq.${id}`),
         ApiGET(request, `${host}/employees?is_active=eq.true&order=display_name.asc`)
     ]);
 
     const surveyJobs = await surveyJobRes.json();
-    const auditJobs = await auditJobRes.json();
     const employees = await employeesRes.json();
-
     const surveyJobId = surveyJobs.length > 0 ? surveyJobs[0].id : null;
-    const auditJobId = auditJobs.length > 0 ? auditJobs[0].id : null;
 
-    // 2. Get participants
     let participants = [];
-    if (surveyJobId || auditJobId) {
-        const query = surveyJobId
-            ? `survey_job_id=eq.${surveyJobId}`
-            : `audit_job_id=eq.${auditJobId}`;
-        const participantsRes = await ApiGET(request, `${host}/job_participants?${query}&select=*,employees(display_name,email)`);
+    if (surveyJobId) {
+        const participantsRes = await ApiGET(request, `${host}/job_participants?survey_job_id=eq.${surveyJobId}&select=*,employees(display_name,email)`);
         participants = await participantsRes.json();
     }
 
-    return { surveyJobId, auditJobId, participants, employees };
+    return { surveyJobId, participants, employees };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -42,9 +33,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     if (intent === "add_participant") {
         const employeeId = formData.get("employee_id");
-        const type = formData.get("participant_type"); // trainee or monitor
+        const type = formData.get("participant_type");
         const surveyJobId = formData.get("survey_job_id");
-        const auditJobId = formData.get("audit_job_id");
 
         const data: any = {
             employee_id: parseInt(employeeId as string),
@@ -53,7 +43,6 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
 
         if (surveyJobId) data.survey_job_id = parseInt(surveyJobId as string);
-        if (auditJobId) data.audit_job_id = parseInt(auditJobId as string);
 
         const res = await ApiPOST(request, `${host}/job_participants`, data);
         if (!res.ok) return { error: "Failed to add participant" };
@@ -71,7 +60,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function RegisterScope() {
-    const { surveyJobId, auditJobId, participants, employees } = useLoaderData<typeof loader>();
+    const { surveyJobId, participants, employees } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
 
     return (
@@ -162,7 +151,6 @@ export default function RegisterScope() {
                 </h3>
                 <Form method="post" className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <input type="hidden" name="survey_job_id" value={surveyJobId || ""} />
-                    <input type="hidden" name="audit_job_id" value={auditJobId || ""} />
 
                     <div className="md:col-span-2 space-y-1.5">
                         <label className="text-[11px] font-bold text-slate-500 uppercase">Select Employee</label>

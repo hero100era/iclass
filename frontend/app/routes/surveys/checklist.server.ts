@@ -28,50 +28,37 @@ function mapParticulars(items: any[], sourceKey: string) {
 export async function getChecklistData({ params, request }: any) {
     const { id } = params;
 
-    // 1. Get job and sub-jobs
-    const [surveyJobs, auditJobs] = await Promise.all([
-        ApiGET(request, `${API_HOST}/survey_jobs?job_id=eq.${id}`).then(r => fetchJson(r, "surveyJobs")),
-        ApiGET(request, `${API_HOST}/audit_jobs?job_id=eq.${id}`).then(r => fetchJson(r, "auditJobs"))
-    ]);
-
+    // 1. Get the survey_job by id (id is a survey_job id)
+    const surveyJobs = await ApiGET(request, `${API_HOST}/survey_jobs?id=eq.${id}`).then(r => fetchJson(r, "surveyJobs"));
     const surveyJob = surveyJobs[0] || null;
-    const auditJob = auditJobs[0] || null;
 
-    // 2. Get survey/audit lines
-    const [surveyLines, auditLines] = await Promise.all([
-        surveyJob ? ApiGET(request, `${API_HOST}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`).then(r => fetchJson(r, "surveyLines")) : [],
-        auditJob ? ApiGET(request, `${API_HOST}/audit_lines?job_id=eq.${auditJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`).then(r => fetchJson(r, "auditLines")) : []
-    ]);
+    // 2. Get survey lines
+    const surveyLines = surveyJob
+        ? await ApiGET(request, `${API_HOST}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,cert_code),survey_pool(name,code)`).then(r => fetchJson(r, "surveyLines"))
+        : [];
 
     // 3. Get checklists and results
     const checklistSelect = `*,checklist_items(*,checklist_sections(*),breakdown_template_nodes(*))`;
-    const [surveyChecklistsRaw, auditChecklistsRaw, checklistResults] = await Promise.all([
+    const [surveyChecklistsRaw, checklistResults] = await Promise.all([
         surveyJob ? ApiGET(request, `${API_HOST}/survey_checklists?survey_job_id=eq.${surveyJob.id}&select=${checklistSelect},survey_checklist_item_particulars(*,ship_breakdown_nodes(name,code))`).then(r => fetchJson(r, "surveyChecklists")) : [],
-        auditJob ? ApiGET(request, `${API_HOST}/audit_checklists?audit_job_id=eq.${auditJob.id}&select=${checklistSelect},audit_checklist_item_particulars(*,ship_breakdown_nodes(name,code))`).then(r => fetchJson(r, "auditChecklists")) : [],
         ApiGET(request, `${API_HOST}/checklist_results`).then(r => fetchJson(r, "checklistResults"))
     ]);
 
     return {
         surveyLines,
-        auditLines,
         surveyChecklists: mapParticulars(surveyChecklistsRaw, "survey_checklist_item_particulars"),
-        auditChecklists: mapParticulars(auditChecklistsRaw, "audit_checklist_item_particulars"),
         checklistResults,
-        surveyJobId: surveyJob?.id,
-        auditJobId: auditJob?.id
+        surveyJobId: surveyJob?.id
     };
 }
 
-export async function updateChecklistResult({ request }: any, { id, result, type }: any) {
-    const endpoint = type === "survey" ? "survey_checklists" : "audit_checklists";
-    const res = await ApiPATCH(request, `${API_HOST}/${endpoint}?id=eq.${id}`, { result });
+export async function updateChecklistResult({ request }: any, { id, result }: any) {
+    const res = await ApiPATCH(request, `${API_HOST}/survey_checklists?id=eq.${id}`, { result });
     if (!res.ok) throw new Error("Failed to update result");
     return { success: true };
 }
 
-export async function updateChecklistParticulars({ request }: any, { id, particularsJson, type }: any) {
-    const endpoint = type === "survey" ? "survey_checklist_item_particulars" : "audit_checklist_item_particulars";
-
+export async function updateChecklistParticulars({ request }: any, { id, particularsJson }: any) {
     let particulars = [];
     try {
         particulars = JSON.parse(particularsJson as string);
@@ -81,7 +68,7 @@ export async function updateChecklistParticulars({ request }: any, { id, particu
 
     for (const p of particulars) {
         if (p.id) {
-            await ApiPATCH(request, `${API_HOST}/${endpoint}?id=eq.${p.id}`, {
+            await ApiPATCH(request, `${API_HOST}/survey_checklist_item_particulars?id=eq.${p.id}`, {
                 attr_result: p.result
             });
         }

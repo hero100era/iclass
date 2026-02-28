@@ -7,8 +7,6 @@ import {
     ClipboardList,
     LogOut,
     User,
-    Library,
-    Network,
     ShieldAlert,
     Briefcase
 } from "lucide-react";
@@ -25,12 +23,6 @@ const navItems = [
         icon: Ship,
         label: "Vessels",
         to: "/vessels",
-        roles: ["admingrp", "employees", "customers", "administrations"]
-    },
-    {
-        icon: FileBadge,
-        label: "Certificates",
-        to: "/certificates",
         roles: ["admingrp", "employees", "customers", "administrations"]
     },
     {

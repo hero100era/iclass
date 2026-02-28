@@ -30,9 +30,8 @@ export async function action(args: any) {
 }
 
 /** Renders the particulars table for a checklist item across all its instances. */
-function ParticularsTable({ particulars, activeType, submit }: {
+function ParticularsTable({ particulars, submit }: {
     particulars: any[];
-    activeType: "survey" | "audit";
     submit: ReturnType<typeof useSubmit>;
 }) {
     if (particulars.length === 0) return null;
@@ -67,9 +66,8 @@ function ParticularsTable({ particulars, activeType, submit }: {
     const submitParticular = (p: any, value: string) => {
         const formData = new FormData();
         formData.append("intent", "update_particulars");
-        formData.append("id", (p.survey_checklist_id || p.audit_checklist_id).toString());
+        formData.append("id", p.survey_checklist_id.toString());
         formData.append("particulars", JSON.stringify([{ ...p, result: value }]));
-        formData.append("type", activeType);
         submit(formData, { method: "post" });
     };
 
@@ -148,21 +146,14 @@ function ParticularsTable({ particulars, activeType, submit }: {
 }
 
 export default function JobChecklist() {
-    const { surveyLines, auditLines, surveyChecklists, auditChecklists, checklistResults } = useLoaderData<typeof loader>();
+    const { surveyLines, surveyChecklists, checklistResults } = useLoaderData<typeof loader>();
     const submit = useSubmit();
 
-    // Combine lines
-    const allLines = [
-        ...(Array.isArray(surveyLines) ? surveyLines.map((l: any) => ({ ...l, type: "survey" })) : []),
-        ...(Array.isArray(auditLines) ? auditLines.map((l: any) => ({ ...l, type: "audit" })) : [])
-    ];
-
+    const allLines = Array.isArray(surveyLines) ? surveyLines : [];
     const [activeLineId, setActiveLineId] = useState<number | null>(allLines.length > 0 ? allLines[0].id : null);
-    const [activeType, setActiveType] = useState<"survey" | "audit">(allLines.length > 0 ? allLines[0].type : "survey");
 
-    const checklists = activeType === "survey" ? surveyChecklists : auditChecklists;
-    const currentChecklist = (Array.isArray(checklists) ? checklists : []).filter(
-        (c: any) => (activeType === "survey" ? c.survey_line_id : c.audit_line_id) === activeLineId
+    const currentChecklist = (Array.isArray(surveyChecklists) ? surveyChecklists : []).filter(
+        (c: any) => c.survey_line_id === activeLineId
     );
 
     // Group by sections
@@ -197,7 +188,6 @@ export default function JobChecklist() {
         formData.append("intent", "update_result");
         formData.append("id", checklistId.toString());
         formData.append("result", result);
-        formData.append("type", activeType);
         submit(formData, { method: "post" });
     };
 
@@ -220,20 +210,17 @@ export default function JobChecklist() {
                     <div className="text-[10px] font-bold text-slate-400 uppercase px-2 mb-1">Surveys in Scope</div>
                     {allLines.map((line: any) => (
                         <button
-                            key={`${line.type}-${line.id}`}
-                            onClick={() => { setActiveLineId(line.id); setActiveType(line.type); }}
+                            key={line.id}
+                            onClick={() => setActiveLineId(line.id)}
                             className={cn(
                                 "w-full text-left p-3 rounded-lg border transition-all flex flex-col gap-1 shadow-sm",
-                                activeLineId === line.id && activeType === line.type
+                                activeLineId === line.id
                                     ? "bg-white border-primary border-2 ring-1 ring-primary/20"
                                     : "bg-white border-slate-200 hover:border-slate-300"
                             )}
                         >
-                            <span className={cn(
-                                "text-[9px] font-bold uppercase w-fit px-1.5 py-0.5 rounded",
-                                line.type === "survey" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
-                            )}>
-                                {line.type}
+                            <span className="text-[9px] font-bold uppercase w-fit px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                survey
                             </span>
                             <span className="text-xs font-bold text-slate-700 line-clamp-2">
                                 {line.survey_audits?.description || line.survey_pool?.name}
@@ -296,7 +283,7 @@ export default function JobChecklist() {
                                                         </div>
                                                     </div>
 
-                                                    <ParticularsTable particulars={allParticulars} activeType={activeType} submit={submit} />
+                                                    <ParticularsTable particulars={allParticulars} submit={submit} />
                                                 </div>
                                             );
                                         })}

@@ -123,14 +123,20 @@ FROM iclass.job;
 DROP VIEW IF EXISTS api.survey_jobs CASCADE;
 CREATE OR REPLACE VIEW api.survey_jobs AS
 SELECT
-  id, job_id, ship_id, surveyor_id, reviewer_id, initialized
+  id, job_id, parent_id, ship_id, surveyor_id, reviewer_id, description, initialized
 FROM iclass.survey_job;
 
 DROP VIEW IF EXISTS api.audit_jobs CASCADE;
 CREATE OR REPLACE VIEW api.audit_jobs AS
 SELECT
-  id, job_id, ship_id, company_id, auditor_id, reviewer_id, initialized
+  id, job_id, parent_id, ship_id, company_id, auditor_id, reviewer_id, description, initialized
 FROM iclass.audit_job;
+
+DROP VIEW IF EXISTS api.ms_jobs CASCADE;
+CREATE OR REPLACE VIEW api.ms_jobs AS
+SELECT
+  id, job_id, ship_id, company_id, issued_by, reviewed_by, initialized
+FROM iclass.ms_job;
 
 DROP VIEW IF EXISTS api.survey_lines CASCADE;
 CREATE OR REPLACE VIEW api.survey_lines AS
@@ -563,6 +569,7 @@ GRANT UPDATE, DELETE ON api.survey_request_carts TO employees;
 GRANT SELECT, INSERT, UPDATE ON api.jobs TO employees;
 GRANT SELECT, INSERT, UPDATE ON api.survey_jobs TO employees;
 GRANT SELECT, INSERT, UPDATE ON api.audit_jobs TO employees;
+GRANT SELECT, INSERT, UPDATE ON api.ms_jobs TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.survey_lines TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.audit_lines TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.comment_lines TO employees;

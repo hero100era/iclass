@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS iclass.job (
 CREATE TABLE IF NOT EXISTS iclass.survey_job(
   id serial PRIMARY KEY,
   job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  parent_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
   ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
   surveyor_id integer REFERENCES iclass.employee(id),
   reviewer_id integer REFERENCES iclass.employee(id),
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_job(
 CREATE TABLE IF NOT EXISTS iclass.audit_job (
   id serial PRIMARY KEY,
   job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
+  parent_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
   ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
   company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
   auditor_id integer REFERENCES iclass.employee(id),
