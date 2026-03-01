@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router";
-import { Ship, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, ChevronRight, Download, ExternalLink, Anchor, Flag, Lock, MessageSquare, Plus, Minus, Network } from "lucide-react";
+import { Ship, MapPin, Calendar, Ruler, Weight, Info, FileBadge, FileText, Activity, Anchor, Flag, Lock, MessageSquare, Plus, Minus, Network } from "lucide-react";
 import { ApiGET, ApiPOST } from "~/.server/lib/api";
 import type { Route } from "./+types/detail";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";

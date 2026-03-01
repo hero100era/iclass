@@ -61,7 +61,6 @@ export async function action({ request, params }: Route.ActionArgs) {
         if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
         if (formData.get("pool_id")) {
             payload.pool_id = parseInt(formData.get("pool_id") as string);
-            payload.credit_periodical = false;
         }
 
         const res = await ApiPOST(request, `${host}/survey_lines`, payload);
@@ -158,7 +157,6 @@ export default function RegisterScope() {
                 <table className="w-full text-left text-[11px]">
                     <thead className="bg-slate-50/50 border-b border-slate-200 text-slate-500 uppercase font-bold tracking-wider">
                         <tr>
-                            {/* <th className="px-4 py-2 w-10">Type</th> */}
                             <th className="px-4 py-2">Cert/Code</th>
                             <th className="px-4 py-2">Description</th>
                             <th className="px-4 py-2">Range / Due</th>
@@ -175,14 +173,6 @@ export default function RegisterScope() {
                         ) : (
                             allLines.map((line: any) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    {/* <td className="px-4 py-2">
-                                        <span className={cn(
-                                            "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
-                                            line.type === "survey" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
-                                        )}>
-                                            {line.type}
-                                        </span>
-                                    </td> */}
                                     <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
                                     <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
                                     <td className="px-4 py-2">

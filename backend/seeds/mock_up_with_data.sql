@@ -223,10 +223,12 @@ VALUES
   ('COF', 'Change of Flag', 'Change of Flag', 5000.00)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, period, window_before, window_after, is_mandatory) VALUES
-('LL.A', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE),
-('LL.R', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE),
-('CL.R', 'Class Renewal', 'Class Renewal Survey', 5000, 'CL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE)
+INSERT INTO iclass.survey_pool (code, name, description, fee, cert_code, type, period, window_before, window_after, is_statutory, is_audit, is_doc, is_mandatory, is_periodical) VALUES
+('LL.A', 'LoadLine Annual', 'LoadLine Annual Survey', 800, 'LL', 'A', INTERVAL '1 year', INTERVAL '3 months', INTERVAL '3 months', TRUE, FALSE, FALSE, TRUE, TRUE),
+('LL.R', 'LoadLine Renewal', 'LoadLine Renewal Survey', 2000, 'LL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE, FALSE, FALSE, TRUE, TRUE),
+('CL.R', 'Class Renewal', 'Class Renewal Survey', 5000, 'CL', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE, FALSE, FALSE, TRUE, TRUE),
+('SMC.R', 'Safety Management Certificate Renewal', 'Safety Management Certificate Renewal', 5000, 'SMC', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE, TRUE, FALSE, TRUE, TRUE),
+('DOC.R', 'Document of Compliance Renewal', 'Document of Compliance Renewal', 5000, 'DOC', 'R', INTERVAL '5 years', INTERVAL '3 months', NULL, TRUE, TRUE, TRUE, TRUE, TRUE)
 ON CONFLICT DO NOTHING;
 
 -- Survey Audits

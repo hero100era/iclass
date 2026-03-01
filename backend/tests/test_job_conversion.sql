@@ -17,17 +17,16 @@ VALUES (10101, 10101, 10001, 'John', 'Surveyor', 'John Surveyor', 'surveyor@icla
        (10102, 10102, 10001, 'Jane', 'Reviewer', 'Jane Reviewer', 'reviewer@iclass.com');
 
 -- Setup certificate pool for is_audit checks
-INSERT INTO iclass.certificate_survey_pool (code, description, is_statutory, is_audit)
-VALUES ('TEST_SURV', 'Test Survey Cert', TRUE, FALSE),
-       ('TEST_AUDIT', 'Test Audit Cert', TRUE, TRUE);
+INSERT INTO iclass.certificate_survey_pool (code, description)
+VALUES ('CL', 'Classification'),
+       ('LL', 'Load Line');
 
-INSERT INTO iclass.survey_pool (id, code, name, type, cert_code, is_audit) 
-VALUES (10001, 'ANNUAL', 'Annual Survey', 'A', 'TEST_SURV', FALSE),
-       (10002, 'OCC_SURV', 'Occasional Survey', 'O', 'TEST_SURV', FALSE),
-       (10003, 'OCC_AUDIT', 'Occasional Audit', 'O', 'TEST_AUDIT', TRUE);
+INSERT INTO iclass.survey_pool (id, code, name, type, cert_code) 
+VALUES (10001, 'CL', 'Classification', 'A', 'CL'),
+       (10002, 'LL', 'Load Line', 'O', 'LL');
 
 INSERT INTO iclass.survey_audit (id, pool_id, description, last_held_date, place_held, task_status)
-VALUES (10001, 10001, 'Annual Survey 2026', '2025-01-01', 'Test Port', 'draft');
+VALUES (10001, 10001, 'Classification', '2025-01-01', 'Test Port', 'draft');
 
 INSERT INTO iclass.finding_comment (id, ship_id, company_id, comment_type, status, date_issued, text)
 VALUES (10001, 10001, 10001, 'D', 'A', '2026-01-01', 'Test finding text');

@@ -33,7 +33,7 @@ CREATE TABLE iclass.training_course (
     certification_validity_months INTEGER,
     ro_code_citation VARCHAR(20), -- e.g., 'A2.3.7.2.1'
     is_mandatory boolean DEFAULT true,
-    is_active boolean DEFAULT true, 
+    is_active boolean DEFAULT true,
     version varchar(10),
     created_by integer REFERENCES auth.user(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

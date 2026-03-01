@@ -38,14 +38,11 @@ BEGIN
     
     FOR v_cart_item IN SELECT * FROM iclass.survey_request_cart WHERE survey_request_id = p_request_id LOOP
         IF v_cart_item.survey_audit_id IS NOT NULL THEN
-            -- Check if it's an audit or survey
-            -- We will check iclass.survey_pool.cert_code -> is_audit
-            
+            -- is_audit lives on survey_pool directly now
             IF EXISTS (
                 SELECT 1 FROM iclass.survey_audit sa
                 JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
-                JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
-                WHERE sa.id = v_cart_item.survey_audit_id AND csp.is_audit = TRUE
+                WHERE sa.id = v_cart_item.survey_audit_id AND sp.is_audit = TRUE
             ) THEN
                 v_has_audit := TRUE;
             ELSE
@@ -54,7 +51,6 @@ BEGIN
         END IF;
 
         IF v_cart_item.occ_survey_code IS NOT NULL THEN
-            -- Check if it's an audit or survey via survey_pool
             IF EXISTS (
                 SELECT 1 FROM iclass.survey_pool sp
                 WHERE sp.code = v_cart_item.occ_survey_code AND sp.is_audit = TRUE
@@ -72,15 +68,14 @@ BEGIN
         VALUES (v_job_id, v_ship_id, p_surveyor_id, p_reviewer_id)
         RETURNING id INTO v_survey_job_id;
 
-        -- Add lines (mandatory surveys)
+        -- Add lines (mandatory surveys) — use sp.is_audit directly
         INSERT INTO iclass.survey_line (job_id, survey_audit_id, pool_id)
         SELECT v_survey_job_id, src.survey_audit_id, sa.pool_id
         FROM iclass.survey_request_cart src
         JOIN iclass.survey_audit sa ON src.survey_audit_id = sa.id
         JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
-        JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
         WHERE src.survey_request_id = p_request_id AND src.survey_audit_id IS NOT NULL
-        AND csp.is_audit = FALSE;
+        AND sp.is_audit = FALSE;
 
         -- Add lines (occasional surveys)
         INSERT INTO iclass.survey_line (job_id, pool_id)
@@ -103,9 +98,8 @@ BEGIN
         FROM iclass.survey_request_cart src
         JOIN iclass.survey_audit sa ON src.survey_audit_id = sa.id
         JOIN iclass.survey_pool sp ON sa.pool_id = sp.id
-        JOIN iclass.certificate_survey_pool csp ON sp.cert_code = csp.code
         WHERE src.survey_request_id = p_request_id AND src.survey_audit_id IS NOT NULL
-        AND csp.is_audit = TRUE;
+        AND sp.is_audit = TRUE;
 
         -- Add lines (occasional audits)
         INSERT INTO iclass.audit_line (job_id, pool_id)
