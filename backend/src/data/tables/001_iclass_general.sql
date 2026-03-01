@@ -160,12 +160,12 @@ ON CONFLICT
 
 -- Create enum for certificates applicability
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificate_applicability_enum') THEN
-        CREATE TYPE iclass.certificate_applicability_enum AS ENUM(
-          'Vessel',
-          'Company'
-        );
-    END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificate_applicability_enum') THEN
+      CREATE TYPE iclass.certificate_applicability_enum AS ENUM(
+        'Vessel',
+        'Company'
+      );
+  END IF;
 END $$;
 
 -- Create table for Classification Societies reference
@@ -321,38 +321,38 @@ ON CONFLICT
   DO NOTHING;
 
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status_enum') THEN
-        CREATE TYPE iclass.task_status_enum AS ENUM (
-            'draft',
-            'submitted',
-            'accepted',
-            'partial',
-            'assigned',
-            'scheduled',
-            'planning',
-            'executing',
-            'pending_review',
-            'approved',
-            'completed',
-            'cancelled',
-            'rejected'
-        );
-    END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status_enum') THEN
+    CREATE TYPE iclass.task_status_enum AS ENUM (
+      'draft',
+      'submitted',
+      'accepted',
+      'partial',
+      'assigned',
+      'scheduled',
+      'planning',
+      'executing',
+      'pending_review',
+      'approved',
+      'completed',
+      'cancelled',
+      'rejected'
+    );
+  END IF;
 END $$;
 
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'data_type_enum') THEN
-    CREATE TYPE iclass.data_type_enum AS ENUM (
-        'text',
-        'integer',
-        'decimal',
-        'boolean',
-        'date',
-        'datetime',
-        'selection',     -- dropdown / single select
-        'multi_select'
-    );
-    END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'data_type_enum') THEN
+  CREATE TYPE iclass.data_type_enum AS ENUM (
+    'text',
+    'integer',
+    'decimal',
+    'boolean',
+    'date',
+    'datetime',
+    'selection',     -- dropdown / single select
+    'multi_select'
+  );
+  END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS iclass.flag(
@@ -442,86 +442,86 @@ ON CONFLICT
   DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template (
-    id              SERIAL PRIMARY KEY,
-    code            VARCHAR(50)  NOT NULL UNIQUE,       -- e.g., 'TMPL-BULK-001'
-    name            VARCHAR(200) NOT NULL,               -- e.g., 'Bulk Carrier Standard Breakdown'
-    description     TEXT,
-    vessel_type     VARCHAR(100),                        -- e.g., 'Bulk Carrier', 'Tanker', 'Container'
-    version         VARCHAR(20)      NOT NULL DEFAULT '1.0',
-    is_active       BOOLEAN   NOT NULL DEFAULT TRUE,
-    -- Versioning / lineage
-    parent_template_id integer REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- if cloned from another template
+  id              SERIAL PRIMARY KEY,
+  code            VARCHAR(50)  NOT NULL UNIQUE,       -- e.g., 'TMPL-BULK-001'
+  name            VARCHAR(200) NOT NULL,               -- e.g., 'Bulk Carrier Standard Breakdown'
+  description     TEXT,
+  vessel_type     VARCHAR(100),                        -- e.g., 'Bulk Carrier', 'Tanker', 'Container'
+  version         VARCHAR(20)      NOT NULL DEFAULT '1.0',
+  is_active       BOOLEAN   NOT NULL DEFAULT TRUE,
+  -- Versioning / lineage
+  parent_template_id integer REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- if cloned from another template
 
-    created_by      VARCHAR(100),
-    updated_by      VARCHAR(100),
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by      VARCHAR(100),
+  updated_by      VARCHAR(100),
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_template_code_version UNIQUE (code, version)
+  CONSTRAINT uq_template_code_version UNIQUE (code, version)
 );
 
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template_node(
-    id              SERIAL PRIMARY KEY,
-    template_id     integer  NOT NULL REFERENCES iclass.breakdown_template(id) ON DELETE CASCADE,
-    parent_node_id  integer  REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  id              SERIAL PRIMARY KEY,
+  template_id     integer  NOT NULL REFERENCES iclass.breakdown_template(id) ON DELETE CASCADE,
+  parent_node_id  integer  REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
 
-    -- Identification
-    code            VARCHAR(50)  NOT NULL,                -- e.g., 'TK-001', 'ME-001'
-    name            VARCHAR(200) NOT NULL,                -- e.g., 'No.1 Port Ballast Tank'
-    description     TEXT,
+  -- Identification
+  code            VARCHAR(50)  NOT NULL,                -- e.g., 'TK-001', 'ME-001'
+  name            VARCHAR(200) NOT NULL,                -- e.g., 'No.1 Port Ballast Tank'
+  description     TEXT,
 
-    -- Classification
-    category        VARCHAR(100),  -- e.g., 'tank', 'cargo_space', 'equipment', 'system',
-    node_type       VARCHAR(50),   -- more granular: 'fuel_oil_tank', 'main_engine', etc.
+  -- Classification
+  category        VARCHAR(100),  -- e.g., 'tank', 'cargo_space', 'equipment', 'system',
+  node_type       VARCHAR(50),   -- more granular: 'fuel_oil_tank', 'main_engine', etc.
 
-    -- Hierarchy & ordering
-    level           INTEGER      NOT NULL DEFAULT 0,      -- depth in tree (0 = root)
-    sort_order      INTEGER      NOT NULL DEFAULT 0,      -- sibling ordering
-    is_instantiable     BOOLEAN         NOT NULL DEFAULT TRUE,
-    default_quantity    INTEGER         NOT NULL DEFAULT 1,  -- how many to create by default
-    -- path      LTREE,                                 -- materialized path for fast queries
-    is_active BOOLEAN  NOT NULL DEFAULT TRUE,
+  -- Hierarchy & ordering
+  level           INTEGER      NOT NULL DEFAULT 0,      -- depth in tree (0 = root)
+  sort_order      INTEGER      NOT NULL DEFAULT 0,      -- sibling ordering
+  is_instantiable     BOOLEAN         NOT NULL DEFAULT TRUE,
+  default_quantity    INTEGER         NOT NULL DEFAULT 1,  -- how many to create by default
+  -- path      LTREE,                                 -- materialized path for fast queries
+  is_active BOOLEAN  NOT NULL DEFAULT TRUE,
 
-    -- Metadata as JSONB for flexible template properties
-    metadata        JSONB        DEFAULT '{}',  -- metadata for flexible template properties
-    is_mandatory     BOOLEAN     NOT NULL DEFAULT TRUE,    -- must this node exist when applied?
-    is_leaf          BOOLEAN     NOT NULL DEFAULT FALSE,   -- hint: no children expected
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Metadata as JSONB for flexible template properties
+  metadata        JSONB        DEFAULT '{}',  -- metadata for flexible template properties
+  is_mandatory     BOOLEAN     NOT NULL DEFAULT TRUE,    -- must this node exist when applied?
+  is_leaf          BOOLEAN     NOT NULL DEFAULT FALSE,   -- hint: no children expected
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_template_node_code UNIQUE (template_id, code),
-    CONSTRAINT chk_no_self_parent CHECK (id != parent_node_id)
+  CONSTRAINT uq_template_node_code UNIQUE (template_id, code),
+  CONSTRAINT chk_no_self_parent CHECK (id != parent_node_id)
 );
 -- ---------------------------------------------
 --Breakdown Template Item Particulars (key-value specs)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template_node_particular (
-    id              SERIAL PRIMARY KEY,
-    template_node_id integer NOT NULL REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  id              SERIAL PRIMARY KEY,
+  template_node_id integer NOT NULL REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
 
-    attr_key   VARCHAR(20) NOT NULL,               -- e.g., 'material', 'coating_type'
-    attr_title VARCHAR(200) NOT NULL,
-    data_type   iclass.data_type_enum NOT NULL,         -- TEXT, NUMBER, BOOLEAN, DATE, JSON
-    default_value TEXT,                                  -- default value
-    selection_options    JSONB,                          -- for selection/multi_select types
-                                                          -- e.g., ["good","fair","poor"]
-    unit            VARCHAR(20),
-    is_required     BOOLEAN      NOT NULL DEFAULT FALSE,
-    sort_order      INTEGER      NOT NULL DEFAULT 0,
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  attr_key   VARCHAR(20) NOT NULL,               -- e.g., 'material', 'coating_type'
+  attr_title VARCHAR(200) NOT NULL,
+  data_type   iclass.data_type_enum NOT NULL,         -- TEXT, NUMBER, BOOLEAN, DATE, JSON
+  default_value TEXT,                                  -- default value
+  selection_options    JSONB,                          -- for selection/multi_select types
+                                                        -- e.g., ["good","fair","poor"]
+  unit            VARCHAR(20),
+  is_required     BOOLEAN      NOT NULL DEFAULT FALSE,
+  sort_order      INTEGER      NOT NULL DEFAULT 0,
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_tnode_attr UNIQUE (template_node_id, attr_key)
+  CONSTRAINT uq_tnode_attr UNIQUE (template_node_id, attr_key)
 );
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_section (
-    id serial PRIMARY KEY,
-    survey_id integer REFERENCES iclass.survey_pool(id),
-    code varchar(50) NOT NULL,
-    section_number VARCHAR(20) NOT NULL, -- e.g., '1.1.1', '2.2.2'
-    title TEXT NOT NULL, -- e.g., 'Examination of plans and designs'
-    description text,
-    is_active BOOLEAN DEFAULT TRUE
+  id serial PRIMARY KEY,
+  survey_id integer REFERENCES iclass.survey_pool(id),
+  code varchar(50) NOT NULL,
+  section_number VARCHAR(20) NOT NULL, -- e.g., '1.1.1', '2.2.2'
+  title TEXT NOT NULL, -- e.g., 'Examination of plans and designs'
+  description text,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_item (
@@ -542,21 +542,21 @@ CREATE TABLE IF NOT EXISTS iclass.checklist_item (
 );
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_item_particular (
-    id SERIAL PRIMARY KEY,
-    checklist_item_id   BIGINT NOT NULL REFERENCES iclass.checklist_item(id) ON DELETE CASCADE,
-    attr_key            VARCHAR(100)    NOT NULL,
-    attr_title          VARCHAR(300)    NOT NULL,
-    data_type           iclass.data_type_enum  NOT NULL DEFAULT 'text',
-    unit                VARCHAR(50),
-    default_value       TEXT,
-    selection_options    JSONB,                            -- for selection/multi_select
-    is_required         BOOLEAN         NOT NULL DEFAULT TRUE,
-    sort_order          INTEGER         NOT NULL DEFAULT 0,
-    description         TEXT,
-    created_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id SERIAL PRIMARY KEY,
+  checklist_item_id   BIGINT NOT NULL REFERENCES iclass.checklist_item(id) ON DELETE CASCADE,
+  attr_key            VARCHAR(100)    NOT NULL,
+  attr_title          VARCHAR(300)    NOT NULL,
+  data_type           iclass.data_type_enum  NOT NULL DEFAULT 'text',
+  unit                VARCHAR(50),
+  default_value       TEXT,
+  selection_options    JSONB,                            -- for selection/multi_select
+  is_required         BOOLEAN         NOT NULL DEFAULT TRUE,
+  sort_order          INTEGER         NOT NULL DEFAULT 0,
+  description         TEXT,
+  created_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (checklist_item_id, attr_key)
+  UNIQUE (checklist_item_id, attr_key)
 );
 
 
