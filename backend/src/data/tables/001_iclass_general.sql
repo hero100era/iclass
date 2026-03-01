@@ -388,19 +388,6 @@ CREATE TABLE IF NOT EXISTS iclass.certificate_template (
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.report_template (
-  code varchar(10) PRIMARY KEY,
-  name varchar(100) NOT NULL,
-  version varchar(20) NOT NULL,
-  file_path_rml varchar(255),
-  file_path_html varchar(255),
-  file_path_pdf varchar(255),
-  description text,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  is_active BOOLEAN DEFAULT TRUE
-);
-
 CREATE TABLE IF NOT EXISTS iclass.survey_pool (
   id serial PRIMARY KEY,
   code varchar(20) NOT NULL UNIQUE,
@@ -411,7 +398,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_pool (
   type varchar(2) REFERENCES iclass.survey_audit_type(code),
   period INTERVAL,
   window_before INTERVAL,
-  window_after INTERVAL, 
+  window_after INTERVAL,
   is_statutory boolean DEFAULT FALSE,
   is_audit boolean DEFAULT FALSE,
   is_doc boolean DEFAULT FALSE,
@@ -421,6 +408,20 @@ CREATE TABLE IF NOT EXISTS iclass.survey_pool (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE,
   CONSTRAINT unique_mandatory_survey_audit UNIQUE (cert_code, type)
+);
+
+CREATE TABLE IF NOT EXISTS iclass.report_template (
+  code varchar(10) PRIMARY KEY,
+  survey_id integer NOT NULL REFERENCES iclass.survey_pool(id) ON DELETE CASCADE,
+  name varchar(100) NOT NULL,
+  version varchar(20) NOT NULL,
+  file_path_rml varchar(255),
+  file_path_html varchar(255),
+  file_path_pdf varchar(255),
+  description text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_result (
@@ -576,6 +577,46 @@ CREATE TABLE IF NOT EXISTS iclass.flag_survey_authorization (
   flag_code varchar(3) NOT NULL REFERENCES iclass.flag(code) ON DELETE CASCADE,
   cert_code varchar(10) NOT NULL REFERENCES iclass.certificate_survey_pool(code) ON DELETE CASCADE,
   survey_type varchar(2) REFERENCES iclass.survey_audit_type(code),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.survey_preparation_section (
+  id SERIAL PRIMARY KEY,
+  survey_id integer NOT NULL REFERENCES iclass.survey_pool(id) ON DELETE CASCADE,
+  code varchar(100),
+  category varchar(20), --- Accommodation, Deck, Machinery, ER, Bridge, Office, CH, Tank, General.
+  content varchar(1000),
+  description text,
+  guidance text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.survey_preparation (
+  id SERIAL PRIMARY KEY,
+  survey_id integer NOT NULL REFERENCES iclass.survey_pool(id) ON DELETE CASCADE,
+  code varchar(100),
+  category varchar(2), --- AC(Accommodation), DE(Deck), MA(Machinery), ER(Engine Room), BR(Bridge), OF(Office), CH(Cargo Hold), TA(Tank), GE(General).
+  description text,
+  guidance text,
+  remarks text,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.survey_documentation(
+  id SERIAL PRIMARY KEY,
+  survey_id integer NOT NULL REFERENCES iclass.survey_pool(id) ON DELETE CASCADE,
+  code varchar(100),
+  description text,
+  guidance text,
+  remarks text,
+  file_path varchar(255),
+  is_mandatory boolean DEFAULT TRUE,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE

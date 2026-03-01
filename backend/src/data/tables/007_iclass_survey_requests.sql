@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_request (
   is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS iclass.survey_request_cart ( 
+CREATE TABLE IF NOT EXISTS iclass.survey_request_cart (
   id serial PRIMARY KEY,
   ship_id integer REFERENCES iclass.ship(id) ON DELETE CASCADE,
   company_id integer REFERENCES iclass.organization(id) ON DELETE CASCADE,

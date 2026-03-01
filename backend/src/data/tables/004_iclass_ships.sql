@@ -62,17 +62,17 @@ CREATE TABLE IF NOT EXISTS iclass.ship(
 -- Ship Breakdown (header - links ship ↔ template)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.ship_breakdown (
-    id              serial PRIMARY KEY,
-    ship_id         integer   NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
-    template_id integer  REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- which template was used
-    name            VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
-    description     TEXT,
-    revision        INTEGER      NOT NULL DEFAULT 1,
-    is_active       BOOLEAN      NOT NULL DEFAULT TRUE,   -- only one active breakdown per ship
-    applied_at      TIMESTAMPTZ,                           -- when template was applied
-    applied_by      VARCHAR(100),
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+  id              serial PRIMARY KEY,
+  ship_id         integer   NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  template_id integer  REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- which template was used
+  name            VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
+  description     TEXT,
+  revision        INTEGER      NOT NULL DEFAULT 1,
+  is_active       BOOLEAN      NOT NULL DEFAULT TRUE,   -- only one active breakdown per ship
+  applied_at      TIMESTAMPTZ,                           -- when template was applied
+  applied_by      VARCHAR(100),
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Ensure only one active breakdown per ship
@@ -84,63 +84,63 @@ CREATE UNIQUE INDEX IF NOT EXISTS uidx_ship_active_breakdown ON iclass.ship_brea
 -- Ship Breakdown Node (ship-specific component tree)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node (
-    id                  serial PRIMARY KEY,
-    ship_id             integer  NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
-    ship_breakdown_id   integer  NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
-    parent_node_id      integer  REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+  id                  serial PRIMARY KEY,
+  ship_id             integer  NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  ship_breakdown_id   integer  NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
+  parent_node_id      integer  REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
 
-    -- Traceability back to template
-    template_node_id integer   REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
+  -- Traceability back to template
+  template_node_id integer   REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
 
-    -- Identification (can be customized per ship)
-    code                VARCHAR(50)  NOT NULL,
-    name                VARCHAR(200) NOT NULL,
-    description         TEXT,
+  -- Identification (can be customized per ship)
+  code                VARCHAR(50)  NOT NULL,
+  name                VARCHAR(200) NOT NULL,
+  description         TEXT,
 
-    -- Classification
-    category            VARCHAR(50),
-    node_type           VARCHAR(50),
+  -- Classification
+  category            VARCHAR(50),
+  node_type           VARCHAR(50),
 
-    -- Hierarchy & ordering
-    level           INTEGER      NOT NULL DEFAULT 0,
-    sort_order      INTEGER      NOT NULL DEFAULT 0,
-    -- path            LTREE,
+  -- Hierarchy & ordering
+  level           INTEGER      NOT NULL DEFAULT 0,
+  sort_order      INTEGER      NOT NULL DEFAULT 0,
+  -- path            LTREE,
 
-    -- Customization tracking
-    is_from_template    BOOLEAN      NOT NULL DEFAULT TRUE,   -- FALSE if added ship-specifically
-    is_modified         BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE if template values were changed
-    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+  -- Customization tracking
+  is_from_template    BOOLEAN      NOT NULL DEFAULT TRUE,   -- FALSE if added ship-specifically
+  is_modified         BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE if template values were changed
+  is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
 
-    -- Flexible properties (ship-specific overrides)
-    metadata            JSONB        DEFAULT '{}', -- JSONB data type for flexible properties
-    created_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Flexible properties (ship-specific overrides)
+  metadata            JSONB        DEFAULT '{}', -- JSONB data type for flexible properties
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_ship_node_code UNIQUE (ship_breakdown_id, code),
-    CONSTRAINT chk_no_self_parent_ship CHECK (id != parent_node_id)
+  CONSTRAINT uq_ship_node_code UNIQUE (ship_breakdown_id, code),
+  CONSTRAINT chk_no_self_parent_ship CHECK (id != parent_node_id)
 );
 
 -- ---------------------------------------------
 -- Ship Node Attributes (ship-specific key-value)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node_particular (
-    id serial PRIMARY KEY,
-    ship_breakdown_node_id integer NOT NULL REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
-    -- Traceability
-    template_particular_id integer REFERENCES iclass.breakdown_template_node_particular(id) ON DELETE SET NULL,
+  id serial PRIMARY KEY,
+  ship_breakdown_node_id integer NOT NULL REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+  -- Traceability
+  template_particular_id integer REFERENCES iclass.breakdown_template_node_particular(id) ON DELETE SET NULL,
 
-    attr_key           VARCHAR(100) NOT NULL,
-    attr_title         VARCHAR(200) NOT NULL,
-    attr_value         TEXT,
-    selection_options  JSONB,
-    data_type          iclass.data_type_enum    DEFAULT 'text',
-    unit               VARCHAR(20),
-    is_modified        BOOLEAN      NOT NULL DEFAULT FALSE,
-    sort_order         INTEGER      NOT NULL DEFAULT 0,
-    created_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  attr_key           VARCHAR(100) NOT NULL,
+  attr_title         VARCHAR(200) NOT NULL,
+  attr_value         TEXT,
+  selection_options  JSONB,
+  data_type          iclass.data_type_enum    DEFAULT 'text',
+  unit               VARCHAR(20),
+  is_modified        BOOLEAN      NOT NULL DEFAULT FALSE,
+  sort_order         INTEGER      NOT NULL DEFAULT 0,
+  created_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_snode_attr UNIQUE (ship_breakdown_node_id, attr_key)
+  CONSTRAINT uq_snode_attr UNIQUE (ship_breakdown_node_id, attr_key)
 );
 
 CREATE SEQUENCE IF NOT EXISTS iclass.certificate_id_seq;

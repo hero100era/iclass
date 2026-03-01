@@ -1,12 +1,12 @@
 -- Create the reset_tokens table
 DROP TABLE IF EXISTS auth.reset_token;
 CREATE TABLE auth.reset_token (
-    id serial PRIMARY KEY,
-    token UUID NOT NULL DEFAULT uuidv7(),
-    email TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '1 hour',
-    used BOOLEAN DEFAULT FALSE
+  id serial PRIMARY KEY,
+  token UUID NOT NULL DEFAULT uuidv7(),
+  email TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '1 hour',
+  used BOOLEAN DEFAULT FALSE
 );
 
 -- Index for faster lookups
@@ -44,28 +44,28 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION auth.reset_password(token_arg UUID, new_pass_arg TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
-    token_record RECORD;
+  token_record RECORD;
 BEGIN
-    -- Find the token
-    SELECT * INTO token_record
-    FROM auth.reset_token
-    WHERE token = token_arg AND used = FALSE AND expires_at > NOW();
+  -- Find the token
+  SELECT * INTO token_record
+  FROM auth.reset_token
+  WHERE token = token_arg AND used = FALSE AND expires_at > NOW();
 
-    IF token_record IS NULL THEN
-        RETURN FALSE;
-    END IF;
+  IF token_record IS NULL THEN
+      RETURN FALSE;
+  END IF;
 
     -- Update the user's password
     -- Note: auth.user trigger encrypt_pass handles hashing
-    UPDATE auth.user
-    SET password_hash = new_pass_arg
-    WHERE email = token_record.email;
+  UPDATE auth.user
+  SET password_hash = new_pass_arg
+  WHERE email = token_record.email;
 
-    -- Mark token as used
-    UPDATE auth.reset_token
-    SET used = TRUE
-    WHERE id = token_record.id;
+  -- Mark token as used
+  UPDATE auth.reset_token
+  SET used = TRUE
+  WHERE id = token_record.id;
 
-    RETURN TRUE;
+  RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
