@@ -316,3 +316,11 @@ VALUES
   ('LA.1.2.1.9',(select id from iclass.checklist_section where code = 'LA' and section_number = '1.2.1'), 9, 'checking the validity of the International Load Line Certificate or International Load Line Exemption Certificate', null),
   ('CR.5.1.1', (select id from iclass.checklist_section where code = 'CR' and section_number = '5.1'), 1, 'overall and close up insepction of the cargo holds', (select id from iclass.breakdown_template_node where code = '23'))
 ON CONFLICT DO NOTHING;
+
+INSERT INTO iclass.checklist_item_particular (checklist_item_id, attr_key, attr_title, data_type)
+VALUES
+  ((select id from iclass.checklist_item where code = 'CR.5.1.1'), 'area', 'Area', 'text'),
+  ((select id from iclass.checklist_item where code = 'CR.5.1.1'), 'tm_result', 'TM result', 'text'),
+  ((select id from iclass.checklist_item where code = 'CR.5.1.1'), 's_corrosion', 'Area with substantial corrosion', 'text'),
+  ((select id from iclass.checklist_item where code = 'CR.5.1.1'), 'test_result', 'Tank testing result', 'text')
+ON CONFLICT DO NOTHING;

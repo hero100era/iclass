@@ -109,7 +109,7 @@ FROM iclass.survey_request_cart;
 DROP VIEW IF EXISTS api.survey_pool CASCADE;
 CREATE OR REPLACE VIEW api.survey_pool AS
 SELECT
-  id, code, name, description, fee, is_active, is_mandatory, cert_code
+  id, code, name, description, type, fee, is_active, cert_code, is_mandatory, is_periodical, is_audit
 FROM iclass.survey_pool
 WHERE is_active = TRUE;
 
