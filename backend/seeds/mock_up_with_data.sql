@@ -85,7 +85,7 @@ INSERT INTO iclass.ship(
   call_sign, official_number, type_iacs, type_other, type_mms, class_status, ship_status, class_notation,
   gross_tons, national_tons, deadweight, net_tons, light_ship, ballast_capacity, equipment_number,
   length, length_oa, length_bp, moulded_depth, moulded_breadth, moulded_draft, design_draft,
-  dual_class, singal_letter, flag_code, registration_port, mmsi_number, main_class,
+  dual_class, signal_letter, flag_code, registration_port, mmsi_number, main_class,
   registered_owner_id, ism_owner_id, mlc_owner_id
 )
 VALUES

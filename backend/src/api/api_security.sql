@@ -19,7 +19,7 @@ SELECT
   registration_port, mmsi_number, main_class, net_tons,
   light_ship, ballast_capacity, equipment_number,
   length, length_oa, length_bp, moulded_depth, moulded_breadth,
-  moulded_draft, design_draft, dual_class, singal_letter,
+  moulded_draft, design_draft, dual_class, signal_letter,
   created_at, updated_at, is_active
 FROM iclass.ship;
 
