@@ -124,7 +124,7 @@ CREATE POLICY customer_read_own_findings ON iclass.finding_comment FOR SELECT TO
       registered_owner_id = iclass.get_customer_company_id() OR
       ism_owner_id = iclass.get_customer_company_id() OR
       mlc_owner_id = iclass.get_customer_company_id())))
-    AND (priviate IS NOT TRUE)
+    AND (private IS NOT TRUE)
   );
 -- Customers shouldn't see private comments
 

@@ -253,7 +253,7 @@ ON CONFLICT DO NOTHING;
 
 -- Finding Comments
 INSERT INTO iclass.finding_comment (
-  ship_id, company_id, comment_type, priviate, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
+  ship_id, company_id, comment_type, private, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
   status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
 )
 VALUES

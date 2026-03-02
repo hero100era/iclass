@@ -13,7 +13,7 @@ SELECT
   administration_country, classed_by, class_number, port_of_registry,
   date_of_registry, registry_number, call_sign, official_number,
   type_iacs, type_other, type_mms, class_status, ship_status,
-  class_notation, service_notation, navigation_notation, addtional_notation,
+  class_notation, service_notation, navigation_notation, additional_notation,
   gross_tons, national_tons, deadweight,
   registered_owner_id, ism_owner_id, mlc_owner_id, flag_code,
   registration_port, mmsi_number, main_class, net_tons,
@@ -26,7 +26,7 @@ FROM iclass.ship;
 DROP VIEW IF EXISTS api.certificates CASCADE;
 CREATE OR REPLACE VIEW api.certificates AS
 SELECT
-  id, certificate_id, version, ship_id, company_id, certifiate_template_code,
+  id, certificate_id, version, ship_id, company_id, certificate_template_code,
   status, remark, issued_by, cert_code, validity_type, category, internal_category,
   description, issue_date, expiry_date, mlc_declaration_date, mlc_declaration_place,
   doc_administration, extended_date, file_path_cert, file_path_draft,
@@ -64,7 +64,7 @@ FROM iclass.document;
 DROP VIEW IF EXISTS api.finding_comments CASCADE;
 CREATE OR REPLACE VIEW api.finding_comments AS
 SELECT
-  id, ship_id, company_id, comment_type, priviate, certificates,
+  id, ship_id, company_id, comment_type, private, certificates,
   date_issued, place_issued, due_date, expiry_survey_audits, status,
   postponed_due_date, postponed_expiry_survey_audits, mms_reference, text,
   created_at, updated_at, is_active
