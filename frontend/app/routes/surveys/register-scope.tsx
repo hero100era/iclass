@@ -5,6 +5,48 @@ import { ApiGET, ApiPOST, ApiDELETE, ApiPATCH } from "~/.server/lib/api";
 import type { Route } from "./+types/register-scope";
 import { cn } from "~/lib/utils";
 
+interface SurveyLine {
+    id: number;
+    job_id: number;
+    survey_audits?: Record<string, unknown>;
+    survey_pool?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
+interface SurveyAudit {
+    id: number;
+    ship_id: number;
+    is_active: boolean;
+    [key: string]: unknown;
+}
+
+interface FindingComment {
+    id: number;
+    ship_id: number;
+    is_active: boolean;
+    [key: string]: unknown;
+}
+
+interface PoolItem {
+    id: number;
+    code: string;
+    description: string;
+    cert_code: string;
+    is_active: boolean;
+    [key: string]: unknown;
+}
+
+interface SurveyLineWithType extends SurveyLine {
+    type: "survey";
+}
+
+interface CommentLine {
+    id: number;
+    job_id: number;
+    finding_comments?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const host = process.env.API_URL || "http://localhost:2000";
@@ -24,12 +66,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         ApiGET(request, `${host}/comment_lines?job_id=eq.${surveyJob.job_id}&select=*,finding_comments(*)`)
     ]);
 
-    const surveyLines = await (surveyLinesRes as any).json();
-    const commentLines = await (commentLinesRes as any).json();
+    const surveyLines: SurveyLine[] = await surveyLinesRes.json();
+    const commentLines = await commentLinesRes.json();
 
     // 3. Get available surveys/findings for the ship to add to scope
-    let availableSurveys = [];
-    let availableFindings = [];
+    let availableSurveys: SurveyAudit[] = [];
+    let availableFindings: FindingComment[] = [];
 
     if (shipId) {
         const [surveysRes, findingsRes] = await Promise.all([
@@ -47,8 +89,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return { surveyJob, surveyLines, commentLines, availableSurveys, availableFindings, allPoolItems };
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
-    const { id } = params;
+export async function action({ request, params: _params }: Route.ActionArgs) {
     const formData = await request.formData();
     const intent = formData.get("intent");
     const host = process.env.API_URL || "http://localhost:2000";
@@ -57,7 +98,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         const surveyAuditId = formData.get("survey_audit_id");
         const surveyJobId = formData.get("survey_job_id");
 
-        const payload: any = { job_id: parseInt(surveyJobId as string) };
+        const payload: Record<string, number | undefined> = { job_id: parseInt(surveyJobId as string) };
         if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
         if (formData.get("pool_id")) {
             payload.pool_id = parseInt(formData.get("pool_id") as string);
@@ -87,9 +128,9 @@ export async function action({ request, params }: Route.ActionArgs) {
         const findingId = formData.get("finding_id");
         // link findings to the parent job_id
         const surveyJobId = formData.get("survey_job_id");
-        const surveyJobRes = await ApiGET({ headers: request.headers } as any, `${host}/survey_jobs?id=eq.${surveyJobId}&select=job_id`);
-        const surveyJobs = await surveyJobRes.json();
-        const jobId = surveyJobs[0]?.job_id;
+        const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${surveyJobId}&select=job_id`);
+        const surveyJobs: Record<string, unknown>[] = await surveyJobRes.json();
+        const jobId = surveyJobs[0]?.job_id as number | undefined;
         if (!jobId) return { error: "Could not find parent job" };
         const res = await ApiPOST(request, `${host}/comment_lines`, { job_id: jobId, finding_comment_id: parseInt(findingId as string) });
         if (!res.ok) return { error: "Failed to add finding to scope" };
@@ -114,17 +155,17 @@ export default function RegisterScope() {
     const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
 
     // Find the selected survey to get its pool_id
-    const selectedSurvey = availableSurveys.find((s: any) => s.id.toString() === selectedSurveyId);
+    const selectedSurvey = availableSurveys.find((s) => s.id.toString() === selectedSurveyId);
 
-    const allLines = surveyLines.map((l: any) => ({ ...l, type: "survey" }));
+    const allLines = surveyLines.map((l) => ({ ...l, type: "survey" as const }));
 
     // Filter available pool items: exclude those that are already in availableSurveys (by pool_id) or already in scope (by pool_id)
-    const existingPoolIdsInAudits = new Set(availableSurveys.map((s: any) => s.pool_id).filter(Boolean));
+    const existingPoolIdsInAudits = new Set(availableSurveys.map((s) => s.pool_id).filter(Boolean));
     // also check lines in current scope to avoid duplicates if possible, though business logic might allow multiples? Assuming unique per job for now for simplicity or just let backend handle constraint.
     // Let's at least filter out those that are "Linked" via survey_audit matches, but here we are talking about adding FRESH pool items.
     // If a pool item is in availableSurveys, user should use the "Available Survey" dropdown (which links to survey_audit).
     // So we primarily filter out matchng pool_ids from availableSurveys.
-    const availablePoolOptions = allPoolItems.filter((p: any) => !existingPoolIdsInAudits.has(p.id));
+    const availablePoolOptions = allPoolItems.filter((p: PoolItem) => !existingPoolIdsInAudits.has(p.id));
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">
@@ -133,7 +174,7 @@ export default function RegisterScope() {
                     <ClipboardList size={20} className="text-primary" />
                     Register Survey Scope
                 </h2>
-                <p className="text-sm text-slate-500">Add or remove surveys and recommendations from this job's scope.</p>
+                <p className="text-sm text-slate-500">Add or remove surveys and recommendations from this job&apos;s scope.</p>
             </div>
 
             {actionData?.error && (
@@ -171,7 +212,7 @@ export default function RegisterScope() {
                                 <td colSpan={6} className="px-4 py-8 text-center text-slate-400 italic">No survey lines registered for this job.</td>
                             </tr>
                         ) : (
-                            allLines.map((line: any) => (
+                            allLines.map((line: SurveyLineWithType) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
                                     <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
@@ -232,7 +273,7 @@ export default function RegisterScope() {
                                 onChange={(e) => setSelectedSurveyId(e.target.value)}
                             >
                                 <option value="">-- Select Available Survey --</option>
-                                {availableSurveys.map((s: any) => (
+                                {availableSurveys.map((s) => (
                                     <option key={s.id} value={s.id}>{s.description} ({s.cert_code}) - Due: {s.next_due_date}</option>
                                 ))}
                             </select>
@@ -255,10 +296,10 @@ export default function RegisterScope() {
                     <Form method="post" className="flex items-end gap-2 max-w-lg">
                         <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
                         <div className="flex-1 space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Or Add New Survey Type (Not in Ship's List)</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Or Add New Survey Type (Not in Ship&apos;s List)</label>
                             <select name="pool_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
                                 <option value="">-- Select Survey Type --</option>
-                                {availablePoolOptions.map((p: any) => (
+                                {availablePoolOptions.map((p: PoolItem) => (
                                     <option key={p.id} value={p.id}>{p.description} ({p.cert_code || p.code})</option>
                                 ))}
                             </select>
@@ -298,7 +339,7 @@ export default function RegisterScope() {
                                 <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">No recommendations linked to this job.</td>
                             </tr>
                         ) : (
-                            commentLines.map((line: any) => (
+                            commentLines.map((line: CommentLine) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-4 py-2">
                                         <span className={cn(
@@ -346,7 +387,7 @@ export default function RegisterScope() {
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Open Finding to Scope</label>
                             <select name="finding_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
                                 <option value="">-- Select Open Finding --</option>
-                                {availableFindings.map((f: any) => (
+                                {availableFindings.map((f: FindingComment) => (
                                     <option key={f.id} value={f.id}>{f.text.substring(0, 60)}... (Due: {f.due_date})</option>
                                 ))}
                             </select>

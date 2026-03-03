@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ClipboardList, Library, Network, ShieldCheck, Users, Settings, ArrowRight } from "lucide-react";
+import { ClipboardList, Network, ShieldCheck, Users, Settings, ArrowRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export default function AdminDashboard() {

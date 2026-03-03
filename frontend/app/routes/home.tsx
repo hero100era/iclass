@@ -13,7 +13,7 @@ export default function Home() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Fleet Overview</h2>
-        <p className="text-muted-foreground">Welcome back. Here is what's happening with your fleet today.</p>
+        <p className="text-muted-foreground">Welcome back. Here is what&apos;s happening with your fleet today.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -46,7 +46,7 @@ export default function Home() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, subtext, color }: { icon: any, label: string, value: string, subtext: string, color: string }) {
+function StatCard({ icon: Icon, label, value, subtext, color }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string, value: string, subtext: string, color: string }) {
   return (
     <div className="bg-card border rounded-xl p-6 shadow-sm flex flex-col gap-2">
       <div className={`p-2 w-fit rounded-lg bg-muted ${color}`}>

@@ -1,8 +1,24 @@
 /** React Router Route Component */
-import { ArrowLeft, CheckCircle2, UserPlus, FileText, MapPin, Calendar, Mail, Phone } from "lucide-react";
+import { ArrowLeft, CheckCircle2, UserPlus, FileText, MapPin, Calendar, Phone } from "lucide-react";
 import { Link, useLoaderData, Form, useActionData, redirect } from "react-router";
 import { ApiGET, ApiPOST } from "~/.server/lib/api";
 import type { Route } from "./+types/detail";
+
+interface CartItem {
+    id: number;
+    survey_audit_id?: number;
+    comment_id?: number;
+    occ_survey_code?: string;
+    survey_audits?: { cert_code?: string };
+    [key: string]: unknown;
+}
+
+interface Employee {
+    id: number;
+    display_name: string;
+    employee_role?: string;
+    [key: string]: unknown;
+}
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
@@ -63,10 +79,10 @@ export default function RequestDetail() {
     const { requestItem, cartItems, employees } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
 
-    const surveyItems = cartItems.filter((item: any) => item.survey_audit_id || item.occ_survey_code);
-    const findingItems = cartItems.filter((item: any) => item.comment_id);
+    const surveyItems = cartItems.filter((item: CartItem) => item.survey_audit_id || item.occ_survey_code);
+    const findingItems = cartItems.filter((item: CartItem) => item.comment_id);
 
-    const hasAuditItems = cartItems.some((item: any) => ['SMC', 'ISPS', 'MLC', 'DOC'].includes(item.survey_audits?.cert_code));
+    const hasAuditItems = cartItems.some((item: CartItem) => ['SMC', 'ISPS', 'MLC', 'DOC'].includes(item.survey_audits?.cert_code));
     // More generically, use the is_audit flag from backend if possible, but here we'll just check if auditor assignment is needed.
     const needsAuditor = hasAuditItems;
 
@@ -149,7 +165,7 @@ export default function RequestDetail() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
-                                    {surveyItems.map((item: any) => (
+                                    {surveyItems.map((item: CartItem) => (
                                         <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="px-6 py-4 font-mono text-sm">{item.survey_audits?.code || item.occ_survey_code}</td>
                                             <td className="px-6 py-4">
@@ -187,7 +203,7 @@ export default function RequestDetail() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
-                                    {findingItems.map((item: any) => (
+                                    {findingItems.map((item: CartItem) => (
                                         <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
@@ -229,7 +245,7 @@ export default function RequestDetail() {
                                         className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
                                     >
                                         <option value="">Select Surveyor</option>
-                                        {employees.map((emp: any) => (
+                                        {employees.map((emp: Employee) => (
                                             <option key={emp.id} value={emp.id}>{emp.display_name}</option>
                                         ))}
                                     </select>
@@ -244,7 +260,7 @@ export default function RequestDetail() {
                                             className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
                                         >
                                             <option value="">Select Auditor</option>
-                                            {employees.map((emp: any) => (
+                                        {employees.map((emp: Employee) => (
                                                 <option key={emp.id} value={emp.id}>{emp.display_name}</option>
                                             ))}
                                         </select>
@@ -259,7 +275,7 @@ export default function RequestDetail() {
                                         className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
                                     >
                                         <option value="">Select Reviewer</option>
-                                        {employees.map((emp: any) => (
+                                        {employees.map((emp: Employee) => (
                                             <option key={emp.id} value={emp.id}>{emp.display_name}</option>
                                         ))}
                                     </select>

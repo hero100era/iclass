@@ -14,7 +14,7 @@ export function StatusBadge({ status }: { status: string }) {
     );
 }
 
-export function GridItem({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: any }) {
+export function GridItem({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: React.ComponentType<{ className?: string; size?: number }> }) {
     return (
         <div className="flex flex-col gap-1">
             <dt className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">

@@ -1,4 +1,4 @@
-import { FileBadge, Download, Filter, Search } from "lucide-react";
+import { Download, Filter, Search } from "lucide-react";
 import { useState } from "react";
 import { Pagination } from "~/components/Pagination";
 
@@ -84,6 +84,7 @@ export default function CertificateList() {
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cn(...classes: any[]) {
     return classes.filter(Boolean).join(' ');
 }

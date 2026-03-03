@@ -1,5 +1,5 @@
-import { ArrowLeft, Ship, Building2, Info, Save, PanelLeft, ChevronRight, MapPin } from "lucide-react";
-import { Link, useLoaderData, Outlet, useParams, NavLink } from "react-router";
+import { PanelLeft, ChevronRight } from "lucide-react";
+import { useLoaderData, Outlet, useParams, NavLink } from "react-router";
 import { ApiGET } from "~/.server/lib/api";
 import type { Route } from "./+types/layout";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/components/ui/Accordion";
@@ -27,8 +27,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function JobLayout() {
-    const { job, surveyJob } = useLoaderData<typeof loader>();
-    const { id, itemId } = useParams();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { job, surveyJob: _surveyJob } = useLoaderData<typeof loader>();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, itemId: _itemId } = useParams();
 
     const manual = [
         {

@@ -1,9 +1,21 @@
 import React from "react";
 import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
-import { Link, useLoaderData, useSearchParams, Form } from "react-router";
+import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { ApiGET } from "~/.server/lib/api";
 import type { Route } from "./+types/index";
+
+interface Job {
+    id: number;
+    job_type: string;
+    job_status: string;
+    location: string;
+    created_at: string;
+    survey_jobs?: Record<string, unknown>[];
+    audit_jobs?: Record<string, unknown>[];
+    ms_jobs?: Record<string, unknown>[];
+    [key: string]: unknown;
+}
 
 const ITEM_PER_PAGE = 10;
 
@@ -43,7 +55,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function JobList() {
     const { jobs, totalPages, currentPage } = useLoaderData<typeof loader>();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
     const [expandedJobs, setExpandedJobs] = React.useState<Record<number, boolean>>({});
 
     const handlePageChange = (page: number) => {
@@ -106,7 +118,7 @@ export default function JobList() {
                                 </td>
                             </tr>
                         ) : (
-                            jobs.map((job: any) => {
+                            jobs.map((job: Job) => {
                                 const isExpanded = !!expandedJobs[job.id];
                                 const hasSubJobs = (job.survey_jobs?.length > 0) || (job.audit_jobs?.length > 0) || (job.ms_jobs?.length > 0);
                                 return (
@@ -152,7 +164,7 @@ export default function JobList() {
                                             </td>
                                         </tr>
 
-                                        {isExpanded && job.survey_jobs?.map((sj: any) => (
+                                        {isExpanded && job.survey_jobs?.map((sj: Record<string, unknown>) => (
                                             <tr key={`sj-${sj.id}`} className="hover:bg-muted/50 transition-colors group">
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/surveys/${sj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
@@ -175,7 +187,7 @@ export default function JobList() {
                                             </tr>
                                         ))}
 
-                                        {isExpanded && job.audit_jobs?.map((aj: any) => (
+                                        {isExpanded && job.audit_jobs?.map((aj: Record<string, unknown>) => (
                                             <tr key={`aj-${aj.id}`} className="hover:bg-muted/50 transition-colors group">
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/audits/${aj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
@@ -199,7 +211,7 @@ export default function JobList() {
                                             </tr>
                                         ))}
 
-                                        {isExpanded && job.ms_jobs?.map((mj: any) => (
+                                        {isExpanded && job.ms_jobs?.map((mj: Record<string, unknown>) => (
                                             <tr key={`mj-${mj.id}`} className="hover:bg-muted/50 transition-colors group">
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/ms_jobs/${mj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
@@ -250,6 +262,7 @@ function getStatusColor(status: string) {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cn(...classes: any[]) {
     return classes.filter(Boolean).join(' ');
 }

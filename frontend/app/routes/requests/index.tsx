@@ -1,8 +1,19 @@
-import { ClipboardList, ExternalLink, Filter, Search } from "lucide-react";
+import { ExternalLink, Filter, Search } from "lucide-react";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { ApiGET } from "~/.server/lib/api";
 import type { Route } from "./+types/index";
+
+interface SurveyRequest {
+    id: number;
+    ships?: { name?: string };
+    location?: string;
+    estimated_date?: string;
+    status?: string;
+    is_assigned?: boolean;
+    created_at?: string;
+    [key: string]: unknown;
+}
 
 const ITEM_PER_PAGE = 20;
 
@@ -40,7 +51,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function RequestList() {
     const { requests, totalPages, currentPage } = useLoaderData<typeof loader>();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
 
     const handlePageChange = (page: number) => {
         setSearchParams((prev) => {
@@ -93,7 +104,7 @@ export default function RequestList() {
                                 </td>
                             </tr>
                         ) : (
-                            requests.map((req: any) => (
+                            requests.map((req: SurveyRequest) => (
                                 <tr key={req.id} className="hover:bg-muted/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-primary">

@@ -8,6 +8,7 @@ export default [
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
+    ignores: [".react-router/**"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

@@ -1,12 +1,64 @@
 import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData } from "react-router";
 import { ApiGET, ApiPOST, ApiPATCH, ApiDELETE } from "~/.server/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, ChevronRight, ListChecks, Settings2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export const handle = { fluid: true };
 
-export async function loader({ request }: any) {
+interface LoaderArgs {
+    request: Request;
+}
+
+interface ActionArgs {
+    request: Request;
+}
+
+interface ChecklistItemParticular {
+    id?: number;
+    temp_id?: string;
+    attr_key: string;
+    attr_title: string;
+    data_type: string;
+    unit?: string | null;
+    default_value?: string | null;
+    selection_options?: string[] | null;
+    is_required?: boolean;
+    sort_order?: number;
+}
+
+interface ChecklistItem {
+    id: number;
+    section_id: number;
+    item_number: number;
+    content: string;
+    breakdown_template_node_id?: number | null;
+    checklist_item_particulars?: ChecklistItemParticular[];
+}
+
+interface ChecklistSection {
+    id: number;
+    survey_id: number;
+    section_number: string;
+    title: string;
+    checklist_items?: ChecklistItem[];
+}
+
+interface Survey {
+    id: number;
+    code: string;
+    name: string;
+    vessel_type?: string;
+    checklist_sections?: ChecklistSection[];
+}
+
+interface BreakdownNode {
+    id: number;
+    code: string;
+    name: string;
+}
+
+export async function loader({ request }: LoaderArgs) {
     const host = process.env.API_URL || "http://localhost:2000";
     const [surveysRes, resultsRes, breakdownNodesRes] = await Promise.all([
         ApiGET(request, `${host}/survey_pool?select=*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))`),
@@ -21,7 +73,7 @@ export async function loader({ request }: any) {
     };
 }
 
-export async function action({ request }: any) {
+export async function action({ request }: ActionArgs) {
     const host = process.env.API_URL || "http://localhost:2000";
     const formData = await request.formData();
     const intent = formData.get("intent");
@@ -35,7 +87,7 @@ export async function action({ request }: any) {
 
         // 2. Insert new
         if (particulars.length > 0) {
-            const toInsert = particulars.map((p: any) => ({
+            const toInsert = particulars.map((p: Record<string, unknown>) => ({
                 checklist_item_id: id,
                 attr_key: p.attr_key || p.key,
                 attr_title: p.attr_title || p.title,
@@ -90,8 +142,9 @@ export async function action({ request }: any) {
 }
 
 export default function AdminChecklists() {
-    const { surveys, results, breakdownNodes } = useLoaderData<typeof loader>();
-    const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
+    const { surveys, breakdownNodes } = useLoaderData<typeof loader>();
+    const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
+    const prevSelectedSurveyIdRef = useRef<number | undefined>(undefined);
     const [addingToSection, setAddingToSection] = useState<number | null>(null);
     const [newItemContent, setNewItemContent] = useState("");
     const [isAddingSection, setIsAddingSection] = useState(false);
@@ -113,29 +166,30 @@ export default function AdminChecklists() {
         if (actionData?.success && navigation.state === "idle") {
             revalidator.revalidate();
         }
-    }, [actionData, navigation.state]);
+    }, [actionData, navigation.state, revalidator]);
 
     useEffect(() => {
-        if (selectedSurvey?.id) {
-            const fresh = surveys.find((s: any) => s.id === selectedSurvey.id);
+        if (selectedSurvey?.id && selectedSurvey.id !== prevSelectedSurveyIdRef.current) {
+            const fresh = surveys.find((s) => s.id === selectedSurvey.id);
             if (fresh) {
-                setSelectedSurvey((prev: any) => {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setSelectedSurvey((prev) => {
                     if (!prev || prev.id !== fresh.id) return fresh;
 
                     // Preserve items that have temporary IDs (drafts)
                     return {
                         ...fresh,
-                        checklist_sections: fresh.checklist_sections?.map((freshSection: any) => {
-                            const prevSection = prev.checklist_sections?.find((s: any) => s.id === freshSection.id);
+                        checklist_sections: fresh.checklist_sections?.map((freshSection) => {
+                            const prevSection = prev.checklist_sections?.find((s) => s.id === freshSection.id);
                             if (!prevSection) return freshSection;
 
                             return {
                                 ...freshSection,
-                                checklist_items: freshSection.checklist_items?.map((freshItem: any) => {
-                                    const prevItem = prevSection.checklist_items?.find((i: any) => i.id === freshItem.id);
+                                checklist_items: freshSection.checklist_items?.map((freshItem) => {
+                                    const prevItem = prevSection.checklist_items?.find((i) => i.id === freshItem.id);
                                     if (!prevItem) return freshItem;
 
-                                    const hasTemp = prevItem.checklist_item_particulars?.some((p: any) => p.temp_id);
+                                    const hasTemp = prevItem.checklist_item_particulars?.some((p) => p.temp_id);
                                     if (hasTemp) {
                                         return { ...freshItem, checklist_item_particulars: prevItem.checklist_item_particulars };
                                     }
@@ -145,18 +199,19 @@ export default function AdminChecklists() {
                         })
                     };
                 });
+                prevSelectedSurveyIdRef.current = selectedSurvey.id;
             }
         }
-    }, [surveys]);
+    }, [surveys, selectedSurvey]);
 
-    const handleLocalParticularsUpdate = (itemId: number, newParticulars: any[]) => {
+    const handleLocalParticularsUpdate = (itemId: number, newParticulars: ChecklistItemParticular[]) => {
         if (!selectedSurvey) return;
 
         const updatedSurvey = {
             ...selectedSurvey,
-            checklist_sections: selectedSurvey.checklist_sections.map((section: any) => ({
+            checklist_sections: selectedSurvey.checklist_sections?.map((section) => ({
                 ...section,
-                checklist_items: section.checklist_items.map((item: any) => {
+                checklist_items: section.checklist_items?.map((item: ChecklistItem) => {
                     if (item.id === itemId) {
                         return { ...item, checklist_item_particulars: newParticulars };
                     }
@@ -167,9 +222,9 @@ export default function AdminChecklists() {
         setSelectedSurvey(updatedSurvey);
     };
 
-    const handleSaveParticulars = (itemId: number, particulars: any) => {
+    const handleSaveParticulars = (itemId: number, particulars: ChecklistItemParticular[]) => {
         // Validation: only save if all items have attr_key and attr_title
-        const validParticulars = particulars.filter((p: any) => (p.attr_key || p.key) && (p.attr_title || p.title));
+        const validParticulars = particulars.filter((p) => (p.attr_key || (p as Record<string, unknown>).key) && (p.attr_title || (p as Record<string, unknown>).title));
         if (validParticulars.length === 0 && particulars.length > 0) return; // Don't save if we added an empty one
 
         const formData = new FormData();
@@ -243,7 +298,7 @@ export default function AdminChecklists() {
                     <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Survey Types</h3>
                     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <div className="divide-y divide-slate-100">
-                            {surveys.map((survey: any) => (
+                            {surveys.map((survey: Survey) => (
                                 <button
                                     key={survey.id}
                                     onClick={() => setSelectedSurvey(survey)}
@@ -322,8 +377,8 @@ export default function AdminChecklists() {
                             {selectedSurvey.checklist_sections && selectedSurvey.checklist_sections.length > 0 ? (
                                 <div className="space-y-2">
                                     {selectedSurvey.checklist_sections
-                                        .sort((a: any, b: any) => (a.section_number || "").localeCompare(b.section_number || "", undefined, { numeric: true }))
-                                        .map((section: any) => (
+                                        .sort((a: ChecklistSection, b: ChecklistSection) => (a.section_number || "").localeCompare(b.section_number || "", undefined, { numeric: true }))
+                                        .map((section: ChecklistSection) => (
                                             <div key={section.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                                                 <div className="bg-slate-50 px-2 py-1 border-b border-slate-200 flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
@@ -365,7 +420,7 @@ export default function AdminChecklists() {
                                                                 disabled={!newItemContent.trim()}
                                                                 onClick={() => {
                                                                     const nextNum = section.checklist_items.length > 0
-                                                                        ? Math.max(...section.checklist_items.map((i: any) => i.item_number)) + 1
+                                                                        ? Math.max(...section.checklist_items.map((i: ChecklistItem) => i.item_number)) + 1
                                                                         : 1;
                                                                     handleAddItem(section.id, nextNum);
                                                                 }}
@@ -378,7 +433,7 @@ export default function AdminChecklists() {
                                                 )}
 
                                                 <div className="divide-y divide-slate-100">
-                                                    {section.checklist_items.sort((a: any, b: any) => a.item_number - b.item_number).map((item: any) => (
+                                                    {section.checklist_items.sort((a: ChecklistItem, b: ChecklistItem) => a.item_number - b.item_number).map((item: ChecklistItem) => (
                                                         <div key={item.id} className="px-2 py-2 space-y-2 group/item">
                                                             {editingItemId === item.id ? (
                                                                 <div className="bg-slate-50 p-2 rounded border border-slate-200 space-y-2">
@@ -398,7 +453,7 @@ export default function AdminChecklists() {
                                                                             className="w-full text-[11px] px-2 py-1.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
                                                                         >
                                                                             <option value="">None</option>
-                                                                            {breakdownNodes.map((comp: any) => (
+                                                                            {breakdownNodes.map((comp: BreakdownNode) => (
                                                                                 <option key={comp.id} value={comp.id}>{comp.name} ({comp.code})</option>
                                                                             ))}
                                                                         </select>
@@ -427,8 +482,8 @@ export default function AdminChecklists() {
                                                                                 <p className="text-[11px] font-medium text-slate-800 leading-tight">{item.content}</p>
                                                                                 {item.breakdown_template_node_id && (
                                                                                     <div className="mt-1 flex items-center gap-1">
-                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter" title={breakdownNodes.find((c: any) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}>
-                                                                                            Linked: {breakdownNodes.find((c: any) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}
+                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter" title={breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}>
+                                                                                            Linked: {breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
@@ -496,7 +551,7 @@ export default function AdminChecklists() {
                                                                             <div className="col-span-1"></div>
                                                                         </div>
 
-                                                                        {item.checklist_item_particulars.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)).map((p: any, idx: number) => (
+                                                                        {item.checklist_item_particulars.sort((a: ChecklistItemParticular, b: ChecklistItemParticular) => (a.sort_order || 0) - (b.sort_order || 0)).map((p: ChecklistItemParticular, idx: number) => (
                                                                             <div key={p.id || p.temp_id || `idx_${idx}`} className="space-y-1 p-1 rounded hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                                                                                 <div className="grid grid-cols-12 gap-1 items-center group/prow">
                                                                                     <div className="col-span-2">
@@ -591,7 +646,7 @@ export default function AdminChecklists() {
                                                                                     <div className="col-span-1 flex justify-end">
                                                                                         <button
                                                                                             onClick={() => {
-                                                                                                const updated = item.checklist_item_particulars.filter((_: any, i: number) => i !== idx);
+                                                                                                 const updated = item.checklist_item_particulars.filter((_: ChecklistItemParticular, i: number) => i !== idx);
                                                                                                 handleSaveParticulars(item.id, updated);
                                                                                             }}
                                                                                             className="p-0.5 text-slate-300 hover:text-destructive transition-colors opacity-0 group-hover/prow:opacity-100"
