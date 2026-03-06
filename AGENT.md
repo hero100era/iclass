@@ -14,17 +14,17 @@ iClass is a maritime vessel certification and management system. It uses a **Rea
 ```bash
 # Development
 cd frontend
-npm run dev              # Start dev server on port 5173
-npm run build            # Build for production
-npm run start            # Start production server
-npm run typecheck        # Run TypeScript compiler (react-router typegen + tsc)
+bun run dev              # Start dev server on port 5173
+bun run build            # Build for production
+bun run start            # Start production server
+bun run typecheck        # Run TypeScript compiler (react-router typegen + tsc)
 
 # Run ESLint
-npx eslint .             # Lint all files
-npx eslint frontend/app/routes/vessels/index.tsx  # Lint single file
+bun run eslint .             # Lint all files
+bun run eslint frontend/app/routes/vessels/index.tsx  # Lint single file
 
 # Testing (if test framework is added)
-# npm test              # Run tests (when configured)
+# bun test              # Run tests (when configured)
 ```
 
 ### Backend (PostgreSQL + PostgREST)
@@ -55,7 +55,7 @@ Order: 1) External libraries, 2) Absolute imports (~/), 3) Relative imports (./)
 import { useState, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { Search, Plus } from "lucide-react";
-import { ApiGET } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
 import { Pagination } from "~/components/Pagination";
 import type { Route } from "./+types/index";
 ```
@@ -86,10 +86,14 @@ export function CartDrawer({ vesselId, companyId }: Route.ComponentProps) {
 - Routes: lowercase with hyphens (`/vessels/detail`, `/forgot-password`)
 
 ### API Calls
-Use the ApiGET/POST/PATCH/DELETE utilities which auto-inject JWT tokens
+Use `getDb(request)` from `~/.server/lib/api` to get a database client that auto-injects JWT tokens and supports PostgREST filtering/ordering.
 ```typescript
-const res = await ApiGET(request, `${host}/ships`);
-const postRes = await ApiPOST(request, `${host}/endpoint`, { data: "value" });
+const db = await getDb(request);
+const { data, count } = await db.get('/ships', {
+  select: 'id,name',
+  filters: { is_active: 'eq.true' }
+});
+const { data: newShip } = await db.post('/ships', { body: { name: "Value" } });
 ```
 
 ### Error Handling
@@ -132,7 +136,7 @@ const postRes = await ApiPOST(request, `${host}/endpoint`, { data: "value" });
 
 ## General Guidelines
 - No comments unless essential for complex logic
-- Always run `npm run typecheck` after changes
+- Always run `bun run typecheck` after changes
 - Follow existing patterns in similar components
 - Use `process.env.API_URL` for API endpoint (default: http://localhost:2000)
 - Session tokens stored in JWT format, auto-refreshed via middleware

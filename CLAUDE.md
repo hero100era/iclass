@@ -12,7 +12,7 @@ iClass is a maritime vessel certification and management system. It uses a React
   - `app/routes/` - Route components (login, vessels, surveys, admin, etc.)
   - `app/components/` - Reusable UI components
   - `app/definitions/` - TypeScript type definitions
-- **API utilities**: Use `ApiGET`, `ApiPOST`, `ApiPATCH`, `ApiDELETE` from `~/.server/lib/api` - they auto-inject JWT tokens from session
+- **API utilities**: Use `getDb` from `~/.server/lib/api` to get a database client (`db = await getDb(request)`) that auto-injects JWT tokens from session and provides methods like `db.get()`, `db.post()`, `db.patch()`, `db.delete()`, `db.rpc()`.
 
 ### Backend (PostgreSQL + PostgREST)
 - **Path**: `backend/`
@@ -35,11 +35,11 @@ iClass is a maritime vessel certification and management system. It uses a React
 ### Frontend
 ```bash
 cd frontend
-npm run dev        # Start dev server (http://localhost:5173)
-npm run build      # Production build
-npm run start      # Serve production build
-npm run typecheck  # TypeScript check (react-router typegen + tsc)
-npx eslint .       # Run ESLint
+bun run dev        # Start dev server (http://localhost:5173)
+bun run build      # Production build
+bun run start      # Serve production build
+bun run typecheck  # TypeScript check (react-router typegen + tsc)
+bunx eslint .       # Run ESLint
 ```
 
 ### Backend
@@ -63,7 +63,7 @@ docker-compose down     # Stop containers
 Order: 1) External libraries, 2) Absolute imports (`~/`), 3) Relative imports
 ```typescript
 import { useFetcher } from "react-router";
-import { ApiGET } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
 import { Pagination } from "~/components/Pagination";
 import type { Route } from "./+types/index";
 ```

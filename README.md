@@ -57,6 +57,7 @@ iClass is a modern fullstack web application designed for **maritime vessel cert
 
 Before you begin, ensure you have the following installed:
 - **Node.js** 22 or higher
+- **Bun**
 - **Docker** and **Docker Compose**
 - **PostgreSQL** (or use Docker)
 - **OpenSSL** (for password generation)
@@ -122,7 +123,7 @@ postgrest postgrest.conf
 
 ```bash
 cd frontend
-npm run dev
+bun run dev
 ```
 
 The application will be available at `http://localhost:5173`
@@ -209,6 +210,19 @@ iclass/
 
 ## 🔌 API Reference
 
+### Frontend Database Client
+The frontend interacts with the PostgREST backend using a unified API client:
+```typescript
+import { getDb } from "~/.server/lib/api";
+
+// In a loader or action
+const db = await getDb(request);
+const { data, count } = await db.get('/vessels', {
+  select: 'id,name',
+  filters: { is_active: 'eq.true' }
+});
+```
+
 ### Authentication Endpoints
 
 #### Email/Password Login
@@ -277,10 +291,10 @@ Content-Type: application/json
 
 ```bash
 # Frontend
-npm run dev          # Start development server with HMR
-npm run build        # Create production build
-npm run start        # Serve production build
-npm run typecheck    # Run TypeScript type checking
+bun run dev          # Start development server with HMR
+bun run build        # Create production build
+bun run start        # Serve production build
+bun run typecheck    # Run TypeScript type checking
 ```
 
 ### Database Schema
@@ -349,7 +363,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🎯 Roadmap
 
-- [ ] Add more OAuth providers (Google, Microsoft)
 - [ ] Implement role-based UI
 - [ ] Add maritime-specific dashboards
 - [ ] Implement rate limiting
