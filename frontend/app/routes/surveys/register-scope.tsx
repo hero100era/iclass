@@ -1,7 +1,8 @@
 import { Plus, Trash2, ClipboardList, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useLoaderData, Form, useActionData, useNavigation } from "react-router";
 import { useState } from "react";
-import { ApiGET, ApiPOST, ApiDELETE, ApiPATCH } from "~/.server/lib/api";
+import { getDb } from "../../.server/lib/api";
+
 import type { Route } from "./+types/register-scope";
 import { cn } from "~/lib/utils";
 
@@ -49,103 +50,133 @@ interface CommentLine {
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
-    const host = process.env.API_URL || "http://localhost:2000";
+    const db = await getDb(request);
 
     // 1. Get the survey_job by id
-    const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}`);
-    const surveyJobs = await surveyJobRes.json();
-    const surveyJob = surveyJobs[0] || null;
-
+    const { data: surveyJobs } = await db.get<any[]>("/survey_jobs", {
+        filters: { id: `eq.${id}` },
+    });
+    const surveyJob = surveyJobs?.[0] || null;
     if (!surveyJob) throw new Response("Job not found", { status: 404 });
 
     const shipId = surveyJob.ship_id;
 
     // 2. Get survey lines and comment lines
-    const [surveyLinesRes, commentLinesRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_lines?job_id=eq.${surveyJob.id}&select=*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)`),
-        ApiGET(request, `${host}/comment_lines?job_id=eq.${surveyJob.job_id}&select=*,finding_comments(*)`)
+    const [{ data: surveyLines }, { data: commentLines }] = await Promise.all([
+        db.get<SurveyLine[]>("/survey_lines", {
+            filters: { job_id: `eq.${surveyJob.id}` },
+            select:
+                "*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)",
+        }),
+        db.get<any[]>("/comment_lines", {
+            filters: { job_id: `eq.${surveyJob.job_id}` },
+            select: "*,finding_comments(*)",
+        }),
     ]);
-
-    const surveyLines: SurveyLine[] = await surveyLinesRes.json();
-    const commentLines = await commentLinesRes.json();
 
     // 3. Get available surveys/findings for the ship to add to scope
     let availableSurveys: SurveyAudit[] = [];
     let availableFindings: FindingComment[] = [];
 
     if (shipId) {
-        const [surveysRes, findingsRes] = await Promise.all([
-            ApiGET(request, `${host}/survey_audits?ship_id=eq.${shipId}&is_active=eq.true`),
-            ApiGET(request, `${host}/finding_comments?ship_id=eq.${shipId}&is_active=eq.true`)
+        const [{ data: surveys }, { data: findings }] = await Promise.all([
+            db.get<SurveyAudit[]>("/survey_audits", {
+                filters: { ship_id: `eq.${shipId}`, is_active: "eq.true" },
+            }),
+            db.get<FindingComment[]>("/finding_comments", {
+                filters: { ship_id: `eq.${shipId}`, is_active: "eq.true" },
+            }),
         ]);
-        availableSurveys = await surveysRes.json();
-        availableFindings = await findingsRes.json();
+        availableSurveys = surveys || [];
+        availableFindings = findings || [];
     }
 
     // 4. Get all active survey pool items for fallback/new additions
-    const poolRes = await ApiGET(request, `${host}/survey_pool?is_active=eq.true`);
-    const allPoolItems = await poolRes.json();
+    const { data: allPoolItems } = await db.get<PoolItem[]>("/survey_pool", {
+        filters: { is_active: "eq.true" },
+    });
 
-    return { surveyJob, surveyLines, commentLines, availableSurveys, availableFindings, allPoolItems };
+    return {
+        surveyJob,
+        surveyLines: surveyLines || [],
+        commentLines: commentLines || [],
+        availableSurveys,
+        availableFindings,
+        allPoolItems: allPoolItems || [],
+    };
 }
+
 
 export async function action({ request, params: _params }: Route.ActionArgs) {
     const formData = await request.formData();
     const intent = formData.get("intent");
-    const host = process.env.API_URL || "http://localhost:2000";
+    const { id } = _params;
 
-    if (intent === "add_survey") {
-        const surveyAuditId = formData.get("survey_audit_id");
-        const surveyJobId = formData.get("survey_job_id");
+    try {
+        const db = await getDb(request);
 
-        const payload: Record<string, number | undefined> = { job_id: parseInt(surveyJobId as string) };
-        if (surveyAuditId) payload.survey_audit_id = parseInt(surveyAuditId as string);
-        if (formData.get("pool_id")) {
-            payload.pool_id = parseInt(formData.get("pool_id") as string);
+        if (intent === "add_survey") {
+            const surveyAuditId = formData.get("survey_audit_id");
+            const poolId = formData.get("pool_id");
+            await db.post("/survey_lines", {
+                body: {
+                    survey_job_id: Number(id),
+                    survey_id: surveyAuditId ? Number(surveyAuditId) : null,
+                    pool_id: poolId ? Number(poolId) : null,
+                },
+            });
+            return { success: "Added" };
         }
 
-        const res = await ApiPOST(request, `${host}/survey_lines`, payload);
-        if (!res.ok) return { error: "Failed to add survey line" };
-        return { success: "Survey added to scope" };
-    }
+        if (intent === "remove_survey_line") {
+            const lineId = formData.get("line_id");
+            await db.delete("/survey_lines", { filters: { id: `eq.${lineId}` } });
+            return { success: "Removed" };
+        }
 
-    if (intent === "remove_survey_line") {
-        const lineId = formData.get("line_id");
-        const res = await ApiDELETE(request, `${host}/survey_lines?id=eq.${lineId}`);
-        if (!res.ok) return { error: "Failed to remove line" };
-        return { success: "Line removed" };
-    }
+        if (intent === "toggle_credit") {
+            const lineId = formData.get("line_id");
+            const credit = formData.get("credit") === "true";
+            await db.patch("/survey_lines", {
+                filters: { id: `eq.${lineId}` },
+                body: {
+                    credit_periodical: !credit,
+                },
+            });
+            return { success: "Updated" };
+        }
 
-    if (intent === "toggle_credit") {
-        const lineId = formData.get("line_id");
-        const credit = formData.get("credit") === "true";
-        const res = await ApiPATCH(request, `${host}/survey_lines?id=eq.${lineId}`, { credit_periodical: !credit });
-        if (!res.ok) return { error: "Failed to update credit" };
-        return { success: "Updated" };
-    }
+        if (intent === "add_finding") {
+            const findingId = formData.get("finding_id");
+            // link findings to the parent job_id
+            const surveyJobId = formData.get("survey_job_id");
+            const { data: surveyJobsData } = await db.get<any[]>("/survey_jobs", {
+                filters: { id: `eq.${surveyJobId}` },
+                select: "job_id",
+            });
+            const jobId = surveyJobsData?.[0]?.job_id as number | undefined;
+            if (!jobId) return { error: "Could not find parent job" };
+            await db.post("/comment_lines", {
+                body: {
+                    job_id: jobId,
+                    finding_comment_id: parseInt(findingId as string),
+                },
+            });
+            return { success: "Finding Linked" };
+        }
 
-    if (intent === "add_finding") {
-        const findingId = formData.get("finding_id");
-        // link findings to the parent job_id
-        const surveyJobId = formData.get("survey_job_id");
-        const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${surveyJobId}&select=job_id`);
-        const surveyJobs: Record<string, unknown>[] = await surveyJobRes.json();
-        const jobId = surveyJobs[0]?.job_id as number | undefined;
-        if (!jobId) return { error: "Could not find parent job" };
-        const res = await ApiPOST(request, `${host}/comment_lines`, { job_id: jobId, finding_comment_id: parseInt(findingId as string) });
-        if (!res.ok) return { error: "Failed to add finding to scope" };
-        return { success: "Finding added" };
-    }
-
-    if (intent === "remove_comment_line") {
-        const lineId = formData.get("line_id");
-        const res = await ApiDELETE(request, `${host}/comment_lines?id=eq.${lineId}`);
-        if (!res.ok) return { error: "Failed to remove finding from scope" };
-        return { success: "Finding removed" };
+        if (intent === "remove_comment_line") {
+            const lineId = formData.get("line_id");
+            await db.delete("/comment_lines", { filters: { id: `eq.${lineId}` } });
+            return { success: "Finding removed" };
+        }
+    } catch (error: any) {
+        return { error: error.message || "Failed to perform action" };
     }
 
     return { error: "Unknown action" };
 }
+
 
 export default function RegisterScope() {
     const { surveyJob, surveyLines, commentLines, availableSurveys, availableFindings, allPoolItems } = useLoaderData<typeof loader>();
@@ -214,11 +245,11 @@ export default function RegisterScope() {
                         ) : (
                             allLines.map((line: SurveyLineWithType) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
-                                    <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
+                                    <td className="px-4 py-2 font-mono text-slate-600">{(line.survey_audits as any)?.cert_code || (line.survey_pool as any)?.cert_code || (line.survey_pool as any)?.code}</td>
+                                    <td className="px-4 py-2 font-medium text-slate-900">{(line.survey_audits as any)?.description || (line.survey_pool as any)?.description}</td>
                                     <td className="px-4 py-2">
-                                        <div className="text-slate-500">{line.survey_audits?.range_from_date || "N/A"} to {line.survey_audits?.range_to_date || "N/A"}</div>
-                                        <div className="text-[10px] text-slate-400 font-bold">DUE: {line.survey_audits?.next_due_date || "N/A"}</div>
+                                        <div className="text-slate-500">{(line.survey_audits as any)?.range_from_date || "N/A"} to {(line.survey_audits as any)?.range_to_date || "N/A"}</div>
+                                        <div className="text-[10px] text-slate-400 font-bold">DUE: {(line.survey_audits as any)?.next_due_date || "N/A"}</div>
                                     </td>
                                     <td className="px-4 py-2">{line.survey_audits?.is_ordered ? "Yes" : "No"}</td>
                                     <td className="px-4 py-2 text-center">
@@ -264,7 +295,7 @@ export default function RegisterScope() {
                         <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
                         <div className="flex-1 space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Survey to Scope</label>
-                            <input type="hidden" name="pool_id" value={selectedSurvey?.pool_id || ""} />
+                            <input type="hidden" name="pool_id" value={(selectedSurvey as any)?.pool_id || ""} />
                             <select
                                 name="survey_audit_id"
                                 required
@@ -273,7 +304,7 @@ export default function RegisterScope() {
                                 onChange={(e) => setSelectedSurveyId(e.target.value)}
                             >
                                 <option value="">-- Select Available Survey --</option>
-                                {availableSurveys.map((s) => (
+                                {availableSurveys.map((s: any) => (
                                     <option key={s.id} value={s.id}>{s.description} ({s.cert_code}) - Due: {s.next_due_date}</option>
                                 ))}
                             </select>
@@ -344,22 +375,37 @@ export default function RegisterScope() {
                                     <td className="px-4 py-2">
                                         <span className={cn(
                                             "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
-                                            line.finding_comments?.comment_type === "condition" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
+                                            (line.finding_comments as any)?.comment_type === "condition" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
                                         )}>
-                                            {line.finding_comments?.comment_type}
+                                            {(line.finding_comments as any)?.comment_type}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2">
-                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{line.finding_comments?.text}</div>
-                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {line.finding_comments?.mms_reference || "N/A"}</div>
+                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{(line.finding_comments as any)?.text}</div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {(line.finding_comments as any)?.mms_reference || "N/A"}</div>
                                     </td>
-                                    <td className="px-4 py-2 text-slate-500">{line.finding_comments?.date_issued}</td>
+                                    <td className="px-4 py-2 text-slate-500">{(line.finding_comments as any)?.date_issued}</td>
                                     <td className="px-4 py-2">
                                         <span className={cn(
                                             "font-bold",
-                                            new Date(line.finding_comments?.due_date) < new Date() ? "text-destructive" : "text-slate-600"
+                                            new Date((line.finding_comments as any)?.due_date) < new Date() ? "text-destructive" : "text-slate-600"
                                         )}>
-                                            {line.finding_comments?.due_date || "N/A"}
+
+                                            {(line.finding_comments as any)?.due_date || "N/A"}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{(line.finding_comments as any)?.text}</div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {(line.finding_comments as any)?.mms_reference || "N/A"}</div>
+                                    </td>
+                                    <td className="px-4 py-2 text-slate-500">{(line.finding_comments as any)?.date_issued}</td>
+                                    <td className="px-4 py-2">
+                                        <span className={cn(
+                                            "font-bold",
+                                            new Date((line.finding_comments as any)?.due_date) < new Date() ? "text-destructive" : "text-slate-600"
+                                        )}>
+
+                                            {(line.finding_comments as any)?.due_date || "N/A"}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2 text-right">
@@ -387,8 +433,8 @@ export default function RegisterScope() {
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Open Finding to Scope</label>
                             <select name="finding_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
                                 <option value="">-- Select Open Finding --</option>
-                                {availableFindings.map((f: FindingComment) => (
-                                    <option key={f.id} value={f.id}>{f.text.substring(0, 60)}... (Due: {f.due_date})</option>
+                                {availableFindings.map((f: any) => (
+                                    <option key={f.id} value={f.id}>{f.text?.substring(0, 60)}... (Due: {f.due_date})</option>
                                 ))}
                             </select>
                         </div>

@@ -1,37 +1,42 @@
 import { Info, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useLoaderData, Form, useActionData, useNavigation } from "react-router";
-import { ApiGET, ApiPATCH } from "~/.server/lib/api";
+import { getDb } from "../../.server/lib/api";
+
 import type { Route } from "./+types/job-description";
 import { cn } from "~/lib/utils";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
-    const host = process.env.API_URL || "http://localhost:2000";
+    const db = await getDb(request);
 
-    const res = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}`);
-    if (!res.ok) throw new Response("Job not found", { status: 404 });
-    const jobs = await res.json();
-    if (jobs.length === 0) throw new Response("Job not found", { status: 404 });
-
+    const { data: jobs } = await db.get<any[]>("/survey_jobs", {
+        filters: { id: `eq.${id}` },
+    });
+    if (!jobs || jobs.length === 0)
+        throw new Response("Job not found", { status: 404 });
     return { job: jobs[0] };
 }
+
 
 export async function action({ request, params }: Route.ActionArgs) {
     const { id } = params;
     const formData = await request.formData();
     const description = formData.get("description") as string;
-    const host = process.env.API_URL || "http://localhost:2000";
 
-    const res = await ApiPATCH(request, `${host}/survey_jobs?id=eq.${id}`, {
-        description
-    });
-
-    if (!res.ok) {
-        return { error: "Failed to update job description" };
+    try {
+        const db = await getDb(request);
+        await db.patch("/survey_jobs", {
+            filters: { id: `eq.${id}` },
+            body: {
+                description,
+            },
+        });
+        return { success: "Job description updated successfully" };
+    } catch (error: any) {
+        return { error: error.message || "Failed to update job description" };
     }
-
-    return { success: "Job description updated successfully" };
 }
+
 
 export default function JobDescription() {
     const { job } = useLoaderData<typeof loader>();

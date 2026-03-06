@@ -3,7 +3,9 @@ import { Link, Form, useActionData, useNavigation } from "react-router";
 import { Resend } from "resend";
 import { encrypt } from "~/.server/lib/jwt";
 import { getEnvOrDie } from "~/.server/lib/env";
+import { createServerApi } from "../.server/lib/api";
 import type { Route } from "./+types/forgot-password";
+
 
 // Schema for validation
 const ForgotPasswordSchema = z.object({
@@ -26,45 +28,29 @@ export async function action({ request }: Route.ActionArgs) {
   // We use the same secret as the app to sign this token.
   const adminToken = await encrypt({ role: "admingrp" });
 
-  const host = getEnvOrDie("API_URL");
-  const pgrst_query_str = `${host}/rpc/request_password_reset`;
-
   // 2. Call the RPC to get the reset token
   try {
-    const response = await fetch(pgrst_query_str, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-        Authorization: `Bearer ${adminToken}`,
+    const db = createServerApi(adminToken);
+    const { data, status } = await db.rpc<{ token: string }>(
+      "request_password_reset",
+      {
+        body: { email },
       },
-      body: JSON.stringify({ email }),
-    });
+    );
 
-    if (!response.ok) {
+    if (status !== 200 || !data) {
       // If the RPC returns null or error, we still probably want to show a success message
       // to prevent email enumeration, unless it's a 500.
-      // But if the RPC returns NULL (user not found), it might be 200 OK with 'null' body.
-      // Our RPC request_password_reset returns NULL if user not found.
-      const json = await response.json();
-      if (!json) {
-        // User not found. Fake success.
-        return { success: true };
-      }
-      // If it's a real error
-      console.error("RPC Error:", json);
-      // Fallthrough to success to avoid enumeration?
-      // For this task, let's just return success.
       return { success: true };
     }
 
-    const data = await response.json();
     const resetToken = data.token; // The UUID token
 
     if (!resetToken) {
       // Should have been handled above if null
       return { success: true };
     }
+
 
     // 3. Send Email using Resend
     const resendApiKey = getEnvOrDie("RESEND_API_KEY");

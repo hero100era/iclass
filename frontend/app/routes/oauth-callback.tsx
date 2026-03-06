@@ -13,7 +13,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  url.searchParams.get("error"); // Handle OAuth error if present
 
   // If there is no `code` param, initiate the OAuth flow (redirect to provider).
   if (!code) {
@@ -27,7 +26,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     const adminToken = await encrypt({ role: "admingrp" });
 
     // 2. Call backend to ensure user exists / create if necessary.
-    const host = import.meta.env.API_URL || "http://localhost:2000";
+    const host = process.env.API_URL || "http://localhost:2000";
     const rpcUrl = `${host}/rpc/oauth_login`;
     const resp = await fetch(rpcUrl, {
       method: "POST",
@@ -52,9 +51,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     const data = await resp.json();
     const { id, role, category } = data;
 
-    // Create application token and store in session.
-    const token = await encrypt({ id, role, category });
-    session.set("token", token);
+    // Create application jwt and store in session.
+    const jwt = await encrypt({ id, role, category });
+    session.set("jwt", jwt);
 
     // Clean up temporary OAuth session keys.
     session.unset("oAuthState");

@@ -1,8 +1,28 @@
-import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, Link } from "react-router";
+import {
+  useLoaderData,
+  useSubmit,
+  useNavigation,
+  useRevalidator,
+  useActionData,
+  Link,
+} from "react-router";
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Trash2, ChevronRight, ChevronDown, Network, Save, Settings2, Info, X, ArrowLeft, Layers, RefreshCcw, Copy } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ChevronRight,
+  ChevronDown,
+  Network,
+  Save,
+  Settings2,
+  Info,
+  X,
+  ArrowLeft,
+  Layers,
+  RefreshCcw,
+  Copy,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
-
 export const handle = { fluid: true };
 
 import { loader, action } from "./breakdowns.server";
@@ -59,7 +79,14 @@ interface ActiveBreakdown {
 }
 
 export default function VesselBreakdown() {
-  const { vessel, activeBreakdown, tree, allParticulars, templates, templateNodes, vesselId } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const vessel = loaderData.vessel as any;
+  const activeBreakdown = loaderData.activeBreakdown as any;
+  const tree = loaderData.tree as any;
+  const allParticulars = loaderData.allParticulars as any[];
+  const templates = loaderData.templates as any[];
+  const templateNodes = loaderData.templateNodes as any[];
+  const vesselId = loaderData.vesselId;
   const [selectedNode, setSelectedNode] = useState<BreakdownNode | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
   const [showAddNodeModal, setShowAddNodeModal] = useState(false);
@@ -69,7 +96,7 @@ export default function VesselBreakdown() {
     code: "",
     name: "",
     category: "EQUIPMENT",
-    templateNodeId: null as number | null
+    templateNodeId: null as number | null,
   });
 
   const submit = useSubmit();
@@ -78,13 +105,19 @@ export default function VesselBreakdown() {
   const actionData = useActionData<typeof action>();
 
   const isSubmitting = navigation.state !== "idle";
-  const isSavingParticulars = navigation.state === "submitting" && navigation.formData?.get("intent") === "save_particulars";
-  const isSavingNode = navigation.state === "submitting" && navigation.formData?.get("intent") === "update_node_info";
+  const isSavingParticulars =
+    navigation.state === "submitting" &&
+    navigation.formData?.get("intent") === "save_particulars";
+  const isSavingNode =
+    navigation.state === "submitting" &&
+    navigation.formData?.get("intent") === "update_node_info";
 
   // Use useMemo instead of setState in useEffect to avoid cascading renders
   const nodeParticulars = useMemo(() => {
     if (selectedNode) {
-      return allParticulars.filter((p: Particular) => p.ship_breakdown_node_id === selectedNode.id);
+      return allParticulars.filter(
+        (p: Particular) => p.ship_breakdown_node_id === selectedNode.id,
+      );
     }
     return [];
   }, [allParticulars, selectedNode]);
@@ -92,9 +125,16 @@ export default function VesselBreakdown() {
   const availableTemplateNodes = useMemo(() => {
     if (showAddNodeModal) {
       if (newNodeData.parentTemplateNodeId) {
-        return templateNodes.filter((tn: TemplateNode) => tn.parent_node_id === newNodeData.parentTemplateNodeId);
+        return templateNodes.filter(
+          (tn: TemplateNode) =>
+            tn.parent_node_id === newNodeData.parentTemplateNodeId,
+        );
       } else if (!newNodeData.parentId && activeBreakdown?.template_id) {
-        return templateNodes.filter((tn: TemplateNode) => tn.template_id === activeBreakdown.template_id && !tn.parent_node_id);
+        return templateNodes.filter(
+          (tn: TemplateNode) =>
+            tn.template_id === activeBreakdown.template_id &&
+            !tn.parent_node_id,
+        );
       }
     }
     return [];
@@ -107,13 +147,16 @@ export default function VesselBreakdown() {
   }, [actionData, navigation.state, revalidator]);
 
   // Build hierarchical tree structure
-  const buildTree = (nodes: BreakdownNode[], parentId: number | null = null): BreakdownNode[] => {
+  const buildTree = (
+    nodes: BreakdownNode[],
+    parentId: number | null = null,
+  ): BreakdownNode[] => {
     return nodes
-      .filter(n => n.parent_node_id === parentId)
+      .filter((n) => n.parent_node_id === parentId)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(n => ({
+      .map((n) => ({
         ...n,
-        children: buildTree(nodes, n.id)
+        children: buildTree(nodes, n.id),
       }));
   };
 
@@ -131,7 +174,12 @@ export default function VesselBreakdown() {
   };
 
   const handleApplyTemplate = (templateId: number) => {
-    if (!confirm("This will replace any existing breakdown for this vessel. Continue?")) return;
+    if (
+      !confirm(
+        "This will replace any existing breakdown for this vessel. Continue?",
+      )
+    )
+      return;
     const formData = new FormData();
     formData.append("intent", "apply_template");
     formData.append("template_id", templateId.toString());
@@ -150,7 +198,10 @@ export default function VesselBreakdown() {
 
     if (newNodeData.templateNodeId) {
       formData.append("intent", "add_template_node");
-      formData.append("template_node_id", newNodeData.templateNodeId.toString());
+      formData.append(
+        "template_node_id",
+        newNodeData.templateNodeId.toString(),
+      );
     } else {
       formData.append("intent", "add_custom_node");
       formData.append("code", newNodeData.code);
@@ -158,22 +209,45 @@ export default function VesselBreakdown() {
       formData.append("category", newNodeData.category);
     }
 
-    formData.append("breakdown_id", (activeBreakdown as ActiveBreakdown).id.toString());
-    if (newNodeData.parentId) formData.append("parent_id", newNodeData.parentId.toString());
+    formData.append(
+      "breakdown_id",
+      (activeBreakdown as ActiveBreakdown).id.toString(),
+    );
+    if (newNodeData.parentId)
+      formData.append("parent_id", newNodeData.parentId.toString());
 
     submit(formData, { method: "post" });
     setShowAddNodeModal(false);
-    setNewNodeData({ parentId: null, parentTemplateNodeId: null, code: "", name: "", category: "EQUIPMENT", templateNodeId: null });
+    setNewNodeData({
+      parentId: null,
+      parentTemplateNodeId: null,
+      code: "",
+      name: "",
+      category: "EQUIPMENT",
+      templateNodeId: null,
+    });
   };
 
   const handleDeleteNode = (id: number) => {
-    if (!confirm("Are you sure you want to delete this node and all its children?")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this node and all its children?",
+      )
+    )
+      return;
     const formData = new FormData();
     formData.append("intent", "delete_node");
     formData.append("id", id.toString());
     submit(formData, { method: "post" });
     if (selectedNode?.id === id) setSelectedNode(null);
-    setNewNodeData({ parentId: null, parentTemplateNodeId: null, code: "", name: "", category: "EQUIPMENT", templateNodeId: null });
+    setNewNodeData({
+      parentId: null,
+      parentTemplateNodeId: null,
+      code: "",
+      name: "",
+      category: "EQUIPMENT",
+      templateNodeId: null,
+    });
   };
 
   const handleCopyNode = (id: number) => {
@@ -230,7 +304,9 @@ export default function VesselBreakdown() {
         <div
           className={cn(
             "group flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-all",
-            isSelected ? "bg-primary/5 text-primary" : "hover:bg-slate-50 text-slate-600"
+            isSelected
+              ? "bg-primary/5 text-primary"
+              : "hover:bg-slate-50 text-slate-600",
           )}
           onClick={() => handleSelectNode(node)}
         >
@@ -242,21 +318,36 @@ export default function VesselBreakdown() {
             }}
           >
             {hasChildren ? (
-              isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+              isExpanded ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )
             ) : (
               <div className="w-1 h-1 rounded-full bg-slate-200" />
             )}
           </div>
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold text-slate-300 group-hover:text-primary/40">{node.code}</span>
+            <span className="text-[10px] font-mono font-bold text-slate-300 group-hover:text-primary/40">
+              {node.code}
+            </span>
             <span className="text-xs font-semibold truncate">{node.name}</span>
-            {node.is_modified && <div className="w-1 h-1 rounded-full bg-amber-400" title="Modified from template" />}
+            {node.is_modified && (
+              <div
+                className="w-1 h-1 rounded-full bg-amber-400"
+                title="Modified from template"
+              />
+            )}
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setNewNodeData({ ...newNodeData, parentId: node.id, parentTemplateNodeId: node.template_node_id || null });
+                setNewNodeData({
+                  ...newNodeData,
+                  parentId: node.id,
+                  parentTemplateNodeId: node.template_node_id || null,
+                });
                 setShowAddNodeModal(true);
               }}
               className="p-1 hover:bg-primary/10 rounded-md text-slate-400 hover:text-primary"
@@ -265,14 +356,20 @@ export default function VesselBreakdown() {
               <Plus size={12} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); handleCopyNode(node.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyNode(node.id);
+              }}
               className="p-1 hover:bg-white/50 rounded text-slate-400 hover:text-primary transition-colors"
               title="Copy Node"
             >
               <Copy className="w-3 h-3" />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteNode(node.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteNode(node.id);
+              }}
               className="p-1 hover:bg-white/50 rounded text-slate-400 hover:text-red-500 transition-colors"
               title="Delete Node"
             >
@@ -282,7 +379,7 @@ export default function VesselBreakdown() {
         </div>
         {isExpanded && hasChildren && (
           <div className="ml-4 border-l border-slate-100 pl-2 mt-1 space-y-0.5">
-            {node.children.map((child) => renderTreeNode(child))}
+            {node.children?.map((child: any) => renderTreeNode(child))}
           </div>
         )}
       </div>
@@ -304,7 +401,9 @@ export default function VesselBreakdown() {
               <Network size={18} className="text-primary" />
               Vessel Breakdown: {(vessel as Vessel).name}
             </h1>
-            <p className="text-xs text-slate-500">Structured equipment hierarchy and technical particulars.</p>
+            <p className="text-xs text-slate-500">
+              Structured equipment hierarchy and technical particulars.
+            </p>
           </div>
         </div>
         {activeBreakdown && (
@@ -328,28 +427,41 @@ export default function VesselBreakdown() {
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
             <Layers size={40} />
           </div>
-          <h2 className="text-lg font-bold text-slate-800 mb-2">Configure Breakdown Structure</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">
+            Configure Breakdown Structure
+          </h2>
           <p className="text-sm text-slate-500 mb-8">
             This vessel does not have a breakdown structure configured yet.
             Select a standard template to initialize the equipment hierarchy.
           </p>
 
           <div className="grid grid-cols-1 gap-3 text-left max-w-md mx-auto">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Actions</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+              Actions
+            </label>
             <button
               onClick={handleCreateManualBreakdown}
               disabled={isSubmitting}
               className="group w-full p-4 bg-white border border-slate-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-left flex items-center justify-between"
             >
               <div>
-                <div className="text-xs font-bold text-slate-700 group-hover:text-primary">Manual Initialization</div>
-                <div className="text-[10px] text-slate-400">Start with an empty structure and add nodes manually</div>
+                <div className="text-xs font-bold text-slate-700 group-hover:text-primary">
+                  Manual Initialization
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  Start with an empty structure and add nodes manually
+                </div>
               </div>
-              <Plus size={16} className="text-slate-200 group-hover:text-primary" />
+              <Plus
+                size={16}
+                className="text-slate-200 group-hover:text-primary"
+              />
             </button>
 
             <div className="h-4" />
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Standard Templates</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+              Standard Templates
+            </label>
             {templates.map((tmpl: Template) => (
               <button
                 key={tmpl.id}
@@ -358,23 +470,36 @@ export default function VesselBreakdown() {
                 className="group w-full p-4 bg-white border border-slate-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-left flex items-center justify-between"
               >
                 <div>
-                  <div className="text-xs font-bold text-slate-700 group-hover:text-primary">{tmpl.name}</div>
-                  <div className="text-[10px] text-slate-400">{tmpl.vessel_type} &bull; v{tmpl.version}</div>
+                  <div className="text-xs font-bold text-slate-700 group-hover:text-primary">
+                    {tmpl.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {tmpl.vessel_type} &bull; v{tmpl.version}
+                  </div>
                 </div>
-                <ChevronRight size={16} className="text-slate-200 group-hover:text-primary" />
+                <ChevronRight
+                  size={16}
+                  className="text-slate-200 group-hover:text-primary"
+                />
               </button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-12 gap-6 min-h-[600px]">
+        <div className="grid grid-cols-12 gap-6 min-h-150">
           {/* Tree Sidebar */}
           <div className="col-span-4 flex flex-col gap-3 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Equipment Tree</h3>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Equipment Tree
+              </h3>
               <button
                 onClick={() => {
-                  setNewNodeData({ ...newNodeData, parentId: null, parentTemplateNodeId: null });
+                  setNewNodeData({
+                    ...newNodeData,
+                    parentId: null,
+                    parentTemplateNodeId: null,
+                  });
                   setShowAddNodeModal(true);
                 }}
                 className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
@@ -384,7 +509,7 @@ export default function VesselBreakdown() {
             </div>
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
               <div className="space-y-1">
-                {rootNodes.map(node => renderTreeNode(node))}
+                {rootNodes.map((node) => renderTreeNode(node))}
               </div>
             </div>
           </div>
@@ -411,9 +536,13 @@ export default function VesselBreakdown() {
                     <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 uppercase">
                       <span>Equipment Node</span>
                       <span>/</span>
-                      <span className="text-primary font-bold">{selectedNode.code}</span>
+                      <span className="text-primary font-bold">
+                        {selectedNode.code}
+                      </span>
                     </div>
-                    <h2 className="text-xl font-bold text-slate-800">{selectedNode.name}</h2>
+                    <h2 className="text-xl font-bold text-slate-800">
+                      {selectedNode.name}
+                    </h2>
                   </div>
                 </div>
 
@@ -425,7 +554,9 @@ export default function VesselBreakdown() {
                       <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Info className="w-4 h-4 text-slate-400" />
-                          <h3 className="font-semibold text-slate-800">Node Configuration</h3>
+                          <h3 className="font-semibold text-slate-800">
+                            Node Configuration
+                          </h3>
                         </div>
                         <button
                           onClick={handleSaveNodeInfo}
@@ -438,28 +569,49 @@ export default function VesselBreakdown() {
                       </div>
                       <div className="p-4 grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Node Name</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Node Name
+                          </label>
                           <input
                             type="text"
                             value={selectedNode.name}
-                            onChange={(e) => setSelectedNode({ ...selectedNode, name: e.target.value })}
+                            onChange={(e) =>
+                              setSelectedNode({
+                                ...selectedNode,
+                                name: e.target.value,
+                              })
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Node Code</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Node Code
+                          </label>
                           <input
                             type="text"
                             value={selectedNode.code}
-                            onChange={(e) => setSelectedNode({ ...selectedNode, code: e.target.value.toUpperCase() })}
+                            onChange={(e) =>
+                              setSelectedNode({
+                                ...selectedNode,
+                                code: e.target.value.toUpperCase(),
+                              })
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-mono"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Category
+                          </label>
                           <select
                             value={selectedNode.category || ""}
-                            onChange={(e) => setSelectedNode({ ...selectedNode, category: e.target.value })}
+                            onChange={(e) =>
+                              setSelectedNode({
+                                ...selectedNode,
+                                category: e.target.value,
+                              })
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
                           >
                             <option value="EQUIPMENT">Equipment</option>
@@ -470,20 +622,34 @@ export default function VesselBreakdown() {
                           </select>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Node Type</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Node Type
+                          </label>
                           <input
                             type="text"
                             value={selectedNode.node_type || ""}
-                            onChange={(e) => setSelectedNode({ ...selectedNode, node_type: e.target.value })}
+                            onChange={(e) =>
+                              setSelectedNode({
+                                ...selectedNode,
+                                node_type: e.target.value,
+                              })
+                            }
                             placeholder="e.g. diesel_engine"
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
                           />
                         </div>
                         <div className="col-span-2 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Description
+                          </label>
                           <textarea
                             value={selectedNode.description || ""}
-                            onChange={(e) => setSelectedNode({ ...selectedNode, description: e.target.value })}
+                            onChange={(e) =>
+                              setSelectedNode({
+                                ...selectedNode,
+                                description: e.target.value,
+                              })
+                            }
                             rows={3}
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm resize-none"
                           />
@@ -496,7 +662,9 @@ export default function VesselBreakdown() {
                       <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Layers className="w-4 h-4 text-slate-400" />
-                          <h3 className="font-semibold text-slate-800">Technical Specifications (Specs)</h3>
+                          <h3 className="font-semibold text-slate-800">
+                            Technical Specifications (Specs)
+                          </h3>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -512,14 +680,18 @@ export default function VesselBreakdown() {
                             className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
                           >
                             <Save className="w-3.5 h-3.5" />
-                            {isSavingParticulars ? "Saving..." : "Save Particulars"}
+                            {isSavingParticulars
+                              ? "Saving..."
+                              : "Save Particulars"}
                           </button>
                         </div>
                       </div>
                       <div className="p-4">
                         {nodeParticulars.length === 0 ? (
                           <div className="text-center py-8 bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
-                            <p className="text-sm text-slate-400">No particulars defined for this component.</p>
+                            <p className="text-sm text-slate-400">
+                              No particulars defined for this component.
+                            </p>
                             <button
                               onClick={addParticular}
                               className="mt-2 text-xs text-primary font-semibold hover:underline"
@@ -530,18 +702,36 @@ export default function VesselBreakdown() {
                         ) : (
                           <div className="space-y-2">
                             {nodeParticulars.map((p, idx) => (
-                              <div key={idx} className="group flex items-start gap-2 p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all">
+                              <div
+                                key={idx}
+                                className="group flex items-start gap-2 p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all"
+                              >
                                 <div className="grid grid-cols-12 gap-2 flex-1">
                                   <div className="col-span-3">
-                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Title</label>
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                                      Title
+                                    </label>
                                     <input
                                       type="text"
                                       value={p.attr_title}
-                                      onChange={(e) => updateParticular(idx, "attr_title", e.target.value)}
+                                      onChange={(e) =>
+                                        updateParticular(
+                                          idx,
+                                          "attr_title",
+                                          e.target.value,
+                                        )
+                                      }
                                       onBlur={(e) => {
                                         if (!p.attr_key) {
-                                          const key = e.target.value.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
-                                          updateParticular(idx, "attr_key", key);
+                                          const key = e.target.value
+                                            .toLowerCase()
+                                            .replace(/ /g, "_")
+                                            .replace(/[^a-z0-9_]/g, "");
+                                          updateParticular(
+                                            idx,
+                                            "attr_key",
+                                            key,
+                                          );
                                         }
                                       }}
                                       placeholder="e.g. Material"
@@ -549,44 +739,78 @@ export default function VesselBreakdown() {
                                     />
                                   </div>
                                   <div className="col-span-2">
-                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Value</label>
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                                      Value
+                                    </label>
                                     <input
                                       type="text"
                                       value={p.attr_value || ""}
-                                      onChange={(e) => updateParticular(idx, "attr_value", e.target.value)}
+                                      onChange={(e) =>
+                                        updateParticular(
+                                          idx,
+                                          "attr_value",
+                                          e.target.value,
+                                        )
+                                      }
                                       className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     />
                                   </div>
                                   <div className="col-span-2">
-                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Unit</label>
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                                      Unit
+                                    </label>
                                     <input
                                       type="text"
                                       value={p.unit || ""}
-                                      onChange={(e) => updateParticular(idx, "unit", e.target.value)}
+                                      onChange={(e) =>
+                                        updateParticular(
+                                          idx,
+                                          "unit",
+                                          e.target.value,
+                                        )
+                                      }
                                       placeholder="e.g. mm"
                                       className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     />
                                   </div>
                                   <div className="col-span-2">
-                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Type</label>
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                                      Type
+                                    </label>
                                     <select
                                       value={p.data_type}
-                                      onChange={(e) => updateParticular(idx, "data_type", e.target.value)}
+                                      onChange={(e) =>
+                                        updateParticular(
+                                          idx,
+                                          "data_type",
+                                          e.target.value,
+                                        )
+                                      }
                                       className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     >
                                       <option value="text">Text</option>
                                       <option value="integer">Integer</option>
                                       <option value="decimal">Decimal</option>
                                       <option value="boolean">Boolean</option>
-                                      <option value="selection">Selection</option>
+                                      <option value="selection">
+                                        Selection
+                                      </option>
                                     </select>
                                   </div>
                                   <div className="col-span-2">
-                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Key</label>
+                                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                                      Key
+                                    </label>
                                     <input
                                       type="text"
                                       value={p.attr_key}
-                                      onChange={(e) => updateParticular(idx, "attr_key", e.target.value)}
+                                      onChange={(e) =>
+                                        updateParticular(
+                                          idx,
+                                          "attr_key",
+                                          e.target.value,
+                                        )
+                                      }
                                       className="w-full px-2 py-1.5 bg-slate-100 border border-slate-200 rounded text-xs font-mono text-[10px] focus:outline-none"
                                     />
                                   </div>
@@ -613,7 +837,9 @@ export default function VesselBreakdown() {
                 <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
                   <Settings2 size={32} className="text-slate-200" />
                 </div>
-                <h3 className="text-slate-600 font-bold mb-2">Technical Specification</h3>
+                <h3 className="text-slate-600 font-bold mb-2">
+                  Technical Specification
+                </h3>
                 <p className="text-xs text-slate-400 max-w-sm">
                   Select equipment from the tree to view its detailed technical
                   specifications and recorded particulars.
@@ -630,19 +856,29 @@ export default function VesselBreakdown() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-slate-900">Add Custom Equipment</h3>
-              <button onClick={() => setShowAddNodeModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setShowAddNodeModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleAddNode} className="p-6 space-y-4">
               {availableTemplateNodes.length > 0 ? (
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Standard Children</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                    Standard Children
+                  </label>
                   <select
                     required
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
                     value={newNodeData.templateNodeId || ""}
-                    onChange={e => setNewNodeData({ ...newNodeData, templateNodeId: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setNewNodeData({
+                        ...newNodeData,
+                        templateNodeId: parseInt(e.target.value),
+                      })
+                    }
                   >
                     <option value="">Select a template node...</option>
                     {availableTemplateNodes.map((tn: TemplateNode) => (
@@ -651,7 +887,10 @@ export default function VesselBreakdown() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-[9px] text-slate-400 px-1 pt-1">Selecting a standard node will automatically copy its technical particulars.</p>
+                  <p className="text-[9px] text-slate-400 px-1 pt-1">
+                    Selecting a standard node will automatically copy its
+                    technical particulars.
+                  </p>
                 </div>
               ) : (
                 <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-[10px] text-amber-700 font-semibold mb-4">
@@ -660,34 +899,50 @@ export default function VesselBreakdown() {
                 </div>
               )}
 
-              {(availableTemplateNodes.length === 0 || !(activeBreakdown as ActiveBreakdown).template_id) && (
+              {(availableTemplateNodes.length === 0 ||
+                !(activeBreakdown as ActiveBreakdown).template_id) && (
                 <>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Node Code</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                      Node Code
+                    </label>
                     <input
                       required
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
                       placeholder="e.g. ME-01"
                       value={newNodeData.code}
-                      onChange={e => setNewNodeData({ ...newNodeData, code: e.target.value })}
+                      onChange={(e) =>
+                        setNewNodeData({ ...newNodeData, code: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Display Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                      Display Name
+                    </label>
                     <input
                       required
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
                       placeholder="e.g. Main Engine #1"
                       value={newNodeData.name}
-                      onChange={e => setNewNodeData({ ...newNodeData, name: e.target.value })}
+                      onChange={(e) =>
+                        setNewNodeData({ ...newNodeData, name: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Category</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                      Category
+                    </label>
                     <select
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
                       value={newNodeData.category}
-                      onChange={e => setNewNodeData({ ...newNodeData, category: e.target.value })}
+                      onChange={(e) =>
+                        setNewNodeData({
+                          ...newNodeData,
+                          category: e.target.value,
+                        })
+                      }
                     >
                       <option value="EQUIPMENT">Equipment</option>
                       <option value="HULL">Hull Section</option>

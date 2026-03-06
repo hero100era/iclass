@@ -2,7 +2,8 @@ import React from "react";
 import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
-import { ApiGET } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import type { Route } from "./+types/index";
 
 interface Job {
@@ -25,32 +26,20 @@ export async function loader({ request }: Route.LoaderArgs) {
     const limit = ITEM_PER_PAGE;
     const offset = (page - 1) * limit;
 
-    const host = process.env.API_URL || "http://localhost:2000";
-
-    // Select parent jobs and embed sub-jobs via foreign key inference
-    const pgrst_query_str = `${host}/jobs?select=*,survey_jobs(*,ships(name)),audit_jobs(*,ships(name),organizations(name)),ms_jobs(*,ships(name),organizations(name))&limit=${limit}&offset=${offset}&order=created_at.desc`;
-
-    const res = await ApiGET(request, pgrst_query_str, {
-        "Prefer": "count=exact"
+    const db = await getDb(request);
+    const { data: jobs, count } = await db.get<Job[]>("/jobs", {
+        select:
+            "*,survey_jobs(*,ships(name)),audit_jobs(*,ships(name),organizations(name)),ms_jobs(*,ships(name),organizations(name))",
+        limit,
+        offset,
+        order: "created_at.desc",
+        prefer: { count: "exact" },
     });
 
-    if (!res.ok) {
-        return { jobs: [], totalPages: 0, currentPage: page };
-    }
-
-    const jobs = await res.json();
-    const contentRange = res.headers.get("Content-Range");
-    let totalCount = 0;
-    if (contentRange) {
-        const parts = contentRange.split("/");
-        if (parts.length > 1) {
-            totalCount = parseInt(parts[1], 10);
-        }
-    }
-
-    const totalPages = Math.ceil(totalCount / limit);
-    return { jobs, totalPages, currentPage: page };
+    const totalPages = Math.ceil((count || 0) / limit);
+    return { jobs: jobs || [], totalPages, currentPage: page };
 }
+
 
 
 export default function JobList() {
@@ -120,7 +109,7 @@ export default function JobList() {
                         ) : (
                             jobs.map((job: Job) => {
                                 const isExpanded = !!expandedJobs[job.id];
-                                const hasSubJobs = (job.survey_jobs?.length > 0) || (job.audit_jobs?.length > 0) || (job.ms_jobs?.length > 0);
+                                const hasSubJobs = (job.survey_jobs?.length ?? 0 > 0) || (job.audit_jobs?.length ?? 0 > 0) || (job.ms_jobs?.length ?? 0 > 0);
                                 return (
                                     <React.Fragment key={job.id}>
                                         <tr
@@ -169,7 +158,7 @@ export default function JobList() {
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/surveys/${sj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
                                                         <div className="w-2.5 h-[1px] bg-muted-foreground mr-1"></div>
-                                                        Survey #{sj.id}
+                                                        Survey #{(sj.id as number)}
                                                     </Link>
                                                 </td>
                                                 <td className="px-4 py-2">
@@ -178,10 +167,10 @@ export default function JobList() {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px]">
-                                                    <div className="font-medium">{sj.ships?.name || 'No Ship'}</div>
+                                                    <div className="font-medium">{(sj.ships as any)?.name || 'No Ship'}</div>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
-                                                    {sj.description || 'No Description'}
+                                                    {(sj.description as string) || 'No Description'}
                                                 </td>
                                                 <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
                                             </tr>
@@ -192,7 +181,7 @@ export default function JobList() {
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/audits/${aj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
                                                         <div className="w-2.5 h-[1px] bg-muted-foreground mr-1"></div>
-                                                        Audit #{aj.id}
+                                                        Audit #{(aj.id as number)}
                                                     </Link>
                                                 </td>
                                                 <td className="px-4 py-2">
@@ -201,11 +190,11 @@ export default function JobList() {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px]">
-                                                    <div className="font-medium">{aj.ships?.name || 'No Ship'}</div>
-                                                    <div className="text-[11px] text-muted-foreground leading-tight">{aj.organizations?.name || 'No Company'}</div>
+                                                    <div className="font-medium">{(aj.ships as any)?.name || 'No Ship'}</div>
+                                                    <div className="text-[11px] text-muted-foreground leading-tight">{(aj.organizations as any)?.name || 'No Company'}</div>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
-                                                    {aj.description || 'No Description'}
+                                                    {(aj.description as string) || 'No Description'}
                                                 </td>
                                                 <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
                                             </tr>
@@ -216,7 +205,7 @@ export default function JobList() {
                                                 <td className="px-4 py-2 pl-12 text-[13px]">
                                                     <Link to={`/ms_jobs/${mj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
                                                         <div className="w-2.5 h-[1px] bg-muted-foreground mr-1"></div>
-                                                        MS Job #{mj.id}
+                                                        MS Job #{(mj.id as number)}
                                                     </Link>
                                                 </td>
                                                 <td className="px-4 py-2">
@@ -225,8 +214,8 @@ export default function JobList() {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px]">
-                                                    <div className="font-medium">{mj.ships?.name || 'No Ship'}</div>
-                                                    <div className="text-[11px] text-muted-foreground leading-tight">{mj.organizations?.name || 'No Company'}</div>
+                                                    <div className="font-medium">{(mj.ships as any)?.name || 'No Ship'}</div>
+                                                    <div className="text-[11px] text-muted-foreground leading-tight">{(mj.organizations as any)?.name || 'No Company'}</div>
                                                 </td>
                                                 <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
                                                     -

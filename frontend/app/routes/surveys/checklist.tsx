@@ -6,12 +6,12 @@ import { useState } from "react";
 
 interface LoaderArgs {
   request: Request;
-  params: Record<string, string>;
+  params: { id: string };
 }
 
 interface ActionArgs {
   request: Request;
-  params: Record<string, string>;
+  params: { id: string };
 }
 
 export async function loader(args: LoaderArgs) {
@@ -26,14 +26,14 @@ export async function action(args: ActionArgs) {
     const id = formData.get("id");
     const result = formData.get("result");
     const type = formData.get("type");
-    return await updateChecklistResult(args, { id, result, type });
+    return await updateChecklistResult(args, { id: Number(id), result: String(result) });
   }
 
   if (intent === "update_particulars") {
     const id = formData.get("id");
     const particularsJson = formData.get("particulars");
     const type = formData.get("type");
-    return await updateChecklistParticulars(args, { id, particularsJson, type });
+    return await updateChecklistParticulars(args, { id: Number(id), particularsJson: String(particularsJson) });
   }
 
   return { error: "Unknown action" };
@@ -209,16 +209,16 @@ export default function JobChecklist() {
   const { surveyLines, surveyChecklists, checklistResults } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
-  const allLines: SurveyLine[] = Array.isArray(surveyLines) ? surveyLines : [];
+  const allLines = (surveyLines || []) as unknown as SurveyLine[];
   const [activeLineId, setActiveLineId] = useState<number | null>(allLines.length > 0 ? allLines[0].id : null);
 
   const currentChecklist = (Array.isArray(surveyChecklists) ? surveyChecklists : []).filter(
-    (c: ChecklistItem) => c.survey_line_id === activeLineId
+    (c: any) => c.survey_line_id === activeLineId
   );
 
   // Group by sections
   const sections: Record<string, { section: { id: number; section_number: string; title: string }; items: ChecklistItem[][] }> = {};
-  currentChecklist.forEach((c: ChecklistItem) => {
+  currentChecklist.forEach((c: any) => {
     const sectionData = c.checklist_items?.checklist_sections;
     const sectionId = sectionData?.id;
     if (!sectionId) return;
@@ -235,7 +235,7 @@ export default function JobChecklist() {
   // Sort items within sections, grouped by item_id
   sortedSections.forEach(s => {
     const grouped: Record<number, ChecklistItem[]> = {};
-    currentChecklist.forEach((item: ChecklistItem) => {
+    currentChecklist.forEach((item: any) => {
       if (item.checklist_items?.checklist_sections?.id === s.section.id) {
         (grouped[item.item_id] ||= []).push(item);
       }
@@ -338,7 +338,7 @@ export default function JobChecklist() {
                                 onChange={(e) => instances.forEach(inst => handleResultChange(inst.id, e.target.value))}
                                 className="w-full bg-slate-100 border border-slate-200 rounded-md py-0.5 px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-primary/20 appearance-none text-center hover:bg-slate-200 transition-colors cursor-pointer"
                               >
-                                {(checklistResults || []).map((res: ChecklistResult) => (
+                                {(checklistResults || []).map((res: any) => (
                                   <option key={res.code} value={res.code}>{res.code}</option>
                                 ))}
                               </select>
@@ -367,7 +367,7 @@ export default function JobChecklist() {
                 Checklist Result Codes Legend
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1">
-                {(checklistResults || []).map((res: ChecklistResult) => (
+                {(checklistResults || []).map((res: any) => (
                   <div key={res.code} className="flex gap-2 items-start border-b border-slate-100 pb-1 last:border-0 md:[&:nth-last-child(-n+2)]:border-0 lg:[&:nth-last-child(-n+4)]:border-0">
                     <div className="flex-shrink-0 w-7 h-4.5 flex items-center justify-center bg-slate-200 rounded text-[9px] font-bold text-slate-600 shadow-sm border border-slate-300">
                       {res.code}

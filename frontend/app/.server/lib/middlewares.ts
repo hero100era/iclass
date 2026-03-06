@@ -39,15 +39,15 @@ export const sessionMiddleware = async (
     pathname.startsWith("/oauth/callback");
 
   const session = await getSession(request.headers.get("Cookie"));
-  const token = session.get("token");
+  const jwt = session.get("jwt");
 
-  if (!token && !isWhitelisted) {
+  if (!jwt && !isWhitelisted) {
     return redirect("/login");
   }
 
   let payload = null;
-  if (token) {
-    payload = await decrypt(token);
+  if (jwt) {
+    payload = await decrypt(jwt);
     if (!payload && !isWhitelisted) {
       return redirect("/login");
     }
@@ -68,7 +68,7 @@ export const sessionMiddleware = async (
       delete newPayload.jti;
 
       const newToken = await encrypt(newPayload);
-      session.set("token", newToken);
+      session.set("jwt", newToken);
 
       const newResponse = new Response(response.body, response);
       newResponse.headers.set("Set-Cookie", await commitSession(session));

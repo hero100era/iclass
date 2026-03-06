@@ -1,6 +1,7 @@
 import { UserPlus, Trash2, GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { useLoaderData, Form, useActionData } from "react-router";
-import { ApiGET, ApiPOST, ApiDELETE } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import type { Route } from "./+types/assign-surveyor";
 
 interface Employee {
@@ -22,58 +23,76 @@ interface Participant {
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { id } = params;
-  const host = process.env.API_URL || "http://localhost:2000";
+  const db = await getDb(request);
 
-  const [surveyJobRes, employeesRes] = await Promise.all([
-    ApiGET(request, `${host}/survey_jobs?id=eq.${id}`),
-    ApiGET(request, `${host}/employees?is_active=eq.true&order=display_name.asc`)
-  ]);
+  const [{ data: surveyJobs }, { data: employees }, { data: participants }] =
+    await Promise.all([
+      db.get<any[]>("/survey_jobs", {
+        filters: { id: `eq.${id}` },
+        select: "id,job_id",
+      }),
+      db.get<Employee[]>("/employees", {
+        filters: { is_active: "eq.true" },
+        order: "display_name.asc",
+      }),
+      db.get<Participant[]>("/survey_participants", {
+        filters: { survey_job_id: `eq.${id}` },
+        select: "*,employees(*)",
+      }),
+    ]);
 
-  const surveyJobs = await surveyJobRes.json();
-  const employees = await employeesRes.json();
-  const surveyJobId = surveyJobs.length > 0 ? surveyJobs[0].id : null;
+  const surveyJobId = surveyJobs?.[0]?.id || null;
 
-  let participants: Participant[] = [];
-  if (surveyJobId) {
-    const participantsRes = await ApiGET(request, `${host}/job_participants?survey_job_id=eq.${surveyJobId}&select=*,employees(display_name,email)`);
-    participants = await participantsRes.json();
-  }
-
-  return { surveyJobId, participants, employees };
+  return {
+    surveyJobId,
+    participants: participants || [],
+    employees: employees || [],
+  };
 }
+
 
 export async function action({ request, params: _params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const host = process.env.API_URL || "http://localhost:2000";
 
-  if (intent === "add_participant") {
-    const employeeId = formData.get("employee_id");
-    const type = formData.get("participant_type");
-    const surveyJobId = formData.get("survey_job_id");
+  try {
+    const db = await getDb(request);
 
-    const data: Record<string, unknown> = {
-      employee_id: parseInt(employeeId as string),
-      is_trainee: type === "trainee",
-      is_monitor: type === "monitor"
-    };
+    if (intent === "add_participant") {
+      const employeeId = formData.get("employee_id");
+      const type = formData.get("participant_type");
+      const surveyJobId = formData.get("survey_job_id");
+      const role =
+        type === "trainee"
+          ? "Trainee"
+          : type === "monitor"
+            ? "Monitor"
+            : "Surveyor";
 
-    if (surveyJobId) data.survey_job_id = parseInt(surveyJobId as string);
+      await db.post("/survey_participants", {
+        body: {
+          survey_job_id: Number(surveyJobId),
+          employee_id: Number(employeeId),
+          role: role,
+        },
+      });
+      return { success: "Participant added" };
+    }
 
-    const res = await ApiPOST(request, `${host}/job_participants`, data);
-    if (!res.ok) return { error: "Failed to add participant" };
-    return { success: "Participant added" };
-  }
-
-  if (intent === "remove_participant") {
-    const id = formData.get("id");
-    const res = await ApiDELETE(request, `${host}/job_participants?id=eq.${id}`);
-    if (!res.ok) return { error: "Failed to remove participant" };
-    return { success: "Participant removed" };
+    if (intent === "remove_participant") {
+      const participantId = formData.get("id");
+      await db.delete("/survey_participants", {
+        filters: { id: `eq.${participantId}` },
+      });
+      return { success: "Participant removed" };
+    }
+  } catch (error: any) {
+    return { error: error.message || "Failed to perform action" };
   }
 
   return { error: "Unknown action" };
 }
+
 
 export default function RegisterScope() {
   const { surveyJobId, participants, employees } = useLoaderData<typeof loader>();

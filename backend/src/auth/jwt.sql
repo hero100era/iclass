@@ -81,23 +81,19 @@ LANGUAGE plpgsql;
 -- CREATE SCHEMA IF NOT EXISTS api AUTHORIZATION admingrp;
 
 CREATE OR REPLACE FUNCTION api.user_profile(email text, password text)
-  RETURNS json
+  RETURNS TABLE(id integer, role varchar, category varchar)
   AS $$
-DECLARE
-  result json;
 BEGIN
+  RETURN QUERY
   SELECT
-    row_to_json(r) AS users
-  FROM (
-    SELECT
-      *
-    FROM
-      auth.user_profile(email, password)) r INTO result;
-  RETURN result;
+    *
+  FROM
+    auth.user_profile(email, password);
 END;
 $$
 LANGUAGE plpgsql
 SECURITY DEFINER;
+
 
 GRANT usage ON SCHEMA api TO anonymous;
 

@@ -1,5 +1,6 @@
 import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, Link } from "react-router";
-import { ApiGET, ApiPOST, ApiPATCH, ApiDELETE } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, ChevronRight, Network, Settings2, Save, X, Layers } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -24,66 +25,72 @@ interface ActionArgs {
 }
 
 export async function loader({ request }: LoaderArgs) {
-  const host = process.env.API_URL || "http://localhost:2000";
-  const res = await ApiGET(request, `${host}/breakdown_templates?order=code.asc`);
-  let templates: Template[] = [];
-  if (res.ok) {
-    const data = await res.json();
-    templates = Array.isArray(data) ? data : [];
-  }
-  return { templates };
+  const db = await getDb(request);
+  const { data: templates } = await db.get<Template[]>("/breakdown_templates", {
+    order: "name.asc",
+  });
+  return { templates: templates || [] };
 }
 
+
 export async function action({ request }: ActionArgs) {
-  const host = process.env.API_URL || "http://localhost:2000";
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  if (intent === "save_template") {
-    const id = formData.get("id");
-    const code = formData.get("code");
-    const name = formData.get("name");
-    const vessel_type = formData.get("vessel_type");
-    const version = formData.get("version") || "1.0";
-    const description = formData.get("description");
+  try {
+    const db = await getDb(request);
 
-    const data = { code, name, vessel_type, version, description };
+    if (intent === "save_template") {
+      const id = formData.get("id");
+      const code = formData.get("code");
+      const name = formData.get("name");
+      const vessel_type = formData.get("vessel_type");
+      const version = formData.get("version") || "1.0";
+      const description = formData.get("description");
 
-    if (id) {
-      const res = await ApiPATCH(request, `${host}/breakdown_templates?id=eq.${id}`, data);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }));
-        return { success: false, error: err.message || "Failed to update template" };
-      }
-      return { success: true };
-    } else {
-      const res = await ApiPOST(request, `${host}/breakdown_templates`, data);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }));
-        return { success: false, error: err.message || "Failed to create template" };
+      const data = { code, name, vessel_type, version, description };
+
+      if (id) {
+        await db.patch("/breakdown_templates", {
+          filters: { id: `eq.${id}` },
+          body: data,
+        });
+      } else {
+        await db.post("/breakdown_templates", { body: data });
       }
       return { success: true };
     }
-  }
 
-  if (intent === "delete_template") {
-    const id = formData.get("id");
-    const res = await ApiDELETE(request, `${host}/breakdown_templates?id=eq.${id}`);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      return { success: false, error: err.message || "Failed to delete template" };
+    if (intent === "delete_template") {
+      const id = formData.get("id");
+      await db.delete("/breakdown_templates", {
+        filters: { id: `eq.${id}` },
+      });
+      return { success: true };
     }
-    return { success: true };
+  } catch (error: any) {
+    console.error("Action error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to perform action",
+    };
   }
 
   return { error: "Unknown action" };
 }
 
+
 export default function BreakdownTemplatesAdmin() {
   const { templates } = useLoaderData<typeof loader>();
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<{
+    code: string;
+    name: string;
+    vessel_type?: string;
+    version?: string;
+    description?: string;
+  }>({
     code: "",
     name: "",
     vessel_type: "",
@@ -119,7 +126,7 @@ export default function BreakdownTemplatesAdmin() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedTemplate(fresh);
         if (!isEditing) {
-           
+
           setEditForm(fresh);
         }
         prevSelectedTemplateIdRef.current = selectedTemplate.id;
@@ -154,9 +161,9 @@ export default function BreakdownTemplatesAdmin() {
     }
     formData.append("code", editForm.code);
     formData.append("name", editForm.name);
-    formData.append("vessel_type", editForm.vessel_type);
-    formData.append("version", editForm.version);
-    formData.append("description", editForm.description);
+    formData.append("vessel_type", editForm.vessel_type || "");
+    formData.append("version", editForm.version || "1.0");
+    formData.append("description", editForm.description || "");
     submit(formData, { method: "post" });
   };
 

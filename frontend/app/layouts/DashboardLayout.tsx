@@ -7,8 +7,8 @@ import type { Route } from "./+types/DashboardLayout";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
-  const token = session.get("token");
-  const user = await decrypt(token);
+  const jwt = session.get("jwt");
+  const user = await decrypt(jwt);
   return { user };
 }
 
@@ -19,7 +19,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar user={user as { role: string; [key: string]: unknown } | null} />
+      <Sidebar user={user as { role: string;[key: string]: unknown } | null} />
       <main className="pl-64 transition-all duration-300">
         <div className={cn("p-8 mx-auto", isFluid ? "px-6" : "max-w-7xl")}>
           <Outlet />

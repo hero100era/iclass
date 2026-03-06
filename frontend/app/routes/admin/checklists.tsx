@@ -1,5 +1,6 @@
 import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData } from "react-router";
-import { ApiGET, ApiPOST, ApiPATCH, ApiDELETE } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, ChevronRight, ListChecks, Settings2 } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -59,87 +60,120 @@ interface BreakdownNode {
 }
 
 export async function loader({ request }: LoaderArgs) {
-    const host = process.env.API_URL || "http://localhost:2000";
-    const [surveysRes, resultsRes, breakdownNodesRes] = await Promise.all([
-        ApiGET(request, `${host}/survey_pool?select=*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))`),
-        ApiGET(request, `${host}/checklist_results`),
-        ApiGET(request, `${host}/breakdown_template_nodes?select=id,code,name&order=name.asc`)
-    ]);
+    const db = await getDb(request);
+    const [{ data: surveys }, { data: results }, { data: breakdownNodes }] =
+        await Promise.all([
+            db.get<Survey[]>("/survey_pool", {
+                select:
+                    "*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))",
+            }),
+            db.get<any[]>("/checklist_results"),
+            db.get<BreakdownNode[]>("/breakdown_template_nodes", {
+                select: "id,code,name",
+                order: "name.asc",
+            }),
+        ]);
 
     return {
-        surveys: await surveysRes.json(),
-        results: await resultsRes.json(),
-        breakdownNodes: await breakdownNodesRes.json()
+        surveys: surveys || [],
+        results: results || [],
+        breakdownNodes: breakdownNodes || [],
     };
 }
 
+
 export async function action({ request }: ActionArgs) {
-    const host = process.env.API_URL || "http://localhost:2000";
     const formData = await request.formData();
     const intent = formData.get("intent");
 
-    if (intent === "update_item_particulars") {
-        const id = formData.get("id");
-        const particulars = JSON.parse(formData.get("particulars") as string);
+    try {
+        const db = await getDb(request);
 
-        // 1. Delete existing
-        await ApiDELETE(request, `${host}/checklist_item_particulars?checklist_item_id=eq.${id}`);
+        if (intent === "update_item_particulars") {
+            const id = formData.get("id");
+            const particulars = JSON.parse(formData.get("particulars") as string);
 
-        // 2. Insert new
-        if (particulars.length > 0) {
-            const toInsert = particulars.map((p: Record<string, unknown>) => ({
-                checklist_item_id: id,
-                attr_key: p.attr_key || p.key,
-                attr_title: p.attr_title || p.title,
-                data_type: p.data_type || p.type,
-                unit: p.unit || null,
-                default_value: p.default_value || null,
-                selection_options: p.selection_options || null,
-                is_required: p.is_required ?? true,
-                sort_order: p.sort_order ?? 0
-            }));
-            const res = await ApiPOST(request, `${host}/checklist_item_particulars`, toInsert);
-            return { success: res.ok };
+            // 1. Delete existing
+            await db.delete("/checklist_item_particulars", {
+                filters: { checklist_item_id: `eq.${id}` },
+            });
+
+            // 2. Insert new
+            if (particulars.length > 0) {
+                const toInsert = particulars.map((p: Record<string, unknown>) => ({
+                    checklist_item_id: id,
+                    attr_key: p.attr_key || p.key,
+                    attr_title: p.attr_title || p.title,
+                    data_type: p.data_type || p.type,
+                    unit: p.unit || null,
+                    default_value: p.default_value || null,
+                    selection_options: p.selection_options || null,
+                    is_required: p.is_required ?? true,
+                    sort_order: p.sort_order ?? 0,
+                }));
+                await db.post("/checklist_item_particulars", { body: toInsert });
+            }
+            return { success: true };
         }
-        return { success: true };
-    }
 
-    if (intent === "update_item") {
-        const id = formData.get("id");
-        const content = formData.get("content");
-        const breakdown_node_id = formData.get("breakdown_node_id") || null;
-        const res = await ApiPATCH(request, `${host}/checklist_items?id=eq.${id}`, {
-            content,
-            breakdown_template_node_id: breakdown_node_id === "null" ? null : breakdown_node_id
-        });
-        return { success: res.ok };
-    }
+        if (intent === "update_item") {
+            const id = formData.get("id");
+            const content = formData.get("content");
+            const breakdown_node_id = formData.get("breakdown_node_id") || null;
+            await db.patch("/checklist_items", {
+                filters: { id: `eq.${id}` },
+                body: {
+                    content,
+                    breakdown_template_node_id:
+                        breakdown_node_id === "null" ? null : breakdown_node_id,
+                },
+            });
+            return { success: true };
+        }
 
-    if (intent === "delete_item") {
-        const id = formData.get("id");
-        const res = await ApiDELETE(request, `${host}/checklist_items?id=eq.${id}`);
-        return { success: res.ok };
-    }
+        if (intent === "delete_survey") {
+            const surveyId = formData.get("survey_id");
+            await db.delete("/survey_pool", { filters: { id: `eq.${surveyId}` } });
+            return { success: "Survey deleted" };
+        }
 
-    if (intent === "add_item") {
-        const section_id = formData.get("section_id");
-        const item_number = formData.get("item_number");
-        const content = formData.get("content");
-        const res = await ApiPOST(request, `${host}/checklist_items`, { section_id, item_number, content });
-        return { success: res.ok };
-    }
+        if (intent === "delete_item") {
+            const id = formData.get("id");
+            await db.delete("/checklist_items", { filters: { id: `eq.${id}` } });
+            return { success: true };
+        }
 
-    if (intent === "add_section") {
-        const survey_id = formData.get("survey_id");
-        const section_number = formData.get("section_number");
-        const title = formData.get("title");
-        const code = formData.get("survey_code");
-        const res = await ApiPOST(request, `${host}/checklist_sections`, { survey_id, section_number, title, code });
-        return { success: res.ok };
+        if (intent === "add_item") {
+            const section_id = formData.get("section_id");
+            const item_number = formData.get("item_number");
+            const content = formData.get("content");
+            await db.post("/checklist_items", {
+                body: { section_id, item_number, content },
+            });
+            return { success: true };
+        }
+
+        if (intent === "add_section") {
+            const surveyId = formData.get("survey_id");
+            const name = formData.get("name");
+            await db.post("/checklist_sections", {
+                body: {
+                    survey_id: Number(surveyId),
+                    name: name,
+                },
+            });
+            return { success: "Section added" };
+        }
+    } catch (error: any) {
+        return {
+            success: false,
+            error: error.message || "Failed to perform action",
+        };
     }
 
     return { error: "Unknown action" };
 }
+
 
 export default function AdminChecklists() {
     const { surveys, breakdownNodes } = useLoaderData<typeof loader>();
@@ -170,7 +204,7 @@ export default function AdminChecklists() {
 
     useEffect(() => {
         if (selectedSurvey?.id && selectedSurvey.id !== prevSelectedSurveyIdRef.current) {
-            const fresh = surveys.find((s) => s.id === selectedSurvey.id);
+            const fresh = surveys.find((s: Survey) => s.id === selectedSurvey.id);
             if (fresh) {
                 // eslint-disable-next-line react-hooks/set-state-in-effect
                 setSelectedSurvey((prev) => {
@@ -179,13 +213,13 @@ export default function AdminChecklists() {
                     // Preserve items that have temporary IDs (drafts)
                     return {
                         ...fresh,
-                        checklist_sections: fresh.checklist_sections?.map((freshSection) => {
+                        checklist_sections: fresh.checklist_sections?.map((freshSection: ChecklistSection) => {
                             const prevSection = prev.checklist_sections?.find((s) => s.id === freshSection.id);
                             if (!prevSection) return freshSection;
 
                             return {
                                 ...freshSection,
-                                checklist_items: freshSection.checklist_items?.map((freshItem) => {
+                                checklist_items: freshSection.checklist_items?.map((freshItem: ChecklistItem) => {
                                     const prevItem = prevSection.checklist_items?.find((i) => i.id === freshItem.id);
                                     if (!prevItem) return freshItem;
 
@@ -224,7 +258,7 @@ export default function AdminChecklists() {
 
     const handleSaveParticulars = (itemId: number, particulars: ChecklistItemParticular[]) => {
         // Validation: only save if all items have attr_key and attr_title
-        const validParticulars = particulars.filter((p) => (p.attr_key || (p as Record<string, unknown>).key) && (p.attr_title || (p as Record<string, unknown>).title));
+        const validParticulars = particulars.filter((p) => (p.attr_key || (p as unknown as Record<string, unknown>).key) && (p.attr_title || (p as unknown as Record<string, unknown>).title));
         if (validParticulars.length === 0 && particulars.length > 0) return; // Don't save if we added an empty one
 
         const formData = new FormData();
@@ -419,8 +453,8 @@ export default function AdminChecklists() {
                                                             <button
                                                                 disabled={!newItemContent.trim()}
                                                                 onClick={() => {
-                                                                    const nextNum = section.checklist_items.length > 0
-                                                                        ? Math.max(...section.checklist_items.map((i: ChecklistItem) => i.item_number)) + 1
+                                                                    const nextNum = section.checklist_items?.length
+                                                                        ? Math.max(...section.checklist_items?.map((i: ChecklistItem) => i.item_number)) + 1
                                                                         : 1;
                                                                     handleAddItem(section.id, nextNum);
                                                                 }}
@@ -433,7 +467,7 @@ export default function AdminChecklists() {
                                                 )}
 
                                                 <div className="divide-y divide-slate-100">
-                                                    {section.checklist_items.sort((a: ChecklistItem, b: ChecklistItem) => a.item_number - b.item_number).map((item: ChecklistItem) => (
+                                                    {section.checklist_items?.sort((a: ChecklistItem, b: ChecklistItem) => a.item_number - b.item_number).map((item: ChecklistItem) => (
                                                         <div key={item.id} className="px-2 py-2 space-y-2 group/item">
                                                             {editingItemId === item.id ? (
                                                                 <div className="bg-slate-50 p-2 rounded border border-slate-200 space-y-2">
@@ -482,8 +516,8 @@ export default function AdminChecklists() {
                                                                                 <p className="text-[11px] font-medium text-slate-800 leading-tight">{item.content}</p>
                                                                                 {item.breakdown_template_node_id && (
                                                                                     <div className="mt-1 flex items-center gap-1">
-                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter" title={breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}>
-                                                                                            Linked: {breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id}
+                                                                                        <span className="text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold uppercase tracking-tighter" title={breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id?.toString() || ""}>
+                                                                                            Linked: {breakdownNodes.find((c: BreakdownNode) => c.id === item.breakdown_template_node_id)?.name || item.breakdown_template_node_id?.toString() || ""}
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
@@ -493,7 +527,7 @@ export default function AdminChecklists() {
                                                                                     onClick={() => {
                                                                                         setEditingItemId(item.id);
                                                                                         setEditFormContent(item.content);
-                                                                                        setEditBreakdownNodeId(item.breakdown_template_node_id?.toString() || "");
+                                                                                        setEditBreakdownNodeId(item.breakdown_template_node_id ? item.breakdown_template_node_id.toString() : "");
                                                                                     }}
                                                                                     className="p-1 text-slate-400 hover:text-primary transition-colors"
                                                                                     title="Edit Item"
@@ -559,11 +593,11 @@ export default function AdminChecklists() {
                                                                                             type="text"
                                                                                             value={p.attr_key || ""}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, attr_key: e.target.value.toLowerCase().replace(/\s+/g, '_') };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                             className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none font-mono"
                                                                                             placeholder="key_name"
                                                                                         />
@@ -573,11 +607,11 @@ export default function AdminChecklists() {
                                                                                             type="text"
                                                                                             value={p.attr_title || ""}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, attr_title: e.target.value };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                             className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
                                                                                             placeholder="Display Label"
                                                                                         />
@@ -586,7 +620,7 @@ export default function AdminChecklists() {
                                                                                         <select
                                                                                             value={p.data_type || "text"}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, data_type: e.target.value };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                                 handleSaveParticulars(item.id, updated);
@@ -607,11 +641,11 @@ export default function AdminChecklists() {
                                                                                             type="text"
                                                                                             value={p.unit || ""}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, unit: e.target.value };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                             className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
                                                                                             placeholder="unit"
                                                                                         />
@@ -621,12 +655,11 @@ export default function AdminChecklists() {
                                                                                             type="number"
                                                                                             value={p.sort_order ?? 0}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, sort_order: parseInt(e.target.value) || 0 };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
-                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                         />
                                                                                     </div>
                                                                                     <div className="col-span-2">
@@ -634,19 +667,17 @@ export default function AdminChecklists() {
                                                                                             type="text"
                                                                                             value={p.default_value || ""}
                                                                                             onChange={(e) => {
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, default_value: e.target.value };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
-                                                                                            className="w-full text-[9px] px-1 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none"
-                                                                                            placeholder="default"
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                         />
                                                                                     </div>
                                                                                     <div className="col-span-1 flex justify-end">
                                                                                         <button
                                                                                             onClick={() => {
-                                                                                                 const updated = item.checklist_item_particulars.filter((_: ChecklistItemParticular, i: number) => i !== idx);
+                                                                                                const updated = (item.checklist_item_particulars || []).filter((_: ChecklistItemParticular, i: number) => i !== idx);
                                                                                                 handleSaveParticulars(item.id, updated);
                                                                                             }}
                                                                                             className="p-0.5 text-slate-300 hover:text-destructive transition-colors opacity-0 group-hover/prow:opacity-100"
@@ -665,11 +696,11 @@ export default function AdminChecklists() {
                                                                                             value={Array.isArray(p.selection_options) ? p.selection_options.join(", ") : (p.selection_options || "")}
                                                                                             onChange={(e) => {
                                                                                                 const options = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
-                                                                                                const updated = [...item.checklist_item_particulars];
+                                                                                                const updated = [...(item.checklist_item_particulars || [])];
                                                                                                 updated[idx] = { ...p, selection_options: options };
                                                                                                 handleLocalParticularsUpdate(item.id, updated);
                                                                                             }}
-                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars)}
+                                                                                            onBlur={() => handleSaveParticulars(item.id, item.checklist_item_particulars || [])}
                                                                                             className="w-full text-[9px] px-1.5 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-primary/20 outline-none bg-primary/5"
                                                                                         />
                                                                                     </div>

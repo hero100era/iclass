@@ -1,10 +1,10 @@
 import { Search, Plus, Filter, MoreVertical } from "lucide-react";
 import { Link, useLoaderData } from "react-router";
 import { Pagination } from "~/components/Pagination";
-import { ApiGET } from "~/.server/lib/api";
-import { getPaginationFromResponse } from "~/.server/lib/pagination";
+import { getDb } from "../../.server/lib/api";
+
 import { cn } from "~/lib/utils";
-import { type Ship } from "~/definitions/database.types";
+import { type Ship } from "~/definitions/database.iclass.types";
 import type { Route } from "./+types/index";
 
 const ITEM_PER_PAGE = 10;
@@ -15,25 +15,21 @@ export async function loader({ request }: Route.LoaderArgs) {
   const limit = ITEM_PER_PAGE;
   const offset = (page - 1) * limit;
 
-  const host = process.env.API_URL || "http://localhost:2000";
-  const pgrst_query_str = `${host}/ships?limit=${limit}&offset=${offset}`;
+  const db = await getDb(request);
+  const { data: ships, count } = await db.get<Ship[]>("/ships", {
+    limit,
+    offset,
+    prefer: { count: "exact" },
+  });
 
-  try {
-    const res = await ApiGET<Response>(request, pgrst_query_str, {
-      "Prefer": "count=exact"
-    });
+  const totalPages = Math.ceil((count || 0) / limit);
 
-    const vessels: Ship[] = await res.json();
-    const { totalPages } = getPaginationFromResponse(res, limit);
-
-    return { vessels, totalPages, currentPage: page };
-  } catch {
-    return { vessels: [] as Ship[], totalPages: 0, currentPage: page };
-  }
+  return { ships: ships || [], totalPages, currentPage: page };
 }
 
+
 export default function VesselList() {
-  const { vessels, totalPages, currentPage } = useLoaderData<typeof loader>();
+  const { ships, totalPages, currentPage } = useLoaderData<typeof loader>();
 
   const handlePageChange = (page: number) => {
     // Page change handler - would use setSearchParams in a real implementation
@@ -46,7 +42,10 @@ export default function VesselList() {
         <h2 className="text-xl font-semibold">Vessels</h2>
         <div className="flex gap-2 items-center">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+            <Search
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={14}
+            />
             <input
               type="text"
               placeholder="Search vessels..."
@@ -77,22 +76,38 @@ export default function VesselList() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {vessels.map((vessel: Ship) => (
-              <tr key={vessel.id} className="hover:bg-muted/30 transition-colors">
+            {ships.map((vessel: Ship) => (
+              <tr
+                key={vessel.id}
+                className="hover:bg-muted/30 transition-colors"
+              >
                 <td className="px-4 py-2">
-                  <Link to={`/vessels/${vessel.id}`} className="font-medium text-primary hover:underline">
+                  <Link
+                    to={`/vessels/${vessel.id}`}
+                    className="font-medium text-primary hover:underline"
+                  >
                     {vessel.name}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-muted-foreground font-mono text-xs">{vessel.imo_number}</td>
+                <td className="px-4 py-2 text-muted-foreground font-mono text-xs">
+                  {vessel.imo_number}
+                </td>
                 <td className="px-4 py-2">{vessel.flag_code}</td>
                 <td className="px-4 py-2">{vessel.type_iacs}</td>
                 <td className="px-4 py-2">
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium",
-                    vessel.ship_status === "E" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
-                  )}>
-                    {vessel.ship_status === "E" ? "In Service" : vessel.ship_status === "L" ? "Laid Up" : "Withdrawn"}
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium",
+                      vessel.ship_status === "E"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-orange-100 text-orange-700",
+                    )}
+                  >
+                    {vessel.ship_status === "E"
+                      ? "In Service"
+                      : vessel.ship_status === "L"
+                        ? "Laid Up"
+                        : "Withdrawn"}
                   </span>
                 </td>
                 <td className="px-4 py-2">
@@ -108,7 +123,7 @@ export default function VesselList() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          className="border-t bg-muted/10 text-sm"
+          className="border-t bg-muted/10 mt-auto"
         />
       </div>
     </div>

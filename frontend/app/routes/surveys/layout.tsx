@@ -1,30 +1,35 @@
 import { PanelLeft, ChevronRight } from "lucide-react";
 import { useLoaderData, Outlet, useParams, NavLink } from "react-router";
-import { ApiGET } from "~/.server/lib/api";
+import { getDb } from "../../.server/lib/api";
+
 import type { Route } from "./+types/layout";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/components/ui/Accordion";
 import { cn } from "~/lib/utils";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
-    const host = process.env.API_URL || "http://localhost:2000";
+    const db = await getDb(request);
 
     // 1. Get the survey_job record (id is a survey_job id, not a parent job id)
-    const surveyJobRes = await ApiGET(request, `${host}/survey_jobs?id=eq.${id}&select=*,ships(*)`);
-    if (!surveyJobRes.ok) throw new Response("Job not found", { status: 404 });
-    const surveyJobs = await surveyJobRes.json();
-    if (surveyJobs.length === 0) throw new Response("Job not found", { status: 404 });
+    const { data: surveyJobs } = await db.get<any[]>("/survey_jobs", {
+        filters: { id: `eq.${id}` },
+        select: "*,ships(name)",
+    });
+    if (!surveyJobs || surveyJobs.length === 0)
+        throw new Response("Job not found", { status: 404 });
     const surveyJob = surveyJobs[0];
 
     // 2. Load the parent job using surveyJob.job_id
-    const jobRes = await ApiGET(request, `${host}/jobs?id=eq.${surveyJob.job_id}`);
-    if (!jobRes.ok) throw new Response("Job not found", { status: 404 });
-    const jobs = await jobRes.json();
-    if (jobs.length === 0) throw new Response("Job not found", { status: 404 });
+    const { data: jobs } = await db.get<any[]>("/jobs", {
+        filters: { id: `eq.${surveyJob.job_id}` },
+    });
+    if (!jobs || jobs.length === 0)
+        throw new Response("Job not found", { status: 404 });
     const job = jobs[0];
 
     return { job, surveyJob };
 }
+
 
 export default function JobLayout() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

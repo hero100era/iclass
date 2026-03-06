@@ -10,29 +10,19 @@ import {
   MapPin,
   type LucideIcon,
 } from "lucide-react";
-import { ApiGET } from "~/.server/lib/api";
+import { getDb } from "../.server/lib/api";
+
 import type { Route } from "./+types/profile";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const host = process.env.API_URL || "http://localhost:2000";
-  const response = await ApiGET(request, `${host}/me`);
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Response("Unauthorized", { status: 401 });
-    }
-    throw new Response("Failed to fetch user profile", {
-      status: response.status,
-    });
-  }
-
-  const users = await response.json();
+  const db = await getDb(request);
+  const { data: users } = await db.get<any[]>("/me");
   if (!users || users.length === 0) {
     throw new Response("User not found", { status: 404 });
   }
-
   return { user: users[0] };
 }
+
 
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;

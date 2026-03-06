@@ -2,7 +2,8 @@ import React from "react";
 import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLoaderData, useSearchParams, useSubmit } from "react-router";
 import { Pagination } from "~/components/Pagination";
-import { ApiGET, ApiPOST } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import type { Route } from "./+types/index";
 
 const ITEM_PER_PAGE = 10;
@@ -40,23 +41,28 @@ export async function action({ request }: Route.ActionArgs) {
   const shipId = formData.get("shipId");
   const parentId = formData.get("parentId");
 
-  const host = process.env.API_URL || "http://localhost:2000";
+  const db = await getDb(request);
 
   if (actionType === "create_attached_survey") {
-    await ApiPOST(request, `${host}/survey_jobs`, {
-      job_id: Number(jobId),
-      parent_id: Number(parentId),
-      ship_id: shipId ? Number(shipId) : null,
-      description: "Attached Survey"
+    await db.post("/survey_jobs", {
+      body: {
+        job_id: Number(jobId),
+        parent_id: Number(parentId),
+        ship_id: shipId ? Number(shipId) : null,
+        description: "Attached Survey",
+      },
     });
   } else if (actionType === "create_attached_ms") {
-    await ApiPOST(request, `${host}/ms_jobs`, {
-      job_id: Number(jobId),
-      ship_id: shipId ? Number(shipId) : null,
+    await db.post("/ms_jobs", {
+      body: {
+        job_id: Number(jobId),
+        ship_id: shipId ? Number(shipId) : null,
+      },
     });
   }
   return { ok: true };
 }
+
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -64,31 +70,21 @@ export async function loader({ request }: Route.LoaderArgs) {
   const limit = ITEM_PER_PAGE;
   const offset = (page - 1) * limit;
 
-  const host = process.env.API_URL || "http://localhost:2000";
-
-  // We fetch survey_jobs (top-level only) and embed parent's jobs and its sub-jobs
-  const pgrst_query_str = `${host}/survey_jobs?select=*,jobs(*,ms_jobs(*,ships(name),organizations(name)),survey_jobs(*,ships(name))),ships(name)&parent_id=is.null&limit=${limit}&offset=${offset}&order=id.desc`;
-  const res = await ApiGET(request, pgrst_query_str, {
-    "Prefer": "count=exact"
+  const db = await getDb(request);
+  const { data: surveys, count } = await db.get<SurveyJob[]>("/survey_jobs", {
+    select:
+      "*,jobs(*,ms_jobs(*,ships(name),organizations(name)),survey_jobs(*,ships(name))),ships(name)",
+    filters: { parent_id: "is.null" },
+    limit,
+    offset,
+    order: "id.desc",
+    prefer: { count: "exact" },
   });
 
-  if (!res.ok) {
-    return { surveys: [], totalPages: 0, currentPage: page };
-  }
-
-  const surveys: SurveyJob[] = await res.json();
-  const contentRange = res.headers.get("Content-Range");
-  let totalCount = 0;
-  if (contentRange) {
-    const parts = contentRange.split("/");
-    if (parts.length > 1) {
-      totalCount = parseInt(parts[1], 10);
-    }
-  }
-
-  const totalPages = Math.ceil(totalCount / limit);
-  return { surveys, totalPages, currentPage: page, limit };
+  const totalPages = Math.ceil((count || 0) / limit);
+  return { surveys: surveys || [], totalPages, currentPage: page, limit };
 }
+
 
 export default function SurveyDashboard() {
   const { surveys, totalPages, currentPage } = useLoaderData<typeof loader>();

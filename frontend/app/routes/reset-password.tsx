@@ -7,7 +7,9 @@ import {
   useSearchParams,
   Link,
 } from "react-router";
+import { publicApi } from "../.server/lib/api";
 import type { Route } from "./+types/reset-password";
+
 
 const ResetPasswordSchema = z
   .object({
@@ -36,41 +38,29 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const { password } = result.data;
-  const host = process.env.API_URL || "http://localhost:2000";
-  const pgrst_query_str = `${host}/rpc/reset_password`;
-
   try {
-    // Calling API as anonymous is allowed for this RPC
-    const response = await fetch(pgrst_query_str, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const { data: success, status } = await publicApi.rpc<boolean>(
+      "reset_password",
+      {
+        body: {
+          token: token,
+          new_password: password,
+        },
       },
-      body: JSON.stringify({
-        token: token,
-        new_password: password,
-      }),
-    });
+    );
 
-    if (!response.ok) {
-      // RPC returns boolean? Or void?
-      // If RPC returns FALSE, it's 200 OK containing "false".
-      // If error, it's 4xx/5xx.
+    if (status !== 200 || success !== true) {
       return {
         errors: {
-          form: ["Failed to reset password. The link may have expired."],
+          form: ["Invalid or expired token."],
         },
       };
-    }
-
-    const success = await response.json();
-    if (success !== true) {
-      return { errors: { form: ["Invalid or expired token."] } };
     }
 
     // Success
     return redirect("/login");
   } catch (err) {
+
     console.error("Reset Password Error:", err);
     return { errors: { form: ["An unexpected error occurred."] } };
   }

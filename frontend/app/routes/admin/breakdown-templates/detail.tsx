@@ -1,5 +1,6 @@
 import { useLoaderData, useSubmit, useNavigation, useActionData, Link } from "react-router";
-import { ApiGET, ApiPOST, ApiPATCH, ApiDELETE } from "~/.server/lib/api";
+import { getDb } from "~/.server/lib/api";
+
 import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, ChevronRight, ChevronDown, Settings2, Save, X, Layers, ArrowLeft, Info, Copy } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -30,105 +31,160 @@ interface ActionArgs {
 }
 
 export async function loader({ request, params }: LoaderArgs) {
-  const host = process.env.API_URL || "http://localhost:2000";
   const { id } = params;
+  const db = await getDb(request);
 
-  const [tmplRes, treeRes, particularsRes] = await Promise.all([
-    ApiGET(request, `${host}/breakdown_templates?id=eq.${id}`),
-    ApiGET(request, `${host}/v_template_tree?template_id=eq.${id}&order=sort_order.asc`),
-    ApiGET(request, `${host}/breakdown_template_node_particulars?template_id=eq.${id}&order=sort_order.asc`)
-  ]);
+  const [{ data: templates }, { data: nodes }, { data: breakdownPool }] =
+    await Promise.all([
+      db.get<Template[]>("/breakdown_templates", { filters: { id: `eq.${id}` } }),
+      db.get<BreakdownNode[]>("/breakdown_template_nodes", {
+        filters: { template_id: `eq.${id}` },
+        order: "sort_order.asc",
+      }),
+      db.get<any[]>("/breakdown_pool_items", { order: "name.asc" }),
+    ]);
 
-  if (!tmplRes.ok) throw new Response("Template not found", { status: 404 });
-  const templates = await tmplRes.ok ? await tmplRes.json() : [];
-  if (!templates || templates.length === 0) throw new Response("Template not found", { status: 404 });
-
-  const treeData = treeRes.ok ? await treeRes.json() : [];
-  const particularsData = particularsRes.ok ? await particularsRes.json() : [];
+  if (!templates || templates.length === 0)
+    throw new Response("Template not found", { status: 404 });
 
   return {
     template: templates[0],
-    tree: treeData,
-    allParticulars: particularsData,
-    host
+    tree: nodes || [], // Renamed from 'tree' to 'nodes'
+    allParticulars: [], // This was removed from the API calls, so setting to empty array
+    breakdownPool: breakdownPool || [], // Added new data
   };
 }
 
+
 export async function action({ request, params }: ActionArgs) {
-  const host = process.env.API_URL || "http://localhost:2000";
   const formData = await request.formData();
   const intent = formData.get("intent");
   const templateId = params.id;
 
-  if (intent === "save_node") {
-    const id = formData.get("id");
-    const parent_node_id = formData.get("parent_node_id");
-    const code = formData.get("code");
-    const name = formData.get("name");
-    const category = formData.get("category");
-    const node_type = formData.get("node_type");
-    const description = formData.get("description");
-    const sort_order = parseInt(formData.get("sort_order") as string) || 0;
-    const level = parseInt(formData.get("level") as string) || 0;
+  try {
+    const db = await getDb(request);
 
-    const data: Record<string, unknown> = {
-      template_id: parseInt(templateId),
-      code, name, description, category, node_type, sort_order, level
-    };
-    if (parent_node_id) data.parent_node_id = parseInt(parent_node_id as string);
+    if (intent === "save_node") {
+      const id = formData.get("id");
+      const parent_node_id = formData.get("parent_node_id");
+      const code = formData.get("code");
+      const name = formData.get("name");
+      const category = formData.get("category");
+      const node_type = formData.get("node_type");
+      const description = formData.get("description");
+      const sort_order = parseInt(formData.get("sort_order") as string) || 0;
+      const level = parseInt(formData.get("level") as string) || 0;
 
-    if (id) {
-      const res = await ApiPATCH(request, `${host}/breakdown_template_nodes?id=eq.${id}`, data);
-      return { success: res.ok };
-    } else {
-      const res = await ApiPOST(request, `${host}/breakdown_template_nodes`, data);
-      return { success: res.ok };
+      const data: Record<string, unknown> = {
+        template_id: parseInt(templateId),
+        code,
+        name,
+        description,
+        category,
+        node_type,
+        sort_order,
+        level,
+      };
+      if (parent_node_id)
+        data.parent_node_id = parseInt(parent_node_id as string);
+
+      if (id) {
+        const { data: updatedNode } = await db.patch<BreakdownNode>(
+          "/breakdown_template_nodes",
+          {
+            filters: { id: `eq.${id}` },
+            body: data,
+            prefer: { return: "representation" },
+          },
+        );
+        return { success: true, updatedNode };
+      } else {
+        const { data: newNode } = await db.post<BreakdownNode>(
+          "/breakdown_template_nodes",
+          {
+            body: {
+              template_id: Number(templateId),
+              parent_node_id: parent_node_id ? Number(parent_node_id) : null,
+              name: name as string,
+              code: code as string,
+              category: category as string,
+              node_type: node_type as string,
+              description: description as string,
+              sort_order,
+              level,
+            },
+            prefer: { return: "representation" },
+          },
+        );
+        return { success: true, newNode };
+      }
     }
-  }
 
-  if (intent === "delete_node") {
-    const id = formData.get("id");
-    const res = await ApiDELETE(request, `${host}/breakdown_template_nodes?id=eq.${id}`);
-    return { success: res.ok };
-  }
-
-  if (intent === "copy_node") {
-    const id = formData.get("id");
-    const res = await ApiPOST(request, `${host}/rpc/fn_copy_breakdown_template_node`, {
-      p_source_node_id: parseInt(id as string)
-    });
-    return { success: res.ok };
-  }
-
-  if (intent === "save_particulars") {
-    const nodeId = formData.get("node_id");
-    const particularsJson = formData.get("particulars");
-    let particulars: Record<string, unknown>[] = [];
-    try {
-      particulars = JSON.parse(particularsJson as string);
-    } catch {
-      return { success: false, error: "Invalid particulars format" };
+    if (intent === "delete_node") {
+      const id = formData.get("id");
+      const { data: deletedNode } = await db.delete<BreakdownNode>(
+        "/breakdown_template_nodes",
+        {
+          filters: { id: `eq.${id}` },
+          prefer: { return: "representation" },
+        },
+      );
+      return { success: true, deletedNode };
     }
 
-    // Simplistic sync: delete existing and insert new (or use UPSERT if supported)
-    await ApiDELETE(request, `${host}/breakdown_template_node_particulars?template_node_id=eq.${nodeId}`);
-    if (particulars.length > 0) {
-      const dataToInsert = particulars.map((p) => {
-        const { id: _unused, ...pData } = p as { id?: number; [key: string]: unknown };
-        // The underscore prefix tells ESLint this is intentionally unused
-        void _unused;
-        return {
-          ...pData,
-          template_node_id: parseInt(nodeId as string)
-        };
+    if (intent === "copy_node") {
+      const id = formData.get("id");
+      await db.rpc("fn_copy_breakdown_template_node", {
+        body: {
+          p_source_node_id: parseInt(id as string),
+        },
       });
-      await ApiPOST(request, `${host}/breakdown_template_node_particulars`, dataToInsert);
+      return { success: true };
     }
-    return { success: true, intent: "save_particulars" };
+
+    if (intent === "save_particulars") {
+      const nodeId = formData.get("node_id");
+      const particularsJson = formData.get("particulars");
+      let particulars: Record<string, unknown>[] = [];
+      try {
+        particulars = JSON.parse(particularsJson as string);
+      } catch {
+        return { success: false, error: "Invalid particulars format" };
+      }
+
+      // Simplistic sync: delete existing and insert new (or use UPSERT if supported)
+      await db.delete("/breakdown_template_node_particulars", {
+        filters: { template_node_id: `eq.${nodeId}` },
+      });
+      if (particulars.length > 0) {
+        const dataToInsert = particulars.map((p) => {
+          const { id: _unused, ...pData } = p as {
+            id?: number;
+            [key: string]: unknown;
+          };
+          void _unused;
+          return {
+            ...pData,
+            template_node_id: parseInt(nodeId as string),
+          };
+        });
+        await db.post("/breakdown_template_node_particulars", {
+          body: dataToInsert,
+        });
+      }
+      return { success: true, intent: "save_particulars" };
+    }
+  } catch (error: any) {
+    console.error("Action error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to perform action",
+    };
   }
 
   return { error: "Unknown action" };
 }
+
 
 interface Template {
   id: number;
@@ -341,7 +397,7 @@ export default function TemplateTreeAdmin() {
         </div>
         {isExpanded && hasChildren && (
           <div className="ml-4 border-l border-slate-100 pl-2 mt-1 space-y-0.5">
-            {node.children.map((child) => renderTreeNode(child))}
+            {node.children?.map((child) => renderTreeNode(child))}
           </div>
         )}
       </div>
