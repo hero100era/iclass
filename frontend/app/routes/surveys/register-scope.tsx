@@ -120,8 +120,8 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
             const poolId = formData.get("pool_id");
             await db.post("/survey_lines", {
                 body: {
-                    survey_job_id: Number(id),
-                    survey_id: surveyAuditId ? Number(surveyAuditId) : null,
+                    job_id: Number(id),
+                    survey_audit_id: surveyAuditId ? Number(surveyAuditId) : null,
                     pool_id: poolId ? Number(poolId) : null,
                 },
             });

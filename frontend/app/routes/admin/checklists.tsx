@@ -148,18 +148,23 @@ export async function action({ request }: ActionArgs) {
             const item_number = formData.get("item_number");
             const content = formData.get("content");
             await db.post("/checklist_items", {
-                body: { section_id, item_number, content },
+                body: { section_id: Number(section_id), item_number: Number(item_number), content },
             });
             return { success: true };
         }
 
         if (intent === "add_section") {
             const surveyId = formData.get("survey_id");
-            const name = formData.get("name");
+            const surveyCode = formData.get("survey_code");
+            const section_number = formData.get("section_number");
+            const title = formData.get("title");
+            const code = `${(surveyCode as string || "").replace(/\./g, "").substring(0, 2)}${section_number}`.toUpperCase();
             await db.post("/checklist_sections", {
                 body: {
                     survey_id: Number(surveyId),
-                    name: name,
+                    code,
+                    section_number,
+                    title,
                 },
             });
             return { success: "Section added" };

@@ -35,7 +35,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         filters: { is_active: "eq.true" },
         order: "display_name.asc",
       }),
-      db.get<Participant[]>("/survey_participants", {
+      db.get<Participant[]>("/job_participants", {
         filters: { survey_job_id: `eq.${id}` },
         select: "*,employees(*)",
       }),
@@ -62,18 +62,13 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
       const employeeId = formData.get("employee_id");
       const type = formData.get("participant_type");
       const surveyJobId = formData.get("survey_job_id");
-      const role =
-        type === "trainee"
-          ? "Trainee"
-          : type === "monitor"
-            ? "Monitor"
-            : "Surveyor";
 
-      await db.post("/survey_participants", {
+      await db.post("/job_participants", {
         body: {
           survey_job_id: Number(surveyJobId),
           employee_id: Number(employeeId),
-          role: role,
+          is_trainee: type === "trainee",
+          is_monitor: type === "monitor",
         },
       });
       return { success: "Participant added" };
@@ -81,7 +76,7 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
 
     if (intent === "remove_participant") {
       const participantId = formData.get("id");
-      await db.delete("/survey_participants", {
+      await db.delete("/job_participants", {
         filters: { id: `eq.${participantId}` },
       });
       return { success: "Participant removed" };

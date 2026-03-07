@@ -66,6 +66,44 @@ export type FilterOperator =
   | `not.plfts.${string}`
   | `not.phfts.${string}`
   | `not.wfts.${string}`
+  // ─── Operator Modifiers: any / all ───────────────────────────────────
+  // Ref: https://docs.postgrest.org/en/v14/references/api/tables_views.html#operator-modifiers
+  // Syntax: operator(any).{val1,val2}  or  operator(all).{val1,val2}
+  // any → true if the condition holds for ANY value in the set  (SQL: col = ANY(ARRAY[...]))
+  // all → true if the condition holds for ALL values in the set (SQL: col = ALL(ARRAY[...]))
+  | `eq(any).{${string}}`
+  | `eq(all).{${string}}`
+  | `neq(any).{${string}}`
+  | `neq(all).{${string}}`
+  | `gt(any).{${string}}`
+  | `gt(all).{${string}}`
+  | `gte(any).{${string}}`
+  | `gte(all).{${string}}`
+  | `lt(any).{${string}}`
+  | `lt(all).{${string}}`
+  | `lte(any).{${string}}`
+  | `lte(all).{${string}}`
+  | `like(any).{${string}}`
+  | `like(all).{${string}}`
+  | `ilike(any).{${string}}`
+  | `ilike(all).{${string}}`
+  | `match(any).{${string}}`
+  | `match(all).{${string}}`
+  | `imatch(any).{${string}}`
+  | `imatch(all).{${string}}`
+  // Negated modifier variants
+  | `not.eq(any).{${string}}`
+  | `not.eq(all).{${string}}`
+  | `not.neq(any).{${string}}`
+  | `not.neq(all).{${string}}`
+  | `not.like(any).{${string}}`
+  | `not.like(all).{${string}}`
+  | `not.ilike(any).{${string}}`
+  | `not.ilike(all).{${string}}`
+  | `not.match(any).{${string}}`
+  | `not.match(all).{${string}}`
+  | `not.imatch(any).{${string}}`
+  | `not.imatch(all).{${string}}`
   | string; // fallback for complex expressions
 
 // ─── Order Direction ─────────────────────────────────────────────────
@@ -153,11 +191,20 @@ export interface ServerApiOptions {
    * - Column selection: 'id,title'
    * - Renaming: 'fullName:full_name'
    * - Casting: 'id::text'
-   * - JSON access: 'data->key', 'data->>key'
+   * - JSON/JSONB field access (text): 'data->>key'  (returns the value as text)
+   * - JSON/JSONB field access (json): 'data->key'   (returns the value as JSON)
+   * - Nested JSON path: 'data->phones->0->>number'
+   * - Composite/array fields: 'location->>lat,location->>long,languages->0'
    * - Resource embedding: 'id,title,comments(id,body)'
    * - Spread embedding: 'id,...categories(name)'
    * - Embedding with hints: 'id,title,comments!inner(body)'
    * - Top-level ordering of embedded: 'id,comments(id,body).order(id.desc)'
+   *
+   * @example
+   * // Access JSON sub-fields
+   * select: 'id,json_data->>blood_type,json_data->phones'
+   * // Nested path
+   * select: 'id,json_data->phones->0->>number'
    */
   select?: string;
 
@@ -165,6 +212,9 @@ export interface ServerApiOptions {
    * Ordering columns with direction.
    * Can be string or array of strings.
    * e.g., 'created_at.desc.nullslast' or ['priority.asc', 'created_at.desc']
+   *
+   * JSON/JSONB column paths are supported as the column name:
+   * e.g., 'json_data->>age.desc' or 'json_data->score.asc.nullslast'
    */
   order?: OrderDirection | OrderDirection[];
 
@@ -186,7 +236,17 @@ export interface ServerApiOptions {
 
   /**
    * Column-level filters.
-   * e.g., { id: 'eq.5', name: 'ilike.*search*' }
+   * The key is the column name (or JSON path) and the value is a PostgREST filter operator.
+   *
+   * Plain columns:
+   * @example { id: 'eq.5', name: 'ilike.*search*' }
+   *
+   * JSON/JSONB column paths — use `->>` to compare as text, `->` to compare as JSON:
+   * @example { 'json_data->>blood_type': 'eq.A-' }   // text comparison
+   * @example { 'json_data->age': 'gt.20' }            // numeric/JSON comparison
+   *
+   * Tip: use the `filter.jsonPath()` helper to build the key safely:
+   * @example filters: { [filter.jsonPath('json_data', 'blood_type', 'text')]: 'eq.A-' }
    */
   filters?: Record<string, FilterOperator>;
 
@@ -577,6 +637,21 @@ export function createServerApi(jwt: string) {
      *   range: [0, 24],
      *   prefer: { count: 'exact' },
      * });
+     *
+     * // JSON/JSONB column — select sub-fields, filter and order by them
+     * // Ref: https://docs.postgrest.org/en/v14/references/api/tables_views.html#json-columns
+     * const { data } = await db.get<Person[]>('/people', {
+     *   select: 'id,json_data->>blood_type,json_data->phones',
+     *   filters: { 'json_data->>blood_type': 'eq.A-' },
+     *   order: 'json_data->>age.desc',
+     * });
+     *
+     * // Using the filter.jsonPath() helper for the key:
+     * const { data } = await db.get<Person[]>('/people', {
+     *   select: 'id,json_data->age',
+     *   filters: { [filter.jsonPath('json_data', 'age')]: 'gt.20' },
+     *   order: filter.jsonPath('json_data', 'age') + '.asc',
+     * });
      */
     get<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
       return request<T>(jwt, 'GET', path, options);
@@ -840,6 +915,7 @@ export function createServerApi(jwt: string) {
 
 // ─── Convenience: Filter builder ────────────────────────────────────
 // Helper for building complex filter expressions programmatically.
+// Ref: https://docs.postgrest.org/en/v14/references/api/tables_views.html#operators
 
 export const filter = {
   eq: (value: string | number | boolean): FilterOperator => `eq.${value}`,
@@ -880,6 +956,50 @@ export const filter = {
 
   /** Build AND expression for use in `and` parameter */
   and: (...conditions: string[]): string => `(${conditions.join(",")})`,
+
+  /**
+   * Build a JSON/JSONB column path for use as a filter key, order value, or select expression.
+   * Ref: https://docs.postgrest.org/en/v14/references/api/tables_views.html#json-columns
+   *
+   * @param column  - The base column name (e.g. 'json_data')
+   * @param path    - Dot-separated path to the nested key (e.g. 'address.city' or 'age')
+   * @param cast    - 'text'  → uses ->> (extracts as text, use for string/text comparisons)
+   *                  'json'  → uses ->  (extracts as JSON/native type, use for numeric comparisons)
+   *                  Defaults to 'text' (->>).
+   *
+   * @example
+   * // Filter: blood type text comparison
+   * filters: { [filter.jsonPath('json_data', 'blood_type')]: 'eq.A-' }
+   * // → ?json_data->>blood_type=eq.A-
+   *
+   * // Filter: numeric age comparison
+   * filters: { [filter.jsonPath('json_data', 'age', 'json')]: 'gt.20' }
+   * // → ?json_data->age=gt.20
+   *
+   * // Nested path: phones[0].number
+   * filter.jsonPath('json_data', 'phones->0->number', 'text')
+   * // → json_data->phones->0->>number
+   *
+   * // Use in order:
+   * order: filter.jsonPath('json_data', 'age') + '.desc'
+   * // → json_data->>age.desc
+   */
+  jsonPath: (column: string, path: string, cast: 'text' | 'json' = 'text'): string => {
+    // Split on dots to build arrow chain; last segment uses ->> for text, -> for JSON
+    const segments = path.split('.');
+    if (segments.length === 1 && !path.includes('->')) {
+      // Simple single-key path
+      const arrow = cast === 'text' ? '->>' : '->';
+      return `${column}${arrow}${path}`;
+    }
+    // Multi-segment or already arrow-separated: build chain
+    // Intermediate segments always use ->, last uses ->> (text) or -> (json)
+    const parts = path.split('.');
+    const last = parts.pop()!;
+    const middle = parts.map(p => `->${p}`).join('');
+    const lastArrow = cast === 'text' ? '->>' : '->';
+    return `${column}${middle}${lastArrow}${last}`;
+  },
 } as const;
 
 /**
