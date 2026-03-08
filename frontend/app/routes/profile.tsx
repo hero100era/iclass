@@ -10,7 +10,7 @@ import {
   MapPin,
   type LucideIcon,
 } from "lucide-react";
-import { getDb } from "../.server/lib/api";
+import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/profile";
 

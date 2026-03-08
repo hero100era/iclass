@@ -2,7 +2,8 @@ import React from "react";
 import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLoaderData, useSearchParams, useSubmit } from "react-router";
 import { Pagination } from "~/components/Pagination";
-import { getDb } from "~/.server/lib/api";
+import { getDb, filter, type FilterOperator } from "~/.server/lib/api";
+import { cn } from "~/lib/utils";
 
 import type { Route } from "./+types/index";
 
@@ -67,14 +68,21 @@ export async function action({ request }: Route.ActionArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
+  const search = url.searchParams.get("search") || "";
   const limit = ITEM_PER_PAGE;
   const offset = (page - 1) * limit;
 
   const db = await getDb(request);
+
+  const filters: Record<string, FilterOperator> = { parent_id: "is.null" };
+  if (search) {
+    filters["jobs.location"] = filter.ilike(`*${search}*`);
+  }
+
   const { data: surveys, count } = await db.get<SurveyJob[]>("/survey_jobs", {
     select:
       "*,jobs(*,ms_jobs(*,ships(name),organizations(name)),survey_jobs(*,ships(name))),ships(name)",
-    filters: { parent_id: "is.null" },
+    filters,
     limit,
     offset,
     order: "id.desc",
@@ -82,12 +90,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   });
 
   const totalPages = Math.ceil((count || 0) / limit);
-  return { surveys: surveys || [], totalPages, currentPage: page, limit };
+  return { surveys: surveys || [], totalPages, currentPage: page, limit, search };
 }
 
 
 export default function SurveyDashboard() {
-  const { surveys, totalPages, currentPage } = useLoaderData<typeof loader>();
+  const { surveys, totalPages, currentPage, search } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
   const [expandedJobs, setExpandedJobs] = React.useState<Record<number, boolean>>({});
   const submit = useSubmit();
@@ -95,6 +103,14 @@ export default function SurveyDashboard() {
   const handlePageChange = (page: number) => {
     setSearchParams((prev) => {
       prev.set("page", page.toString());
+      return prev;
+    });
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchParams((prev) => {
+      prev.set("search", e.target.value);
+      prev.set("page", "1");
       return prev;
     });
   };
@@ -131,6 +147,8 @@ export default function SurveyDashboard() {
           <input
             type="text"
             placeholder="Search surveys by location..."
+            value={search}
+            onChange={handleSearch}
             className="w-full pl-10 pr-4 py-1.5 text-sm border rounded-lg bg-card focus:ring-2 focus:ring-primary/20 outline-none transition-shadow"
           />
         </div>
@@ -302,8 +320,4 @@ function getStatusColor(status?: string) {
     case "cancelled": return "bg-gray-100 text-gray-700";
     default: return "bg-muted text-muted-foreground";
   }
-}
-
-function cn(...classes: (string | boolean | undefined | null)[]) {
-  return classes.filter(Boolean).join(' ');
 }

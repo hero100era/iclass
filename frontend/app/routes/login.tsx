@@ -2,7 +2,7 @@ import { z } from "zod";
 import { redirect, Link, Form } from "react-router";
 import { getSession, commitSession } from "~/.server/lib/sessions";
 import { encrypt } from "~/.server/lib/jwt";
-import { publicApi } from "../.server/lib/api";
+import { publicApi } from "~/.server/lib/api";
 
 import { LoginFormSchema } from "~/definitions/auth_scheme";
 import type { Route } from "./+types/login";

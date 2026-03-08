@@ -1,6 +1,7 @@
 import { getSession } from "./sessions";
+import { getEnvOrDefault } from "./env";
 
-const POSTGREST_URL = process.env.POSTGREST_URL || 'http://127.0.0.1:2000';
+const POSTGREST_URL = getEnvOrDefault("API_URL", "http://127.0.0.1:2000");
 
 export async function getDb(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));

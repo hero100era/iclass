@@ -16,4 +16,13 @@ function getEnvOrDieInProduction(key: string) {
   return result;
 }
 
-export { getEnvOrDie, getEnvOrDieInProduction };
+function getEnvOrDefault(key: string, defaultValue: string): string {
+  return process.env[key] || defaultValue;
+}
+
+function getEnvAsInt(key: string, defaultValue: number): number {
+  const value = process.env[key];
+  return value ? parseInt(value, 10) : defaultValue;
+}
+
+export { getEnvOrDie, getEnvOrDieInProduction, getEnvOrDefault, getEnvAsInt };

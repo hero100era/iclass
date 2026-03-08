@@ -3,7 +3,7 @@ import { Link, Form, useActionData, useNavigation } from "react-router";
 import { Resend } from "resend";
 import { encrypt } from "~/.server/lib/jwt";
 import { getEnvOrDie } from "~/.server/lib/env";
-import { createServerApi } from "../.server/lib/api";
+import { createServerApi } from "~/.server/lib/api";
 import type { Route } from "./+types/forgot-password";
 
 

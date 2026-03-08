@@ -7,7 +7,7 @@ import {
   useSearchParams,
   Link,
 } from "react-router";
-import { publicApi } from "../.server/lib/api";
+import { publicApi } from "~/.server/lib/api";
 import type { Route } from "./+types/reset-password";
 
 

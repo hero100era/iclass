@@ -1,7 +1,7 @@
 import { Search, Plus, Filter, MoreVertical } from "lucide-react";
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
-import { getDb } from "../../.server/lib/api";
+import { getDb, filter, type FilterOperator } from "~/.server/lib/api";
 
 import { cn } from "~/lib/utils";
 import { type Ship } from "~/definitions/database.iclass.types";
@@ -12,11 +12,19 @@ const ITEM_PER_PAGE = 10;
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
+  const search = url.searchParams.get("search") || "";
   const limit = ITEM_PER_PAGE;
   const offset = (page - 1) * limit;
 
   const db = await getDb(request);
+  
+  const filters: Record<string, FilterOperator> = {};
+  if (search) {
+    filters.name = filter.ilike(`*${search}*`);
+  }
+
   const { data: ships, count } = await db.get<Ship[]>("/ships", {
+    ...(Object.keys(filters).length > 0 && { filters }),
     limit,
     offset,
     prefer: { count: "exact" },
@@ -24,16 +32,27 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const totalPages = Math.ceil((count || 0) / limit);
 
-  return { ships: ships || [], totalPages, currentPage: page };
+  return { ships: ships || [], totalPages, currentPage: page, search };
 }
 
 
 export default function VesselList() {
-  const { ships, totalPages, currentPage } = useLoaderData<typeof loader>();
+  const { ships, totalPages, currentPage, search } = useLoaderData<typeof loader>();
+  const [, setSearchParams] = useSearchParams();
 
   const handlePageChange = (page: number) => {
-    // Page change handler - would use setSearchParams in a real implementation
-    console.log("Navigate to page:", page);
+    setSearchParams((prev) => {
+      prev.set("page", page.toString());
+      return prev;
+    });
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchParams((prev) => {
+      prev.set("search", e.target.value);
+      prev.set("page", "1");
+      return prev;
+    });
   };
 
   return (
@@ -49,6 +68,8 @@ export default function VesselList() {
             <input
               type="text"
               placeholder="Search vessels..."
+              value={search}
+              onChange={handleSearch}
               className="w-64 pl-8 pr-3 py-1.5 text-sm border rounded-md bg-card focus:ring-2 focus:ring-primary/20 outline-none"
             />
           </div>
