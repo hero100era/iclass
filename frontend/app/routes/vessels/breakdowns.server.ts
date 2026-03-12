@@ -1,5 +1,11 @@
-import { getDb } from "../../.server/lib/api";
-import type { Ship, ShipBreakdown, BreakdownTemplate, ShipBreakdownNodeParticular, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
+import { getDb } from "~/.server/lib/api";
+import type {
+  Ship,
+  ShipBreakdown,
+  BreakdownTemplate,
+  ShipBreakdownNodeParticular,
+  BreakdownTemplateNode,
+} from "~/definitions/database.iclass.types";
 
 interface LoaderArgs {
   request: Request;
@@ -43,10 +49,13 @@ export async function loader({ request, params }: LoaderArgs) {
         filters: { ship_breakdown_id: `eq.${activeBreakdown.id}` },
         order: "sort_order.asc",
       }),
-      db.get<ShipBreakdownNodeParticular[]>("/ship_breakdown_node_particulars", {
-        filters: { ship_breakdown_id: `eq.${activeBreakdown.id}` },
-        order: "sort_order.asc",
-      }),
+      db.get<ShipBreakdownNodeParticular[]>(
+        "/ship_breakdown_node_particulars",
+        {
+          filters: { ship_breakdown_id: `eq.${activeBreakdown.id}` },
+          order: "sort_order.asc",
+        },
+      ),
     ]);
     tree = treeData || [];
     allParticulars = particularsData || [];
@@ -54,13 +63,16 @@ export async function loader({ request, params }: LoaderArgs) {
 
   let templateNodes: BreakdownTemplateNode[] = [];
   if (activeBreakdown?.template_id) {
-    const { data: nodes } = await db.get<BreakdownTemplateNode[]>("/breakdown_template_nodes", {
-      filters: {
-        template_id: `eq.${activeBreakdown.template_id}`,
-        is_active: "eq.true",
+    const { data: nodes } = await db.get<BreakdownTemplateNode[]>(
+      "/breakdown_template_nodes",
+      {
+        filters: {
+          template_id: `eq.${activeBreakdown.template_id}`,
+          is_active: "eq.true",
+        },
+        order: "code.asc",
       },
-      order: "code.asc",
-    });
+    );
     templateNodes = nodes || [];
   }
 
@@ -253,7 +265,8 @@ export async function action({ request, params }: ActionArgs) {
   } catch (error: unknown) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to perform action",
+      error:
+        error instanceof Error ? error.message : "Failed to perform action",
     };
   }
 

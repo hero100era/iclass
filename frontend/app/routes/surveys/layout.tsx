@@ -1,6 +1,6 @@
 import { PanelLeft, ChevronRight } from "lucide-react";
 import { useLoaderData, Outlet, useParams, NavLink } from "react-router";
-import { getDb } from "../../.server/lib/api";
+import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/layout";
 import {

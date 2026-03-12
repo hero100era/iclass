@@ -9,18 +9,21 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.8",
     "@react-router/node": "^7.13.1",
     "@react-router/serve": "^7.13.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "isbot": "^5.1.35",
     "jose": "^6.2.0",
-    "lucide-react": "^0.548.0",
+    "lucide-react": "^0.577.0",
     "pg-to-ts": "^4.1.1",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router": "^7.13.1",
     "resend": "^4.8.0",
+    "shadcn": "^4.0.5",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
