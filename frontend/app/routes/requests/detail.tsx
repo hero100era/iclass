@@ -25,8 +25,40 @@ interface CartItem {
   survey_audit_id?: number;
   comment_id?: number;
   occ_survey_code?: string;
-  survey_audits?: { cert_code?: string };
-  [key: string]: unknown;
+  survey_audits?: {
+    code?: string;
+    description?: string;
+    range_from_date?: string;
+    range_to_date?: string;
+  }[];
+  finding_comments?: {
+    comment_type?: string;
+    text?: string;
+    due_date?: string;
+    status?: string;
+  }[];
+}
+
+interface SurveyRequest {
+  id: number;
+  ships?: { name: string; imo_number: string }[];
+  organizations?: { name: string }[];
+  created_at?: string;
+  contact_email?: string;
+  contact_person?: string;
+  contact_phone?: string;
+  location?: string;
+  estimated_date?: string;
+}
+
+interface SurveyRequestCart {
+  id: number;
+  survey_request_id: number;
+  survey_audit_id?: number;
+  comment_id?: number;
+  occ_survey_code?: string;
+  survey_audits?: { cert_code?: string; code?: string; description?: string; range_from_date?: string; range_to_date?: string }[];
+  finding_comments?: { comment_type?: string; text?: string; due_date?: string; status?: string }[];
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -35,16 +67,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const [{ data: requests }, { data: cartItems }, { data: employees }] =
     await Promise.all([
-      db.get<any[]>("/survey_requests", {
+      db.get<SurveyRequest[]>("/survey_requests", {
         filters: { id: `eq.${id}` },
         select: "*,ships(name,imo_number),organizations(name)",
       }),
-      db.get<any[]>("/survey_request_carts", {
+      db.get<SurveyRequestCart[]>("/survey_request_carts", {
         filters: { survey_request_id: `eq.${id}` },
         select:
           "*,survey_audits!survey_audit_id(*),finding_comments!comment_id(*)",
       }),
-      db.get<any[]>("/employees", {
+      db.get<Employee[]>("/employees", {
         filters: { is_active: "eq.true" },
         order: "display_name.asc",
       }),
@@ -82,8 +114,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
 
     return redirect("/requests");
-  } catch (error: any) {
-    return { error: error.message || "Failed to convert request to job" };
+  } catch (error: unknown) {
+    return { error: error instanceof Error ? error.message : "Failed to convert request to job" };
   }
 }
 
@@ -93,12 +125,12 @@ export default function RequestDetail() {
   const actionData = useActionData<typeof action>();
 
   const surveyItems = cartItems.filter(
-    (item: CartItem) => item.survey_audit_id || item.occ_survey_code,
+    (item: SurveyRequestCart) => item.survey_audit_id || item.occ_survey_code,
   );
-  const findingItems = cartItems.filter((item: CartItem) => item.comment_id);
+  const findingItems = cartItems.filter((item: SurveyRequestCart) => item.comment_id);
 
-  const hasAuditItems = cartItems.some((item: CartItem) =>
-    ["SMC", "ISPS", "MLC", "DOC"].includes(item.survey_audits?.cert_code || ""),
+  const hasAuditItems = cartItems.some((item) =>
+    ["SMC", "ISPS", "MLC", "DOC"].includes(item.survey_audits?.[0]?.cert_code || ""),
   );
   // More generically, use the is_audit flag from backend if possible, but here we'll just check if auditor assignment is needed.
   const needsAuditor = hasAuditItems;
@@ -118,7 +150,7 @@ export default function RequestDetail() {
           </h2>
           <p className="text-muted-foreground">
             Request ID: #{requestItem.id} • Submitted on{" "}
-            {new Date(requestItem.created_at).toLocaleDateString()}
+            {requestItem.created_at ? new Date(requestItem.created_at).toLocaleDateString() : "N/A"}
           </p>
         </div>
       </div>
@@ -140,9 +172,9 @@ export default function RequestDetail() {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Vessel
                 </h3>
-                <p className="text-xl font-bold">{requestItem.ships?.name}</p>
+                <p className="text-xl font-bold">{requestItem.ships?.[0]?.name}</p>
                 <p className="text-sm text-muted-foreground font-mono">
-                  IMO: {requestItem.ships?.imo_number}
+                  IMO: {requestItem.ships?.[0]?.imo_number}
                 </p>
               </div>
               <div>
@@ -150,7 +182,7 @@ export default function RequestDetail() {
                   Company
                 </h3>
                 <p className="text-xl font-bold">
-                  {requestItem.organizations?.name}
+                  {requestItem.organizations?.[0]?.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Email: {requestItem.contact_email}
@@ -212,20 +244,20 @@ export default function RequestDetail() {
                       className="hover:bg-muted/30 transition-colors"
                     >
                       <td className="px-6 py-4 font-mono text-sm">
-                        {(item.survey_audits as any)?.code ||
+                        {item.survey_audits?.[0]?.code ||
                           item.occ_survey_code}
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium">
-                          {(item.survey_audits as any)?.description ||
+                          {item.survey_audits?.[0]?.description ||
                             "Occasional Survey"}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {item.survey_audits ? (
                           <span>
-                            {(item.survey_audits as any)?.range_from_date} -{" "}
-                            {(item.survey_audits as any)?.range_to_date}
+                            {item.survey_audits?.[0]?.range_from_date} -{" "}
+                            {item.survey_audits?.[0]?.range_to_date}
                           </span>
                         ) : (
                           <span className="italic">Occasional item</span>
@@ -269,22 +301,22 @@ export default function RequestDetail() {
                     >
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                          {(item.finding_comments as any)?.comment_type}
+                          {item.finding_comments?.[0]?.comment_type}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm leading-relaxed">
-                          {(item.finding_comments as any)?.text}
+                          {item.finding_comments?.[0]?.text}
                         </p>
-                        {(item.finding_comments as any)?.due_date && (
+                        {item.finding_comments?.[0]?.due_date && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Due: {(item.finding_comments as any)?.due_date}
+                            Due: {item.finding_comments?.[0]?.due_date}
                           </p>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm font-medium">
-                          {(item.finding_comments as any)?.status}
+                          {item.finding_comments?.[0]?.status}
                         </span>
                       </td>
                     </tr>

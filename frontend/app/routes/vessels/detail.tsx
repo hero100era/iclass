@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router";
 import {
-  Ship,
+  Ship as ShipIcon,
   MapPin,
   Calendar,
   Ruler,
@@ -35,6 +35,10 @@ import {
 import { CartDrawer, FloatingCartButton } from "~/components/CartDrawer";
 import { getSession } from "~/.server/lib/sessions";
 import { decrypt } from "~/.server/lib/jwt";
+import type {
+  Document,
+  SurveyRequest,
+} from "~/definitions/database.iclass.types";
 
 interface Certificate {
   id: number;
@@ -47,8 +51,9 @@ interface Certificate {
 
 interface Survey {
   id: number;
-  code: string;
-  description: string;
+  certificate_id?: number;
+  code?: string;
+  description?: string;
   last_held_date?: string;
   place_held?: string;
   next_due_date?: string;
@@ -115,7 +120,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     db.get<Certificate[]>("/certificates", {
       filters: { ship_id: `eq.${params.id}` },
     }),
-    db.get<any[]>("/documents", { filters: { ship_id: `eq.${params.id}` } }),
+    db.get<Document[]>("/documents", {
+      filters: { ship_id: `eq.${params.id}` },
+    }),
     db.get<Finding[]>("/finding_comments", {
       filters: { ship_id: `eq.${params.id}` },
     }),
@@ -144,7 +151,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   };
 }
 
-
 export async function action({ request }: Route.ActionArgs) {
   const db = await getDb(request);
   const session = await getSession(request.headers.get("Cookie"));
@@ -159,13 +165,16 @@ export async function action({ request }: Route.ActionArgs) {
     const { requestData, cartItems } = payload;
 
     try {
-      const { data: newRequests } = await db.post<any[]>("/survey_requests", {
-        body: {
-          ...requestData,
-          ordered_by_id: userId,
+      const { data: newRequests } = await db.post<SurveyRequest[]>(
+        "/survey_requests",
+        {
+          body: {
+            ...requestData,
+            ordered_by_id: userId,
+          },
+          prefer: { return: "representation" },
         },
-        prefer: { return: "representation" },
-      });
+      );
 
       if (!newRequests || newRequests.length === 0) {
         throw new Error("Failed to create survey request");
@@ -183,17 +192,19 @@ export async function action({ request }: Route.ActionArgs) {
       await db.post("/survey_request_carts", { body: cartPayload });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to process survey request",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process survey request",
       };
     }
   }
 
   return { success: false, error: "Invalid intent" };
 }
-
 
 export default function VesselDetail() {
   return (
@@ -300,7 +311,11 @@ function VesselDetailContent() {
             </AccordionTrigger>
             <AccordionContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <GridItem label="Vessel Name" value={vessel.name} icon={Ship} />
+                <GridItem
+                  label="Vessel Name"
+                  value={vessel.name}
+                  icon={ShipIcon}
+                />
                 <GridItem
                   label="IMO Number"
                   value={vessel.imo_number}
@@ -366,7 +381,7 @@ function VesselDetailContent() {
                 <GridItem
                   label="Registered Owner"
                   value={vessel.owner_name}
-                  icon={Ship}
+                  icon={ShipIcon}
                 />
               </div>
             </AccordionContent>
@@ -536,12 +551,13 @@ function VesselDetailContent() {
                                 handleToggleCartItem(survey, "survey")
                               }
                               disabled={survey.is_ordered}
-                              className={`p-1.5 rounded-md transition-colors ${survey.is_ordered
-                                ? "bg-slate-50 text-slate-300 cursor-not-allowed"
-                                : isItemSelected(survey.id, "survey")
-                                  ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                }`}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                survey.is_ordered
+                                  ? "bg-slate-50 text-slate-300 cursor-not-allowed"
+                                  : isItemSelected(survey.id, "survey")
+                                    ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
                               title={
                                 survey.is_ordered
                                   ? "Already Ordered"
@@ -699,10 +715,11 @@ function VesselDetailContent() {
                             onClick={() =>
                               handleToggleCartItem(finding, "finding")
                             }
-                            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isItemSelected(finding.id, "finding")
-                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                              : "bg-[#005EAA]/10 text-[#005EAA] hover:bg-[#005EAA]/20"
-                              }`}
+                            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                              isItemSelected(finding.id, "finding")
+                                ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                : "bg-[#005EAA]/10 text-[#005EAA] hover:bg-[#005EAA]/20"
+                            }`}
                           >
                             {isItemSelected(finding.id, "finding") ? (
                               <>

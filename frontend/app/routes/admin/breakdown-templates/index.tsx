@@ -68,11 +68,11 @@ export async function action({ request }: ActionArgs) {
       });
       return { success: true };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Action error:", error);
     return {
       success: false,
-      error: error.message || "Failed to perform action",
+      error: error instanceof Error ? error.message : "Failed to perform action",
     };
   }
 

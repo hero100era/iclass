@@ -20,6 +20,13 @@ interface BreakdownNode {
   children?: BreakdownNode[];
 }
 
+interface BreakdownPoolItem {
+  id: number;
+  name: string;
+  code: string;
+  category: string | null;
+}
+
 interface LoaderArgs {
   request: Request;
   params: { id: string };
@@ -41,7 +48,7 @@ export async function loader({ request, params }: LoaderArgs) {
         filters: { template_id: `eq.${id}` },
         order: "sort_order.asc",
       }),
-      db.get<any[]>("/breakdown_pool_items", { order: "name.asc" }),
+      db.get<BreakdownPoolItem[]>("/breakdown_pool_items", { order: "name.asc" }),
     ]);
 
   if (!templates || templates.length === 0)
@@ -174,11 +181,11 @@ export async function action({ request, params }: ActionArgs) {
       }
       return { success: true, intent: "save_particulars" };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Action error:", error);
     return {
       success: false,
-      error: error.message || "Failed to perform action",
+      error: error instanceof Error ? error.message : "Failed to perform action",
     };
   }
 

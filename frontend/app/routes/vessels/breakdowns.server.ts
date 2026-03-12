@@ -1,4 +1,5 @@
 import { getDb } from "../../.server/lib/api";
+import type { Ship, ShipBreakdown, BreakdownTemplate, ShipBreakdownNodeParticular, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
 
 interface LoaderArgs {
   request: Request;
@@ -16,14 +17,14 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const [{ data: vessels }, { data: activeBreakdowns }, { data: templates }] =
     await Promise.all([
-      db.get<any[]>("/ships", {
+      db.get<Ship[]>("/ships", {
         filters: { id: `eq.${vesselId}` },
         select: "id,name,imo_number",
       }),
-      db.get<any[]>("/ship_breakdowns", {
+      db.get<ShipBreakdown[]>("/ship_breakdowns", {
         filters: { ship_id: `eq.${vesselId}`, is_active: "eq.true" },
       }),
-      db.get<any[]>("/breakdown_templates", {
+      db.get<BreakdownTemplate[]>("/breakdown_templates", {
         filters: { is_active: "eq.true" },
         order: "name.asc",
       }),
@@ -34,15 +35,15 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const activeBreakdown = activeBreakdowns?.[0] || null;
 
-  let tree: unknown[] = [];
-  let allParticulars: unknown[] = [];
+  let tree: Record<string, unknown>[] = [];
+  let allParticulars: ShipBreakdownNodeParticular[] = [];
   if (activeBreakdown) {
     const [{ data: treeData }, { data: particularsData }] = await Promise.all([
-      db.get<any[]>("/v_ship_breakdown_tree", {
+      db.get<Record<string, unknown>[]>("/v_ship_breakdown_tree", {
         filters: { ship_breakdown_id: `eq.${activeBreakdown.id}` },
         order: "sort_order.asc",
       }),
-      db.get<any[]>("/ship_breakdown_node_particulars", {
+      db.get<ShipBreakdownNodeParticular[]>("/ship_breakdown_node_particulars", {
         filters: { ship_breakdown_id: `eq.${activeBreakdown.id}` },
         order: "sort_order.asc",
       }),
@@ -51,9 +52,9 @@ export async function loader({ request, params }: LoaderArgs) {
     allParticulars = particularsData || [];
   }
 
-  let templateNodes: unknown[] = [];
+  let templateNodes: BreakdownTemplateNode[] = [];
   if (activeBreakdown?.template_id) {
-    const { data: nodes } = await db.get<any[]>("/breakdown_template_nodes", {
+    const { data: nodes } = await db.get<BreakdownTemplateNode[]>("/breakdown_template_nodes", {
       filters: {
         template_id: `eq.${activeBreakdown.template_id}`,
         is_active: "eq.true",
@@ -249,10 +250,10 @@ export async function action({ request, params }: ActionArgs) {
       }
       return { success: true };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      error: error.message || "Failed to perform action",
+      error: error instanceof Error ? error.message : "Failed to perform action",
     };
   }
 

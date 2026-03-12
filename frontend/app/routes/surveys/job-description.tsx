@@ -4,12 +4,13 @@ import { getDb } from "../../.server/lib/api";
 
 import type { Route } from "./+types/job-description";
 import { cn } from "~/lib/utils";
+import type { SurveyJob } from "~/definitions/database.iclass.types";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const db = await getDb(request);
 
-    const { data: jobs } = await db.get<any[]>("/survey_jobs", {
+    const { data: jobs } = await db.get<SurveyJob[]>("/survey_jobs", {
         filters: { id: `eq.${id}` },
     });
     if (!jobs || jobs.length === 0)
@@ -32,8 +33,8 @@ export async function action({ request, params }: Route.ActionArgs) {
             },
         });
         return { success: "Job description updated successfully" };
-    } catch (error: any) {
-        return { error: error.message || "Failed to update job description" };
+    } catch (error: unknown) {
+        return { error: error instanceof Error ? error.message : "Failed to update job description" };
     }
 }
 

@@ -1,5 +1,5 @@
 import {
-  User,
+  User as UserIcon,
   Mail,
   Shield,
   Settings,
@@ -14,9 +14,19 @@ import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/profile";
 
+interface CurrentUser {
+  id: number;
+  email: string;
+  role: string;
+  category: string | null;
+  display_name: string | null;
+  location: string | null;
+  phone: string | null;
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb(request);
-  const { data: users } = await db.get<any[]>("/me");
+  const { data: users } = await db.get<CurrentUser[]>("/me");
   if (!users || users.length === 0) {
     throw new Response("User not found", { status: 404 });
   }
@@ -44,7 +54,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <div className="bg-card border rounded-2xl p-8 shadow-sm text-center space-y-4">
             <div className="relative inline-block">
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto border-4 border-background">
-                <User size={48} />
+                <UserIcon size={48} />
               </div>
               <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-4 border-card rounded-full"></div>
             </div>
@@ -74,7 +84,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           </div>
 
           <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-1">
-            <ProfileSidebarItem icon={User} label="Personal Info" active />
+            <ProfileSidebarItem icon={UserIcon} label="Personal Info" active />
             <ProfileSidebarItem icon={Shield} label="Security" />
             <ProfileSidebarItem icon={Bell} label="Notifications" />
             <ProfileSidebarItem icon={Settings} label="Preferences" />
@@ -105,7 +115,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 <InfoItem
                   icon={Key}
                   label="User ID"
-                  value={user.id as string}
+                  value={String(user.id)}
                 />
                 <InfoItem
                   icon={MapPin}

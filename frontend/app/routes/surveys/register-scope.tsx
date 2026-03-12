@@ -5,27 +5,29 @@ import { getDb } from "../../.server/lib/api";
 
 import type { Route } from "./+types/register-scope";
 import { cn } from "~/lib/utils";
+import type { SurveyJob, SurveyAudit, FindingComment, CommentLine as DbCommentLine } from "~/definitions/database.iclass.types";
 
-interface SurveyLine {
+interface SurveyLineWithDetails {
     id: number;
     job_id: number;
-    survey_audits?: Record<string, unknown>;
-    survey_pool?: Record<string, unknown>;
-    [key: string]: unknown;
-}
-
-interface SurveyAudit {
-    id: number;
-    ship_id: number;
-    is_active: boolean;
-    [key: string]: unknown;
-}
-
-interface FindingComment {
-    id: number;
-    ship_id: number;
-    is_active: boolean;
-    [key: string]: unknown;
+    survey_audit_id: number | null;
+    pool_id: number | null;
+    credit_periodical: boolean | null;
+    survey_audits?: {
+        description: string | null;
+        pool_id: number | null;
+        status: string | null;
+        range_from_date: string | null;
+        range_to_date: string | null;
+        next_due_date: string | null;
+        is_ordered: boolean | null;
+        cert_code: string | null;
+    };
+    survey_pool?: {
+        code: string | null;
+        description: string | null;
+        cert_code: string | null;
+    };
 }
 
 interface PoolItem {
@@ -34,18 +36,14 @@ interface PoolItem {
     description: string;
     cert_code: string;
     is_active: boolean;
-    [key: string]: unknown;
 }
 
-interface SurveyLineWithType extends SurveyLine {
+interface CommentLineWithFinding extends DbCommentLine {
+    finding_comments?: FindingComment[];
+}
+
+interface SurveyLineWithType extends SurveyLineWithDetails {
     type: "survey";
-}
-
-interface CommentLine {
-    id: number;
-    job_id: number;
-    finding_comments?: Record<string, unknown>;
-    [key: string]: unknown;
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -53,7 +51,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const db = await getDb(request);
 
     // 1. Get the survey_job by id
-    const { data: surveyJobs } = await db.get<any[]>("/survey_jobs", {
+    const { data: surveyJobs } = await db.get<SurveyJob[]>("/survey_jobs", {
         filters: { id: `eq.${id}` },
     });
     const surveyJob = surveyJobs?.[0] || null;
@@ -63,12 +61,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     // 2. Get survey lines and comment lines
     const [{ data: surveyLines }, { data: commentLines }] = await Promise.all([
-        db.get<SurveyLine[]>("/survey_lines", {
+        db.get<SurveyLineWithDetails[]>("/survey_lines", {
             filters: { job_id: `eq.${surveyJob.id}` },
             select:
                 "*,survey_audits(description,pool_id,status,range_from_date,range_to_date,next_due_date,is_ordered,cert_code),survey_pool(code,description,cert_code)",
         }),
-        db.get<any[]>("/comment_lines", {
+        db.get<CommentLineWithFinding[]>("/comment_lines", {
             filters: { job_id: `eq.${surveyJob.job_id}` },
             select: "*,finding_comments(*)",
         }),
@@ -150,7 +148,7 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
             const findingId = formData.get("finding_id");
             // link findings to the parent job_id
             const surveyJobId = formData.get("survey_job_id");
-            const { data: surveyJobsData } = await db.get<any[]>("/survey_jobs", {
+            const { data: surveyJobsData } = await db.get<SurveyJob[]>("/survey_jobs", {
                 filters: { id: `eq.${surveyJobId}` },
                 select: "job_id",
             });
@@ -170,8 +168,8 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
             await db.delete("/comment_lines", { filters: { id: `eq.${lineId}` } });
             return { success: "Finding removed" };
         }
-    } catch (error: any) {
-        return { error: error.message || "Failed to perform action" };
+    } catch (error: unknown) {
+        return { error: error instanceof Error ? error.message : "Failed to perform action" };
     }
 
     return { error: "Unknown action" };
@@ -245,11 +243,11 @@ export default function RegisterScope() {
                         ) : (
                             allLines.map((line: SurveyLineWithType) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-4 py-2 font-mono text-slate-600">{(line.survey_audits as any)?.cert_code || (line.survey_pool as any)?.cert_code || (line.survey_pool as any)?.code}</td>
-                                    <td className="px-4 py-2 font-medium text-slate-900">{(line.survey_audits as any)?.description || (line.survey_pool as any)?.description}</td>
+                                    <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
+                                    <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
                                     <td className="px-4 py-2">
-                                        <div className="text-slate-500">{(line.survey_audits as any)?.range_from_date || "N/A"} to {(line.survey_audits as any)?.range_to_date || "N/A"}</div>
-                                        <div className="text-[10px] text-slate-400 font-bold">DUE: {(line.survey_audits as any)?.next_due_date || "N/A"}</div>
+                                        <div className="text-slate-500">{line.survey_audits?.range_from_date || "N/A"} to {line.survey_audits?.range_to_date || "N/A"}</div>
+                                        <div className="text-[10px] text-slate-400 font-bold">DUE: {line.survey_audits?.next_due_date ? new Date(line.survey_audits.next_due_date).toLocaleDateString() : "N/A"}</div>
                                     </td>
                                     <td className="px-4 py-2">{line.survey_audits?.is_ordered ? "Yes" : "No"}</td>
                                     <td className="px-4 py-2 text-center">
@@ -295,7 +293,7 @@ export default function RegisterScope() {
                         <input type="hidden" name="survey_job_id" value={surveyJob?.id || ""} />
                         <div className="flex-1 space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Survey to Scope</label>
-                            <input type="hidden" name="pool_id" value={(selectedSurvey as any)?.pool_id || ""} />
+                            <input type="hidden" name="pool_id" value={selectedSurvey?.pool_id || ""} />
                             <select
                                 name="survey_audit_id"
                                 required
@@ -304,8 +302,8 @@ export default function RegisterScope() {
                                 onChange={(e) => setSelectedSurveyId(e.target.value)}
                             >
                                 <option value="">-- Select Available Survey --</option>
-                                {availableSurveys.map((s: any) => (
-                                    <option key={s.id} value={s.id}>{s.description} ({s.cert_code}) - Due: {s.next_due_date}</option>
+                                {availableSurveys.map((s) => (
+                                    <option key={s.id} value={s.id}>{s.description} ({s.cert_code}) - Due: {s.next_due_date ? new Date(s.next_due_date).toLocaleDateString() : "N/A"}</option>
                                 ))}
                             </select>
                         </div>
@@ -370,42 +368,42 @@ export default function RegisterScope() {
                                 <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">No recommendations linked to this job.</td>
                             </tr>
                         ) : (
-                            commentLines.map((line: CommentLine) => (
+                            commentLines.map((line: CommentLineWithFinding) => (
                                 <tr key={line.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-4 py-2">
                                         <span className={cn(
                                             "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
-                                            (line.finding_comments as any)?.comment_type === "condition" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
+                                            line.finding_comments?.[0]?.comment_type === "condition" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
                                         )}>
-                                            {(line.finding_comments as any)?.comment_type}
+                                            {line.finding_comments?.[0]?.comment_type}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2">
-                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{(line.finding_comments as any)?.text}</div>
-                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {(line.finding_comments as any)?.mms_reference || "N/A"}</div>
+                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{line.finding_comments?.[0]?.text}</div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {line.finding_comments?.[0]?.mms_reference || "N/A"}</div>
                                     </td>
-                                    <td className="px-4 py-2 text-slate-500">{(line.finding_comments as any)?.date_issued}</td>
+                                    <td className="px-4 py-2 text-slate-500">{line.finding_comments?.[0]?.date_issued ? new Date(String(line.finding_comments[0].date_issued)).toLocaleDateString() : "N/A"}</td>
                                     <td className="px-4 py-2">
                                         <span className={cn(
                                             "font-bold",
-                                            new Date((line.finding_comments as any)?.due_date) < new Date() ? "text-destructive" : "text-slate-600"
+                                            line.finding_comments?.[0]?.due_date && new Date(line.finding_comments[0].due_date) < new Date() ? "text-destructive" : "text-slate-600"
                                         )}>
 
-                                            {(line.finding_comments as any)?.due_date || "N/A"}
+                                            {line.finding_comments?.[0]?.due_date ? new Date(line.finding_comments[0].due_date).toLocaleDateString() : "N/A"}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2">
-                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{(line.finding_comments as any)?.text}</div>
-                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {(line.finding_comments as any)?.mms_reference || "N/A"}</div>
+                                        <div className="font-medium text-slate-900 line-clamp-2 max-w-md">{line.finding_comments?.[0]?.text}</div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">Ref: {line.finding_comments?.[0]?.mms_reference || "N/A"}</div>
                                     </td>
-                                    <td className="px-4 py-2 text-slate-500">{(line.finding_comments as any)?.date_issued}</td>
+                                    <td className="px-4 py-2 text-slate-500">{line.finding_comments?.[0]?.date_issued ? new Date(line.finding_comments[0].date_issued).toLocaleDateString() : "N/A"}</td>
                                     <td className="px-4 py-2">
                                         <span className={cn(
                                             "font-bold",
-                                            new Date((line.finding_comments as any)?.due_date) < new Date() ? "text-destructive" : "text-slate-600"
+                                            line.finding_comments?.[0]?.due_date && new Date(line.finding_comments[0].due_date) < new Date() ? "text-destructive" : "text-slate-600"
                                         )}>
 
-                                            {(line.finding_comments as any)?.due_date || "N/A"}
+                                            {line.finding_comments?.[0]?.due_date ? new Date(line.finding_comments[0].due_date).toLocaleDateString() : "N/A"}
                                         </span>
                                     </td>
                                     <td className="px-4 py-2 text-right">
@@ -433,8 +431,8 @@ export default function RegisterScope() {
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Add Open Finding to Scope</label>
                             <select name="finding_id" required className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30">
                                 <option value="">-- Select Open Finding --</option>
-                                {availableFindings.map((f: any) => (
-                                    <option key={f.id} value={f.id}>{f.text?.substring(0, 60)}... (Due: {f.due_date})</option>
+                                {availableFindings.map((f) => (
+                                    <option key={f.id} value={f.id}>{f.text?.substring(0, 60)}... (Due: {f.due_date ? new Date(f.due_date).toLocaleDateString() : "N/A"})</option>
                                 ))}
                             </select>
                         </div>

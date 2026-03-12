@@ -3,6 +3,7 @@ import { useLoaderData, Form, useActionData } from "react-router";
 import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/assign-surveyor";
+import type { SurveyJob } from "~/definitions/database.iclass.types";
 
 interface Employee {
   id: number;
@@ -27,7 +28,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const [{ data: surveyJobs }, { data: employees }, { data: participants }] =
     await Promise.all([
-      db.get<any[]>("/survey_jobs", {
+      db.get<SurveyJob[]>("/survey_jobs", {
         filters: { id: `eq.${id}` },
         select: "id,job_id",
       }),
@@ -81,8 +82,8 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
       });
       return { success: "Participant removed" };
     }
-  } catch (error: any) {
-    return { error: error.message || "Failed to perform action" };
+  } catch (error: unknown) {
+    return { error: error instanceof Error ? error.message : "Failed to perform action" };
   }
 
   return { error: "Unknown action" };

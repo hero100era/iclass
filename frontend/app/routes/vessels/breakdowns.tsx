@@ -23,6 +23,7 @@ import {
   Copy,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import type { Ship, ShipBreakdown, BreakdownTemplate, ShipBreakdownNodeParticular, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
 export const handle = { fluid: true };
 
 import { loader, action } from "./breakdowns.server";
@@ -47,9 +48,9 @@ interface Particular {
   ship_breakdown_node_id?: number;
   attr_key: string;
   attr_title: string;
-  attr_value?: string;
+  attr_value: string | null | undefined;
   data_type: string;
-  unit?: string;
+  unit: string | null;
   sort_order: number;
 }
 
@@ -80,12 +81,12 @@ interface ActiveBreakdown {
 
 export default function VesselBreakdown() {
   const loaderData = useLoaderData<typeof loader>();
-  const vessel = loaderData.vessel as any;
-  const activeBreakdown = loaderData.activeBreakdown as any;
-  const tree = loaderData.tree as any;
-  const allParticulars = loaderData.allParticulars as any[];
-  const templates = loaderData.templates as any[];
-  const templateNodes = loaderData.templateNodes as any[];
+  const vessel = loaderData.vessel as Ship | null;
+  const activeBreakdown = loaderData.activeBreakdown;
+  const tree = loaderData.tree;
+  const allParticulars = loaderData.allParticulars;
+  const templates = loaderData.templates;
+  const templateNodes = loaderData.templateNodes;
   const vesselId = loaderData.vesselId;
   const [selectedNode, setSelectedNode] = useState<BreakdownNode | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
@@ -115,8 +116,8 @@ export default function VesselBreakdown() {
   // Use useMemo instead of setState in useEffect to avoid cascading renders
   const nodeParticulars = useMemo(() => {
     if (selectedNode) {
-      return allParticulars.filter(
-        (p: Particular) => p.ship_breakdown_node_id === selectedNode.id,
+      return (allParticulars as unknown as Particular[]).filter(
+        (p) => p.ship_breakdown_node_id === selectedNode.id,
       );
     }
     return [];
@@ -160,7 +161,7 @@ export default function VesselBreakdown() {
       }));
   };
 
-  const rootNodes = buildTree(tree);
+  const rootNodes = buildTree(tree as unknown as BreakdownNode[]);
 
   const toggleExpand = (id: number) => {
     const next = new Set(expandedNodes);
@@ -211,7 +212,7 @@ export default function VesselBreakdown() {
 
     formData.append(
       "breakdown_id",
-      (activeBreakdown as ActiveBreakdown).id.toString(),
+      activeBreakdown?.id.toString() || "",
     );
     if (newNodeData.parentId)
       formData.append("parent_id", newNodeData.parentId.toString());
@@ -379,7 +380,7 @@ export default function VesselBreakdown() {
         </div>
         {isExpanded && hasChildren && (
           <div className="ml-4 border-l border-slate-100 pl-2 mt-1 space-y-0.5">
-            {node.children?.map((child: any) => renderTreeNode(child))}
+            {node.children?.map((child) => renderTreeNode(child))}
           </div>
         )}
       </div>
@@ -409,7 +410,7 @@ export default function VesselBreakdown() {
         {activeBreakdown && (
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">
-              Revision: {(activeBreakdown as ActiveBreakdown).revision}
+              Revision: {String(activeBreakdown.revision)}
             </span>
             <button
               onClick={() => window.location.reload()}
@@ -462,7 +463,7 @@ export default function VesselBreakdown() {
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
               Standard Templates
             </label>
-            {templates.map((tmpl: Template) => (
+            {(templates as Template[]).map((tmpl) => (
               <button
                 key={tmpl.id}
                 onClick={() => handleApplyTemplate(tmpl.id)}
@@ -778,7 +779,7 @@ export default function VesselBreakdown() {
                                       Type
                                     </label>
                                     <select
-                                      value={p.data_type}
+                                      value={p.data_type || ""}
                                       onChange={(e) =>
                                         updateParticular(
                                           idx,
@@ -900,7 +901,7 @@ export default function VesselBreakdown() {
               )}
 
               {(availableTemplateNodes.length === 0 ||
-                !(activeBreakdown as ActiveBreakdown).template_id) && (
+                !activeBreakdown?.template_id) && (
                 <>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">

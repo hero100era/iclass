@@ -1,5 +1,12 @@
 import React from "react";
-import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  Briefcase,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Link, useLoaderData, useSearchParams, useSubmit } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { getDb, filter, type FilterOperator } from "~/.server/lib/api";
@@ -64,7 +71,6 @@ export async function action({ request }: Route.ActionArgs) {
   return { ok: true };
 }
 
-
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
@@ -90,14 +96,22 @@ export async function loader({ request }: Route.LoaderArgs) {
   });
 
   const totalPages = Math.ceil((count || 0) / limit);
-  return { surveys: surveys || [], totalPages, currentPage: page, limit, search };
+  return {
+    surveys: surveys || [],
+    totalPages,
+    currentPage: page,
+    limit,
+    search,
+  };
 }
 
-
 export default function SurveyDashboard() {
-  const { surveys, totalPages, currentPage, search } = useLoaderData<typeof loader>();
+  const { surveys, totalPages, currentPage, search } =
+    useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
-  const [expandedJobs, setExpandedJobs] = React.useState<Record<number, boolean>>({});
+  const [expandedJobs, setExpandedJobs] = React.useState<
+    Record<number, boolean>
+  >({});
   const submit = useSubmit();
 
   const handlePageChange = (page: number) => {
@@ -117,9 +131,9 @@ export default function SurveyDashboard() {
 
   const toggleExpand = (surveyId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setExpandedJobs(prev => ({
+    setExpandedJobs((prev) => ({
       ...prev,
-      [surveyId]: !prev[surveyId]
+      [surveyId]: !prev[surveyId],
     }));
   };
 
@@ -136,14 +150,21 @@ export default function SurveyDashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Survey Dashboard</h2>
-          <p className="text-muted-foreground">Planning and oversight of upcoming vessel surveys.</p>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Survey Dashboard
+          </h2>
+          <p className="text-muted-foreground">
+            Planning and oversight of upcoming vessel surveys.
+          </p>
         </div>
       </div>
 
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search surveys by location..."
@@ -158,31 +179,48 @@ export default function SurveyDashboard() {
         </button>
       </div>
 
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col min-h-[500px]">
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col min-h-125">
         <div className="flex-1 overflow-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/50 border-b">
               <tr>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Survey ID</th>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Ship</th>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Description / Location</th>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">Date</th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Survey ID
+                </th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Ship
+                </th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Description / Location
+                </th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Date
+                </th>
                 <th className="px-4 py-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody className="divide-y relative">
               {surveys.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-muted-foreground"
+                  >
                     No surveys found.
                   </td>
                 </tr>
               ) : (
                 surveys.map((survey: SurveyJob) => {
                   const isExpanded = !!expandedJobs[survey.id];
-                  const subSurveys = (survey.jobs?.survey_jobs || []).filter((sj: SurveyJob) => sj.id !== survey.id);
+                  const subSurveys = (survey.jobs?.survey_jobs || []).filter(
+                    (sj: SurveyJob) => sj.id !== survey.id,
+                  );
                   const msJobs = survey.jobs?.ms_jobs || [];
                   const hasSubJobs = subSurveys.length > 0 || msJobs.length > 0;
 
@@ -190,7 +228,9 @@ export default function SurveyDashboard() {
                     <React.Fragment key={survey.id}>
                       <tr
                         className="hover:bg-muted/30 transition-colors group bg-muted/5 cursor-pointer"
-                        onClick={(e) => hasSubJobs && toggleExpand(survey.id, e)}
+                        onClick={(e) =>
+                          hasSubJobs && toggleExpand(survey.id, e)
+                        }
                       >
                         <td className="px-4 py-2.5 font-medium text-primary flex items-center gap-2">
                           {hasSubJobs ? (
@@ -198,46 +238,83 @@ export default function SurveyDashboard() {
                               className="p-0.5 rounded hover:bg-muted-foreground/10 text-muted-foreground"
                               onClick={(e) => toggleExpand(survey.id, e)}
                             >
-                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              {isExpanded ? (
+                                <ChevronDown size={14} />
+                              ) : (
+                                <ChevronRight size={14} />
+                              )}
                             </button>
                           ) : (
                             <div className="w-4" />
                           )}
-                          <Link to={`/surveys/${survey.id}`} className="hover:underline">
+                          <Link
+                            to={`/surveys/${survey.id}`}
+                            className="hover:underline"
+                          >
                             #{survey.id}
                           </Link>
                         </td>
-                        <td className="px-4 py-2.5 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Main Survey</td>
-                        <td className="px-4 py-2.5 font-medium">{survey.ships?.name || "-"}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="font-medium max-w-xs truncate" title={survey.description || ""}>{survey.description || "-"}</div>
-                          <div className="text-[11px] text-muted-foreground leading-tight">{survey.jobs?.location || "-"}</div>
+                        <td className="px-4 py-2.5 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
+                          Main Survey
+                        </td>
+                        <td className="px-4 py-2.5 font-medium">
+                          {survey.ships?.name || "-"}
                         </td>
                         <td className="px-4 py-2.5">
-                          <span className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase",
-                            getStatusColor(survey.jobs?.job_status)
-                          )}>
+                          <div
+                            className="font-medium max-w-xs truncate"
+                            title={survey.description || ""}
+                          >
+                            {survey.description || "-"}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            {survey.jobs?.location || "-"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={cn(
+                              "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase",
+                              getStatusColor(survey.jobs?.job_status),
+                            )}
+                          >
                             {survey.jobs?.job_status || "Unknown"}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                          {survey.jobs?.created_at ? new Date(survey.jobs.created_at).toLocaleDateString() : "-"}
+                          {survey.jobs?.created_at
+                            ? new Date(
+                                survey.jobs.created_at,
+                              ).toLocaleDateString()
+                            : "-"}
                         </td>
-                        <td className="px-4 py-2.5 text-right relative" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          className="px-4 py-2.5 text-right relative"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="relative inline-block text-left group/dropdown">
                             <button className="p-1 hover:bg-muted rounded text-muted-foreground outline-none">
                               <MoreVertical size={16} />
                             </button>
                             <div className="absolute right-0 top-full mt-1 hidden group-hover/dropdown:block bg-card border shadow-md rounded-md z-10 w-48 py-1">
                               <button
-                                onClick={() => handleCreateAttached("create_attached_survey", survey)}
+                                onClick={() =>
+                                  handleCreateAttached(
+                                    "create_attached_survey",
+                                    survey,
+                                  )
+                                }
                                 className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
                               >
                                 Create Attached Survey
                               </button>
                               <button
-                                onClick={() => handleCreateAttached("create_attached_ms", survey)}
+                                onClick={() =>
+                                  handleCreateAttached(
+                                    "create_attached_ms",
+                                    survey,
+                                  )
+                                }
                                 className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
                               >
                                 Create Attached MS Job
@@ -247,52 +324,80 @@ export default function SurveyDashboard() {
                         </td>
                       </tr>
 
-                      {isExpanded && subSurveys.map((sj: SurveyJob) => (
-                        <tr key={`sj-${sj.id}`} className="hover:bg-muted/50 transition-colors group">
-                          <td className="px-4 py-2 pl-12 text-[13px]">
-                            <Link to={`/surveys/${sj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
-                              <div className="w-2.5 h-[1px] bg-muted-foreground mr-1"></div>
-                              Survey #{sj.id}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 uppercase tracking-wide">
-                              <Briefcase size={10} /> Sub-Survey
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-[13px] font-medium">
-                            {sj.ships?.name || '-'}
-                          </td>
-                          <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
-                            {sj.description || 'Attached Survey'}
-                          </td>
-                          <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
-                        </tr>
-                      ))}
+                      {isExpanded &&
+                        subSurveys.map((sj: SurveyJob) => (
+                          <tr
+                            key={`sj-${sj.id}`}
+                            className="hover:bg-muted/50 transition-colors group"
+                          >
+                            <td className="px-4 py-2 pl-12 text-[13px]">
+                              <Link
+                                to={`/surveys/${sj.id}`}
+                                className="font-medium text-primary hover:underline flex items-center gap-2"
+                              >
+                                <div className="w-2.5 h-px bg-muted-foreground mr-1"></div>
+                                Survey #{sj.id}
+                              </Link>
+                            </td>
+                            <td className="px-4 py-2">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 uppercase tracking-wide">
+                                <Briefcase size={10} /> Sub-Survey
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-[13px] font-medium">
+                              {sj.ships?.name || "-"}
+                            </td>
+                            <td
+                              className="px-4 py-2 text-[13px] text-muted-foreground"
+                              colSpan={3}
+                            >
+                              {sj.description || "Attached Survey"}
+                            </td>
+                            <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
+                          </tr>
+                        ))}
 
-                      {isExpanded && msJobs.map((mj: { id: number; ships?: Ship; organizations?: Organization }) => (
-                        <tr key={`mj-${mj.id}`} className="hover:bg-muted/50 transition-colors group">
-                          <td className="px-4 py-2 pl-12 text-[13px]">
-                            <Link to={`/ms_jobs/${mj.id}`} className="font-medium text-primary hover:underline flex items-center gap-2">
-                              <div className="w-2.5 h-[1px] bg-muted-foreground mr-1"></div>
-                              MS Job #{mj.id}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 uppercase tracking-wide">
-                              <Briefcase size={10} /> MS Job
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-[13px] font-medium">
-                            {mj.ships?.name || '-'}
-                            <div className="text-[11px] text-muted-foreground leading-tight">{mj.organizations?.name || 'No Company'}</div>
-                          </td>
-                          <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
-                            Attached MS Job
-                          </td>
-                          <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
-                        </tr>
-                      ))}
+                      {isExpanded &&
+                        msJobs.map(
+                          (mj: {
+                            id: number;
+                            ships?: Ship;
+                            organizations?: Organization;
+                          }) => (
+                            <tr
+                              key={`mj-${mj.id}`}
+                              className="hover:bg-muted/50 transition-colors group"
+                            >
+                              <td className="px-4 py-2 pl-12 text-[13px]">
+                                <Link
+                                  to={`/ms_jobs/${mj.id}`}
+                                  className="font-medium text-primary hover:underline flex items-center gap-2"
+                                >
+                                  <div className="w-2.5 h-px bg-muted-foreground mr-1"></div>
+                                  MS Job #{mj.id}
+                                </Link>
+                              </td>
+                              <td className="px-4 py-2">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 uppercase tracking-wide">
+                                  <Briefcase size={10} /> MS Job
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-[13px] font-medium">
+                                {mj.ships?.name || "-"}
+                                <div className="text-[11px] text-muted-foreground leading-tight">
+                                  {mj.organizations?.name || "No Company"}
+                                </div>
+                              </td>
+                              <td
+                                className="px-4 py-2 text-[13px] text-muted-foreground"
+                                colSpan={3}
+                              >
+                                Attached MS Job
+                              </td>
+                              <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
+                            </tr>
+                          ),
+                        )}
                     </React.Fragment>
                   );
                 })
@@ -314,10 +419,15 @@ export default function SurveyDashboard() {
 function getStatusColor(status?: string) {
   if (!status) return "bg-gray-100 text-gray-700";
   switch (status.toLowerCase()) {
-    case "assigned": return "bg-blue-100 text-blue-700";
-    case "executing": return "bg-yellow-100 text-yellow-700";
-    case "completed": return "bg-green-100 text-green-700";
-    case "cancelled": return "bg-gray-100 text-gray-700";
-    default: return "bg-muted text-muted-foreground";
+    case "assigned":
+      return "bg-blue-100 text-blue-700";
+    case "executing":
+      return "bg-yellow-100 text-yellow-700";
+    case "completed":
+      return "bg-green-100 text-green-700";
+    case "cancelled":
+      return "bg-gray-100 text-gray-700";
+    default:
+      return "bg-muted text-muted-foreground";
   }
 }

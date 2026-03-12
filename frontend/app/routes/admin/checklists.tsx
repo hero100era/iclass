@@ -59,6 +59,11 @@ interface BreakdownNode {
     name: string;
 }
 
+interface ChecklistResult {
+    code: string;
+    description: string;
+}
+
 export async function loader({ request }: LoaderArgs) {
     const db = await getDb(request);
     const [{ data: surveys }, { data: results }, { data: breakdownNodes }] =
@@ -67,7 +72,7 @@ export async function loader({ request }: LoaderArgs) {
                 select:
                     "*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))",
             }),
-            db.get<any[]>("/checklist_results"),
+            db.get<ChecklistResult[]>("/checklist_results"),
             db.get<BreakdownNode[]>("/breakdown_template_nodes", {
                 select: "id,code,name",
                 order: "name.asc",
@@ -169,10 +174,10 @@ export async function action({ request }: ActionArgs) {
             });
             return { success: "Section added" };
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         return {
             success: false,
-            error: error.message || "Failed to perform action",
+            error: error instanceof Error ? error.message : "Failed to perform action",
         };
     }
 
@@ -458,8 +463,9 @@ export default function AdminChecklists() {
                                                             <button
                                                                 disabled={!newItemContent.trim()}
                                                                 onClick={() => {
-                                                                    const nextNum = section.checklist_items?.length
-                                                                        ? Math.max(...section.checklist_items?.map((i: ChecklistItem) => i.item_number)) + 1
+                                                                    const items = section.checklist_items ?? [];
+                                                                    const nextNum = items.length
+                                                                        ? Math.max(...items.map((i: ChecklistItem) => i.item_number)) + 1
                                                                         : 1;
                                                                     handleAddItem(section.id, nextNum);
                                                                 }}

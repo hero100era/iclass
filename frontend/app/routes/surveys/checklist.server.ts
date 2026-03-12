@@ -1,4 +1,5 @@
 import { getDb } from "~/.server/lib/api";
+import type { SurveyJob, SurveyLine, SurveyChecklist, ChecklistResult } from "~/definitions/database.iclass.types";
 
 
 interface Particular {
@@ -11,22 +12,23 @@ interface Particular {
     [key: string]: unknown;
 }
 
-interface SurveyChecklist {
-    id: number;
-    survey_checklist_item_particulars?: Particular[];
-    [key: string]: unknown;
+interface SurveyChecklistWithParticulars extends SurveyChecklist {
+    particulars?: Particular[];
 }
 
-function mapParticulars(items: SurveyChecklist[], sourceKey: string): SurveyChecklist[] {
-    return items.map((item) => ({
-        ...item,
-        particulars: ((item[sourceKey] as Particular[]) || []).map((p) => ({
-            ...p,
-            result: p.attr_result || "",
-            type: p.data_type,
-            title: p.attr_title
-        }))
-    }));
+function mapParticulars(items: SurveyChecklist[], sourceKey: string): SurveyChecklistWithParticulars[] {
+    return items.map((item) => {
+        const sourceData = (item as unknown as Record<string, unknown>)[sourceKey] as Particular[] | undefined;
+        return {
+            ...item,
+            particulars: (sourceData || []).map((p) => ({
+                ...p,
+                result: p.attr_result || "",
+                type: p.data_type,
+                title: p.attr_title
+            }))
+        };
+    });
 }
 
 interface LoaderParams {
@@ -38,13 +40,13 @@ export async function getChecklistData({ params, request }: LoaderParams) {
     const { id } = params;
     const db = await getDb(request);
 
-    const { data: surveyJobs } = await db.get<any[]>("/survey_jobs", {
+    const { data: surveyJobs } = await db.get<SurveyJob[]>("/survey_jobs", {
         filters: { id: `eq.${id}` },
     });
     const surveyJob = surveyJobs?.[0] || null;
 
     const { data: surveyLines } = surveyJob
-        ? await db.get<any[]>("/survey_lines", {
+        ? await db.get<SurveyLine[]>("/survey_lines", {
             filters: { job_id: `eq.${surveyJob.id}` },
             select: "*,survey_audits(description,cert_code),survey_pool(name,code)",
         })
@@ -54,18 +56,18 @@ export async function getChecklistData({ params, request }: LoaderParams) {
     const [{ data: surveyChecklists }, { data: checklistResults }] =
         await Promise.all([
             surveyJob
-                ? db.get<any[]>("/survey_checklists", {
+                ? db.get<SurveyChecklist[]>("/survey_checklists", {
                     filters: { survey_job_id: `eq.${surveyJob.id}` },
                     select: `${checklistSelect},survey_checklist_item_particulars(*,ship_breakdown_nodes(name,code))`,
                 })
                 : Promise.resolve({ data: [] }),
-            db.get<any[]>("/checklist_results"),
+            db.get<ChecklistResult[]>("/checklist_results"),
         ]);
 
     return {
         surveyLines: surveyLines || [],
         surveyChecklists: mapParticulars(
-            surveyChecklists as SurveyChecklist[],
+            surveyChecklists as SurveyChecklistWithParticulars[],
             "survey_checklist_item_particulars",
         ),
         checklistResults: checklistResults || [],
