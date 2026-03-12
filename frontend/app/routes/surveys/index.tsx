@@ -11,32 +11,23 @@ import { Link, useLoaderData, useSearchParams, useSubmit } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { getDb, filter, type FilterOperator } from "~/.server/lib/api";
 import { cn } from "~/lib/utils";
+import { type Ship, type Organization } from "~/definitions/database.iclass.types";
 
 import type { Route } from "./+types/index";
 
 const ITEM_PER_PAGE = 10;
 
-interface Job {
-  location?: string;
-  job_status?: string;
-  created_at?: string;
-}
-
-interface Ship {
-  name?: string;
-}
-
-interface Organization {
-  name?: string;
-}
-
 interface SurveyJob {
   id: number;
-  job_id?: number;
+  job_id?: number | null;
+  parent_id?: number | null;
   ship_id?: number | null;
-  description?: string;
+  description?: string | null;
   ships?: Ship;
-  jobs?: Job & {
+  jobs?: {
+    location?: string | null;
+    job_status?: string | null;
+    created_at?: string | null;
     ms_jobs?: (SurveyJob & { ships?: Ship; organizations?: Organization })[];
     survey_jobs?: SurveyJob[];
   };
@@ -416,7 +407,7 @@ export default function SurveyDashboard() {
   );
 }
 
-function getStatusColor(status?: string) {
+function getStatusColor(status?: string | null) {
   if (!status) return "bg-gray-100 text-gray-700";
   switch (status.toLowerCase()) {
     case "assigned":

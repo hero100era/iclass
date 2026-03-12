@@ -10,16 +10,9 @@ import {
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { getDb } from "~/.server/lib/api";
+import { type Ship, type Organization } from "~/definitions/database.iclass.types";
 
 import type { Route } from "./+types/index";
-
-interface Ship {
-  name: string;
-}
-
-interface Organization {
-  name: string;
-}
 
 interface SurveyJob {
   id: number;
@@ -43,9 +36,9 @@ interface MsJob {
 interface Job {
   id: number;
   job_type: string;
-  job_status: string;
-  location: string;
-  created_at: string;
+  job_status: string | null;
+  location: string | null;
+  created_at: string | null;
   survey_jobs?: SurveyJob[];
   audit_jobs?: AuditJob[];
   ms_jobs?: MsJob[];
@@ -60,7 +53,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const offset = (page - 1) * limit;
 
   const db = await getDb(request);
-  const { data: jobs, count } = await db.get<Job[]>("/jobs", {
+  const { data: jobs, count } = await db.get<Job[]>("jobs", {
     select:
       "*,survey_jobs(*,ships(name)),audit_jobs(*,ships(name),organizations(name)),ms_jobs(*,ships(name),organizations(name))",
     limit,
@@ -207,7 +200,7 @@ export default function JobList() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                        {new Date(job.created_at).toLocaleDateString()}
+                        {job.created_at ? new Date(job.created_at).toLocaleDateString() : "-"}
                       </td>
                       <td
                         className="px-4 py-2.5 text-right"
@@ -349,7 +342,7 @@ export default function JobList() {
   );
 }
 
-function getStatusColor(status: string) {
+function getStatusColor(status: string | null | undefined) {
   if (!status) return "bg-gray-100 text-gray-700";
   switch (status.toLowerCase()) {
     case "assigned":

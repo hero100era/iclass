@@ -11,17 +11,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getDb } from "~/.server/lib/api";
+import { type Employee } from "~/definitions/database.iclass.types";
 
 import type { Route } from "./+types/profile";
 
-interface CurrentUser {
-  id: number;
-  email: string;
-  role: string;
-  category: string | null;
-  display_name: string | null;
-  location: string | null;
-  phone: string | null;
+interface CurrentUser extends Employee {
+  job_title?: string | null;
+  department_name?: string | null;
+  location_name?: string | null;
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -63,22 +60,24 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 {user.display_name ||
                   (user.email as string).split("@")[0].toUpperCase()}
               </h3>
-              <p className="text-sm text-muted-foreground">{user.role}</p>
+              <p className="text-sm text-muted-foreground">{user.job_title || user.job_title_custom || "Employee"}</p>
             </div>
-            <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
+              <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">
-                  Category
+                  Department
                 </p>
                 <p className="text-sm font-medium">
-                  {user.category || "Standard"}
+                  {user.department_name || "Standard"}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">
                   Status
                 </p>
-                <p className="text-sm font-medium text-green-600">Active</p>
+                <p className="text-sm font-medium text-green-600">
+                  {user.is_active ? "Active" : "Inactive"}
+                </p>
               </div>
             </div>
           </div>
@@ -109,8 +108,8 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 />
                 <InfoItem
                   icon={Shield}
-                  label="User Role"
-                  value={user.role as string}
+                  label="Job Title"
+                  value={user.job_title || user.job_title_custom || "Not assigned"}
                 />
                 <InfoItem
                   icon={Key}
@@ -120,7 +119,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 <InfoItem
                   icon={MapPin}
                   label="Location"
-                  value={user.location || "Not assigned"}
+                  value={user.location_name || user.address || "Not assigned"}
                 />
               </div>
             </div>

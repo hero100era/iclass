@@ -23,7 +23,7 @@ import {
   Copy,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import type { Ship, ShipBreakdown, BreakdownTemplate, ShipBreakdownNodeParticular, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
+import type { Ship } from "~/definitions/database.iclass.types";
 export const handle = { fluid: true };
 
 import { loader, action } from "./breakdowns.server";
@@ -71,12 +71,6 @@ interface Template {
 
 interface Vessel {
   name: string;
-}
-
-interface ActiveBreakdown {
-  id: number;
-  revision?: string;
-  template_id?: number;
 }
 
 export default function VesselBreakdown() {
@@ -210,10 +204,7 @@ export default function VesselBreakdown() {
       formData.append("category", newNodeData.category);
     }
 
-    formData.append(
-      "breakdown_id",
-      activeBreakdown?.id.toString() || "",
-    );
+    formData.append("breakdown_id", activeBreakdown?.id.toString() || "");
     if (newNodeData.parentId)
       formData.append("parent_id", newNodeData.parentId.toString());
 

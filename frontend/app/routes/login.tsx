@@ -5,13 +5,8 @@ import { encrypt } from "~/.server/lib/jwt";
 import { publicApi } from "~/.server/lib/api";
 
 import { LoginFormSchema } from "~/definitions/auth_scheme";
+import { type User } from "~/definitions/database.auth.types";
 import type { Route } from "./+types/login";
-
-interface UserProfile {
-  id: number;
-  role: string;
-  category: string;
-}
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -22,7 +17,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
   const { email, password } = result.data;
   try {
-    const { data: users } = await publicApi.rpc<UserProfile[]>("user_profile", {
+    const { data: users } = await publicApi.rpc<User[]>("user_profile", {
       body: {
         email,
         password,
