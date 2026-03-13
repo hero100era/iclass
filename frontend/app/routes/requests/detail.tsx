@@ -1,445 +1,114 @@
-/** React Router Route Component */
-import {
-  ArrowLeft,
-  CheckCircle2,
-  UserPlus,
-  FileText,
-  MapPin,
-  Calendar,
-  Phone,
-} from "lucide-react";
-import {
-  Link,
-  useLoaderData,
-  Form,
-  useActionData,
-  redirect,
-} from "react-router";
-import { type Employee, type SurveyAudit, type FindingComment } from "~/definitions/database.iclass.types";
+import { redirect, useLoaderData } from "react-router";
 import { getDb } from "~/.server/lib/api";
-
 import type { Route } from "./+types/detail";
-
-interface CartItem {
-  id: number;
-  survey_request_id: number;
-  survey_audit_id?: number;
-  comment_id?: number;
-  occ_survey_code?: string;
-  survey_audit?: SurveyAudit | null;
-  finding_comment?: FindingComment | null;
-}
-
-interface SurveyRequest {
-  id: number;
-  ships?: { name: string; imo_number: string }[];
-  organizations?: { name: string }[];
-  created_at?: string;
-  contact_email?: string;
-  contact_person?: string;
-  contact_phone?: string;
-  location?: string;
-  estimated_date?: string;
-}
-
-interface SurveyRequestCart {
-  id: number;
-  survey_request_id: number;
-  survey_audit_id?: number;
-  comment_id?: number;
-  occ_survey_code?: string;
-  survey_audit?: SurveyAudit | null;
-  finding_comment?: FindingComment | null;
-}
+import { RequestHeader } from "./components/detail/RequestHeader";
+import { RequestInfo } from "./components/detail/RequestInfo";
+import { RequestCartTable } from "./components/detail/RequestCartTable";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { id } = params;
   const db = await getDb(request);
+  const { data: requests } = await db.get<any[]>("/survey_requests", {
+    filters: { id: `eq.${params.id}` },
+    select: "*,ships(name,imo_number),organizations(name)",
+  });
+  if (!requests?.[0]) throw new Response("Request not found.", { status: 404 });
 
-  const [{ data: requests }, { data: cartItems }, { data: employees }] =
-    await Promise.all([
-      db.get<SurveyRequest[]>("/survey_requests", {
-        filters: { id: `eq.${id}` },
-        select: "*,ships(name,imo_number),organizations(name)",
-      }),
-      db.get<SurveyRequestCart[]>("/survey_request_carts", {
-        filters: { survey_request_id: `eq.${id}` },
-      }),
-      db.get<Employee[]>("/employees", {
-        filters: { is_active: "eq.true" },
-        order: "display_name.asc",
-      }),
-    ]);
+  const { data: cartItems } = await db.get<any[]>("/survey_request_carts", {
+    filters: { survey_request_id: `eq.${params.id}` },
+    select: "*,survey_audit:survey_audits!survey_request_cart_survey_audit_id_fkey(*,survey_pool(*)),finding_comment:finding_comments(*)",
+  });
 
-  if (!requests || requests.length === 0) {
-    throw new Response("Request not found", { status: 404 });
-  }
+  const { data: employees } = await db.get<any[]>("/v_employee_full", {
+    filters: { is_active: "is.true" },
+    order: "display_name.asc"
+  });
 
-  const surveyAuditIds = (cartItems || [])
-    .filter((item) => item.survey_audit_id)
-    .map((item) => item.survey_audit_id);
-  const commentIds = (cartItems || [])
-    .filter((item) => item.comment_id)
-    .map((item) => item.comment_id);
-
-  const [{ data: surveyAudits }, { data: findingComments }] = await Promise.all(
-    [
-      surveyAuditIds.length > 0
-        ? db.get<SurveyAudit[]>("/survey_audits", {
-            filters: { id: `in.(${surveyAuditIds.join(",")})` },
-          })
-        : Promise.resolve({ data: [] }),
-      commentIds.length > 0
-        ? db.get<FindingComment[]>("/finding_comments", {
-            filters: { id: `in.(${commentIds.join(",")})` },
-          })
-        : Promise.resolve({ data: [] }),
-    ]
+  const hasSurvey = cartItems?.some(item =>
+    (item.survey_audit?.survey_pool && !item.survey_audit.survey_pool.is_audit) ||
+    item.occ_survey_code // Simplification: assume occasional surveys are surveys for now
   );
 
-  const surveyAuditMap = new Map((surveyAudits || []).map((s) => [s.id, s]));
-  const findingCommentMap = new Map(
-    (findingComments || []).map((c) => [c.id, c])
+  const hasAudit = cartItems?.some(item =>
+    item.survey_audit?.survey_pool?.is_audit
   );
 
-  const enrichedCartItems = (cartItems || []).map((item) => ({
-    ...item,
-    survey_audit: item.survey_audit_id
-      ? surveyAuditMap.get(item.survey_audit_id)
-      : null,
-    finding_comment: item.comment_id
-      ? findingCommentMap.get(item.comment_id)
-      : null,
-  }));
-
-  return { requestItem: requests[0], cartItems: enrichedCartItems, employees };
+  return {
+    request: requests[0],
+    cartItems: cartItems || [],
+    employees: employees || [],
+    hasSurvey,
+    hasAudit
+  };
 }
 
-
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request, params }: any) {
+  const db = await getDb(request);
   const formData = await request.formData();
-  const surveyorId = formData.get("surveyor_id");
-  const auditorId = formData.get("auditor_id");
-  const reviewerId = formData.get("reviewer_id");
   const intent = formData.get("intent");
 
-  if (intent === "reject") {
-    // Handle rejection logic if needed
-    return { message: "Rejection not implemented yet" };
-  }
+  if (intent === "process_request") {
+    try {
+      const surveyor_id = formData.get("surveyor_id") ? parseInt(formData.get("surveyor_id") as string) : null;
+      const auditor_id = formData.get("auditor_id") ? parseInt(formData.get("auditor_id") as string) : null;
+      const reviewer_id = formData.get("reviewer_id") ? parseInt(formData.get("reviewer_id") as string) : null;
 
-  try {
-    const db = await getDb(request);
-    await db.rpc("convert_request_to_job", {
-      body: {
-        p_request_id: parseInt(params.id!),
-        p_surveyor_id: surveyorId ? parseInt(surveyorId as string) : null,
-        p_auditor_id: auditorId ? parseInt(auditorId as string) : null,
-        p_reviewer_id: reviewerId ? parseInt(reviewerId as string) : null,
-      },
-    });
+      const { data: jobId } = await db.rpc<number>("convert_request_to_job", {
+        body: {
+          p_request_id: parseInt(params.id),
+          p_surveyor_id: surveyor_id,
+          p_auditor_id: auditor_id,
+          p_reviewer_id: reviewer_id
+        },
+      });
 
-    return redirect("/requests");
-  } catch (error: unknown) {
-    return { error: error instanceof Error ? error.message : "Failed to convert request to job" };
+      if (!jobId) {
+        return { error: "Failed to create job" };
+      }
+
+      // Find the associated survey job to redirect to
+      const { data: surveyJob } = await db.getOne<any>("/survey_jobs", {
+        filters: { job_id: `eq.${jobId}` },
+        select: "id"
+      }).catch(() => ({ data: null }));
+
+      if (surveyJob?.id) {
+        return redirect(`/surveys/${surveyJob.id}`);
+      }
+
+      // If no survey job, maybe it's an audit job
+      const { data: auditJob } = await db.getOne<any>("/audit_jobs", {
+        filters: { job_id: `eq.${jobId}` },
+        select: "id"
+      }).catch(() => ({ data: null }));
+
+      if (auditJob?.id) {
+        return redirect(`/jobs`); // Or a specific audit page if it exists
+      }
+
+      return redirect("/jobs");
+    } catch (error: any) {
+      console.error("Process request error:", error);
+      return { error: error.message || "Failed to process request" };
+    }
   }
+  return { error: "Unknown action" };
 }
 
-
 export default function RequestDetail() {
-  const { requestItem, cartItems, employees } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-
-  const surveyItems = cartItems.filter(
-    (item: SurveyRequestCart) => item.survey_audit_id || item.occ_survey_code,
-  );
-  const findingItems = cartItems.filter((item: SurveyRequestCart) => item.comment_id);
-
-  const hasAuditItems = cartItems.some((item) =>
-    ["SMC", "ISPS", "MLC", "DOC"].includes(item.survey_audit?.cert_code || ""),
-  );
-  // More generically, use the is_audit flag from backend if possible, but here we'll just check if auditor assignment is needed.
-  const needsAuditor = hasAuditItems;
+  const { request, cartItems, employees, hasSurvey, hasAudit } = useLoaderData<typeof loader>();
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/requests"
-          className="p-2 hover:bg-muted rounded-full transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Review Survey Request
-          </h2>
-          <p className="text-muted-foreground">
-            Request ID: #{requestItem.id} • Submitted on{" "}
-            {requestItem.created_at ? new Date(requestItem.created_at).toLocaleDateString() : "N/A"}
-          </p>
-        </div>
-      </div>
-
-      {actionData?.error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg flex items-center gap-3">
-          <CheckCircle2 size={20} className="rotate-180" />
-          <p>{actionData.error}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Details Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Vessel & Company Info */}
-          <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Vessel
-                </h3>
-                <p className="text-xl font-bold">{requestItem.ships?.[0]?.name}</p>
-                <p className="text-sm text-muted-foreground font-mono">
-                  IMO: {requestItem.ships?.[0]?.imo_number}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Company
-                </h3>
-                <p className="text-xl font-bold">
-                  {requestItem.organizations?.[0]?.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Email: {requestItem.contact_email}
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t pt-6 grid grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <MapPin size={18} />
-                  <span>{requestItem.location}</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Calendar size={18} />
-                  <span>{requestItem.estimated_date}</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <UserPlus size={18} />
-                  <span>{requestItem.contact_person}</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Phone size={18} />
-                  <span>{requestItem.contact_phone}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Surveys & Audits */}
-          {surveyItems.length > 0 && (
-            <div className="bg-card border rounded-xl overflow-hidden shadow-sm mb-8">
-              <div className="px-6 py-4 border-b bg-muted/50">
-                <h3 className="font-semibold flex items-center gap-2 text-primary">
-                  <FileText size={18} />
-                  <span>Surveys & Audits</span>
-                </h3>
-              </div>
-              <table className="w-full text-left">
-                <thead className="bg-muted/30 border-b text-sm">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Code
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Range / Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {surveyItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-6 py-4 font-mono text-sm">
-                        {item.survey_audit?.cert_code || item.occ_survey_code}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-medium">
-                          {item.survey_audit?.description ||
-                            "Occasional Survey"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {item.survey_audit ? (
-                          <span>
-                            {String(item.survey_audit?.range_from_date)} -{" "}
-                            {String(item.survey_audit?.range_to_date)}
-                          </span>
-                        ) : (
-                          <span className="italic">Occasional item</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Finding Comments */}
-          {findingItems.length > 0 && (
-            <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b bg-amber-500/5">
-                <h3 className="font-semibold flex items-center gap-2 text-amber-600">
-                  <CheckCircle2 size={18} />
-                  <span>Finding Comments</span>
-                </h3>
-              </div>
-              <table className="w-full text-left">
-                <thead className="bg-muted/30 border-b text-sm">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Description / Text
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-muted-foreground">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {findingItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                          {item.finding_comment?.comment_type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm leading-relaxed">
-                          {item.finding_comment?.text}
-                        </p>
-                        {item.finding_comment?.due_date && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Due: {String(item.finding_comment?.due_date)}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-medium">
-                          {item.finding_comment?.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Assignment Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-card border rounded-xl p-6 shadow-sm sticky top-8">
-            <h3 className="font-bold mb-6 flex items-center gap-2">
-              <UserPlus size={20} className="text-primary" />
-              <span>Assign Personnel</span>
-            </h3>
-
-            <Form method="post" className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Surveyor
-                  </label>
-                  <select
-                    name="surveyor_id"
-                    required
-                    className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
-                  >
-                    <option value="">Select Surveyor</option>
-                    {employees.map((emp: Employee) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {needsAuditor && (
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      Auditor
-                    </label>
-                    <select
-                      name="auditor_id"
-                      required
-                      className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
-                    >
-                      <option value="">Select Auditor</option>
-                      {employees.map((emp: Employee) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.display_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Reviewer
-                  </label>
-                  <select
-                    name="reviewer_id"
-                    required
-                    className="w-full border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-primary/20 outline-none"
-                  >
-                    <option value="">Select Reviewer</option>
-                    {employees.map((emp: Employee) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 space-y-3">
-                <button
-                  type="submit"
-                  name="intent"
-                  value="approve"
-                  className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <CheckCircle2 size={18} />
-                  <span>Accept & Create Job</span>
-                </button>
-                <button
-                  type="submit"
-                  name="intent"
-                  value="reject"
-                  className="w-full border border-destructive text-destructive py-2.5 rounded-lg font-semibold hover:bg-destructive/5 transition-colors"
-                >
-                  Reject Request
-                </button>
-              </div>
-            </Form>
-          </div>
+    <div className="min-h-screen bg-slate-50/50 pb-20 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <RequestHeader
+          request={request}
+          employees={employees}
+          hasSurvey={hasSurvey}
+          hasAudit={hasAudit}
+        />
+        <div className="space-y-8">
+          <RequestInfo request={request} />
+          <RequestCartTable items={cartItems} />
         </div>
       </div>
     </div>

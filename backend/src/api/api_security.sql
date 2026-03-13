@@ -204,6 +204,10 @@ SELECT
   id, user_id, first_name, last_name, display_name, email, job_title_id, department_id, location_id, is_active
 FROM iclass.employee;
 
+DROP VIEW IF EXISTS api.v_employee_full CASCADE;
+CREATE OR REPLACE VIEW api.v_employee_full AS
+SELECT * FROM iclass.v_employee_full;
+
 DROP VIEW IF EXISTS api.organizations CASCADE;
 CREATE OR REPLACE VIEW api.organizations AS
 SELECT
@@ -578,6 +582,7 @@ GRANT SELECT ON api.surveyor_jobs TO employees;
 
 -- Grants for employees and organizations
 GRANT SELECT ON api.employees TO employees, admingrp;
+GRANT SELECT ON api.v_employee_full TO employees, admingrp;
 GRANT SELECT ON api.organizations TO employees, admingrp;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.breakdown_templates TO employees, admingrp;
