@@ -146,8 +146,8 @@ ON CONFLICT
   DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS iclass.comment_status(
-  code varchar(2) PRIMARY KEY,
-  name varchar(100) NOT NULL
+  code varchar(1) PRIMARY KEY,
+  name varchar(30) NOT NULL
 );
 
 --recommend only use char in "A P O" for code.

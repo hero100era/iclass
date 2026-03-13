@@ -25,18 +25,18 @@ interface CartItem {
   survey_audit_id?: number;
   comment_id?: number;
   occ_survey_code?: string;
-  survey_audits?: {
+  survey_audit?: {
     code?: string;
     description?: string;
     range_from_date?: string;
     range_to_date?: string;
-  }[];
-  finding_comments?: {
+  };
+  finding_comment?: {
     comment_type?: string;
     text?: string;
     due_date?: string;
     status?: string;
-  }[];
+  };
 }
 
 interface SurveyRequest {
@@ -57,8 +57,8 @@ interface SurveyRequestCart {
   survey_audit_id?: number;
   comment_id?: number;
   occ_survey_code?: string;
-  survey_audits?: { cert_code?: string; code?: string; description?: string; range_from_date?: string; range_to_date?: string }[];
-  finding_comments?: { comment_type?: string; text?: string; due_date?: string; status?: string }[];
+  survey_audit?: { cert_code?: string; code?: string; description?: string; range_from_date?: string; range_to_date?: string };
+  finding_comment?: { comment_type?: string; text?: string; due_date?: string; status?: string };
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -73,8 +73,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
       db.get<SurveyRequestCart[]>("/survey_request_carts", {
         filters: { survey_request_id: `eq.${id}` },
-        select:
-          "*,survey_audits!survey_audit_id(*),finding_comments!comment_id(*)",
       }),
       db.get<Employee[]>("/employees", {
         filters: { is_active: "eq.true" },
@@ -86,7 +84,44 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw new Response("Request not found", { status: 404 });
   }
 
-  return { requestItem: requests[0], cartItems, employees };
+  const surveyAuditIds = (cartItems || [])
+    .filter((item) => item.survey_audit_id)
+    .map((item) => item.survey_audit_id);
+  const commentIds = (cartItems || [])
+    .filter((item) => item.comment_id)
+    .map((item) => item.comment_id);
+
+  const [{ data: surveyAudits }, { data: findingComments }] = await Promise.all(
+    [
+      surveyAuditIds.length > 0
+        ? db.get<any[]>("/survey_audits", {
+            filters: { id: `in.(${surveyAuditIds.join(",")})` },
+          })
+        : Promise.resolve({ data: [] }),
+      commentIds.length > 0
+        ? db.get<any[]>("/finding_comments", {
+            filters: { id: `in.(${commentIds.join(",")})` },
+          })
+        : Promise.resolve({ data: [] }),
+    ]
+  );
+
+  const surveyAuditMap = new Map((surveyAudits || []).map((s) => [s.id, s]));
+  const findingCommentMap = new Map(
+    (findingComments || []).map((c) => [c.id, c])
+  );
+
+  const enrichedCartItems = (cartItems || []).map((item) => ({
+    ...item,
+    survey_audit: item.survey_audit_id
+      ? surveyAuditMap.get(item.survey_audit_id)
+      : null,
+    finding_comment: item.comment_id
+      ? findingCommentMap.get(item.comment_id)
+      : null,
+  }));
+
+  return { requestItem: requests[0], cartItems: enrichedCartItems, employees };
 }
 
 
@@ -130,7 +165,7 @@ export default function RequestDetail() {
   const findingItems = cartItems.filter((item: SurveyRequestCart) => item.comment_id);
 
   const hasAuditItems = cartItems.some((item) =>
-    ["SMC", "ISPS", "MLC", "DOC"].includes(item.survey_audits?.[0]?.cert_code || ""),
+    ["SMC", "ISPS", "MLC", "DOC"].includes(item.survey_audit?.cert_code || ""),
   );
   // More generically, use the is_audit flag from backend if possible, but here we'll just check if auditor assignment is needed.
   const needsAuditor = hasAuditItems;
@@ -244,20 +279,19 @@ export default function RequestDetail() {
                       className="hover:bg-muted/30 transition-colors"
                     >
                       <td className="px-6 py-4 font-mono text-sm">
-                        {item.survey_audits?.[0]?.code ||
-                          item.occ_survey_code}
+                        {item.survey_audit?.code || item.occ_survey_code}
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium">
-                          {item.survey_audits?.[0]?.description ||
+                          {item.survey_audit?.description ||
                             "Occasional Survey"}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {item.survey_audits ? (
+                        {item.survey_audit ? (
                           <span>
-                            {item.survey_audits?.[0]?.range_from_date} -{" "}
-                            {item.survey_audits?.[0]?.range_to_date}
+                            {item.survey_audit?.range_from_date} -{" "}
+                            {item.survey_audit?.range_to_date}
                           </span>
                         ) : (
                           <span className="italic">Occasional item</span>
@@ -301,22 +335,22 @@ export default function RequestDetail() {
                     >
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                          {item.finding_comments?.[0]?.comment_type}
+                          {item.finding_comment?.comment_type}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm leading-relaxed">
-                          {item.finding_comments?.[0]?.text}
+                          {item.finding_comment?.text}
                         </p>
-                        {item.finding_comments?.[0]?.due_date && (
+                        {item.finding_comment?.due_date && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Due: {item.finding_comments?.[0]?.due_date}
+                            Due: {item.finding_comment?.due_date}
                           </p>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm font-medium">
-                          {item.finding_comments?.[0]?.status}
+                          {item.finding_comment?.status}
                         </span>
                       </td>
                     </tr>

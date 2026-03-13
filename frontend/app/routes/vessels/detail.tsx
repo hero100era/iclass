@@ -52,6 +52,7 @@ interface Certificate {
 interface Survey {
   id: number;
   certificate_id?: number;
+  pool_id?: number;
   code?: string;
   description?: string;
   last_held_date?: string;
@@ -114,6 +115,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     { data: certificates },
     { data: documents },
     { data: findings },
+    { data: surveys },
     { data: otherSurveys },
   ] = await Promise.all([
     db.get<Vessel[]>("/ships", { filters: { id: `eq.${params.id}` } }),
@@ -126,28 +128,31 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     db.get<Finding[]>("/finding_comments", {
       filters: { ship_id: `eq.${params.id}` },
     }),
+    db.get<Survey[]>("/survey_audits", {
+      filters: { ship_id: `eq.${params.id}` },
+    }),
     db.get<OtherSurvey[]>("/survey_pool"),
   ]);
 
   if (!vessels || vessels.length === 0)
     throw new Response("Vessel not found.", { status: 404 });
 
-  let surveys: Survey[] = [];
-  if (certificates.length > 0) {
-    const certIds = certificates.map((c) => c.id).join(",");
-    const { data: fetchedSurveys } = await db.get<Survey[]>("/survey_audits", {
-      filters: { certificate_id: `in.(${certIds})` },
-    });
-    surveys = fetchedSurveys || [];
-  }
+  const usedPoolIds = new Set(
+    (surveys || [])
+      .filter((s) => s.pool_id !== null)
+      .map((s) => s.pool_id)
+  );
+  const otherSurveysFiltered = (otherSurveys || []).filter(
+    (s) => !usedPoolIds.has(s.id)
+  );
 
   return {
     vessel: vessels[0],
     certificates: certificates || [],
-    surveys,
+    surveys: surveys || [],
     documents: documents || [],
     findings: findings || [],
-    otherSurveys: otherSurveys || [],
+    otherSurveys: otherSurveysFiltered,
   };
 }
 
@@ -498,14 +503,14 @@ function VesselDetailContent() {
           </AccordionItem>
 
           {/* Surveys */}
-          <AccordionItem value="surveys">
+          <AccordionItem value="surveys" className="overflow-visible">
             <AccordionTrigger>
               <span className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-slate-400" />
                 Surveys &amp; Audits ({surveys.length})
               </span>
             </AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent className="overflow-visible">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">

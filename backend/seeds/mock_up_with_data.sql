@@ -235,17 +235,17 @@ ON CONFLICT DO NOTHING;
 INSERT INTO iclass.survey_audit (certificate_id, pool_id, description, last_held_date, place_held, next_due_date, postponement_date, range_from_date, range_to_date, fee)
 VALUES
   (
-    (SELECT id FROM iclass.certificate WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'A'),
+    (SELECT id FROM iclass.certificate WHERE id = 3), (select id from iclass.survey_pool where cert_code='LL' and type = 'A'),
    'Load Line Annual Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL,  CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   ),
   (
-    (SELECT id FROM iclass.certificate WHERE certificate_id = 1 AND version = 1), (select id from iclass.survey_pool where cert_code='LL' and type = 'R'),
+    (SELECT id FROM iclass.certificate WHERE id = 3), (select id from iclass.survey_pool where cert_code='LL' and type = 'R'),
    'Load Line Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL, CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   ),
   (
-  (SELECT id FROM iclass.certificate WHERE cert_code = 'CL' AND version = 1), (select id from iclass.survey_pool where cert_code='CL' and type = 'R'),
+  (SELECT id FROM iclass.certificate WHERE id = 2), (select id from iclass.survey_pool where cert_code='CL' and type = 'R'),
    'Class Renewal Survey', CURRENT_DATE - INTERVAL '1 month', 'Shanghai',
     CURRENT_DATE + INTERVAL '11 months', NULL, CURRENT_DATE + INTERVAL '9 months', CURRENT_DATE + INTERVAL '15 months', 1500.00
   )
@@ -253,7 +253,7 @@ ON CONFLICT DO NOTHING;
 
 -- Finding Comments
 INSERT INTO iclass.finding_comment (
-  ship_id, company_id, comment_type, private, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
+  ship_id, company_id, comment_type, is_private, certificates, date_issued, place_issued, due_date, expiry_survey_audits,
   status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
 )
 VALUES

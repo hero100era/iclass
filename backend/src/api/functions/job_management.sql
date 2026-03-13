@@ -18,7 +18,7 @@ DECLARE
     v_has_audit boolean := FALSE;
 BEGIN
     -- 1. Get request details
-    SELECT ship_id, company_id, location 
+    SELECT ship_id, company_id, location
     INTO v_ship_id, v_company_id, v_location
     FROM iclass.survey_request
     WHERE id = p_request_id AND status = 'submitted';
@@ -35,7 +35,7 @@ BEGIN
     -- 3. Check what's in the cart and create sub-jobs
     -- We'll assume for now that if there are items in the cart, we need to categorize them.
     -- In this schema, survey_audits can be either survey or audit based on the pool type.
-    
+
     FOR v_cart_item IN SELECT * FROM iclass.survey_request_cart WHERE survey_request_id = p_request_id LOOP
         IF v_cart_item.survey_audit_id IS NOT NULL THEN
             -- is_audit lives on survey_pool directly now
@@ -111,15 +111,15 @@ BEGIN
     END IF;
 
     -- 6. Add findings/recommendations to the job scope
-    INSERT INTO iclass.comment_line (job_id, finding_comment_id)
-    SELECT v_job_id, comment_id
-    FROM iclass.survey_request_cart
-    WHERE survey_request_id = p_request_id AND comment_id IS NOT NULL;
+    INSERT INTO iclass.comment_line (survey_job_id, finding_comment_id)
+      SELECT v_survey_job_id, comment_id
+      FROM iclass.survey_request_cart
+      WHERE survey_request_id = p_request_id AND comment_id IS NOT NULL;
 
     -- 7. Update request status
     UPDATE iclass.survey_request
-    SET status = 'assigned', is_assigned = TRUE, updated_at = CURRENT_TIMESTAMP
-    WHERE id = p_request_id;
+      SET status = 'assigned', is_assigned = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE id = p_request_id;
 
     RETURN v_job_id;
 END;

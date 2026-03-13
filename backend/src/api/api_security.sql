@@ -64,7 +64,7 @@ FROM iclass.document;
 DROP VIEW IF EXISTS api.finding_comments CASCADE;
 CREATE OR REPLACE VIEW api.finding_comments AS
 SELECT
-  id, ship_id, company_id, comment_type, private, certificates,
+  id, ship_id, company_id, comment_type, is_private, certificates,
   date_issued, place_issued, due_date, expiry_survey_audits, status,
   postponed_due_date, postponed_expiry_survey_audits, mms_reference, text,
   created_at, updated_at, is_active
@@ -159,7 +159,7 @@ FROM iclass.job_participant;
 DROP VIEW IF EXISTS api.comment_lines CASCADE;
 CREATE OR REPLACE VIEW api.comment_lines AS
 SELECT
-  id, job_id, finding_comment_id, created_at, updated_at
+  id, survey_job_id, audit_job_id, finding_comment_id, is_private, certificates, due_date, expiry_survey_audits, status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
 FROM iclass.comment_line;
 
 -- Consolidated view for surveyor's job list
@@ -270,10 +270,10 @@ BEGIN
             NEW.template_node_id, NEW.attr_key, NEW.attr_title, NEW.data_type, NEW.default_value, NEW.selection_options, NEW.unit, COALESCE(NEW.is_required, FALSE), COALESCE(NEW.sort_order, 0)
         ) RETURNING id, template_node_id, attr_key, attr_title, data_type, default_value, selection_options, unit, is_required, sort_order, created_at, updated_at
         INTO NEW.id, NEW.template_node_id, NEW.attr_key, NEW.attr_title, NEW.data_type, NEW.default_value, NEW.selection_options, NEW.unit, NEW.is_required, NEW.sort_order, NEW.created_at, NEW.updated_at;
-        
+
         -- We need to return template_id as well for the view consistency
         SELECT template_id INTO NEW.template_id FROM iclass.breakdown_template_node WHERE id = NEW.template_node_id;
-        
+
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE iclass.breakdown_template_node_particular SET
@@ -288,10 +288,10 @@ BEGIN
             sort_order = NEW.sort_order,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = OLD.id;
-        
+
         -- Sync NEW with the updated state
         SELECT * INTO NEW FROM api.breakdown_template_node_particulars WHERE id = OLD.id;
-        
+
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         DELETE FROM iclass.breakdown_template_node_particular WHERE id = OLD.id;
@@ -327,18 +327,18 @@ FROM iclass.ship_breakdown_node;
 DROP VIEW IF EXISTS api.ship_breakdown_node_particulars CASCADE;
 CREATE OR REPLACE VIEW api.ship_breakdown_node_particulars AS
 SELECT
-    p.id, 
-    p.ship_breakdown_node_id, 
-    p.template_particular_id, 
-    p.attr_key, 
+    p.id,
+    p.ship_breakdown_node_id,
+    p.template_particular_id,
+    p.attr_key,
     p.attr_title,
-    p.attr_value, 
-    p.selection_options, 
-    p.data_type, 
-    p.unit, 
-    p.is_modified, 
+    p.attr_value,
+    p.selection_options,
+    p.data_type,
+    p.unit,
+    p.is_modified,
     p.sort_order,
-    p.created_at, 
+    p.created_at,
     p.updated_at,
     n.ship_breakdown_id,
     n.ship_id
@@ -360,10 +360,10 @@ BEGIN
             NEW.ship_breakdown_node_id, NEW.template_particular_id, NEW.attr_key, NEW.attr_title, NEW.attr_value,
             NEW.selection_options, NEW.data_type, NEW.unit, COALESCE(NEW.is_modified, FALSE), COALESCE(NEW.sort_order, 0)
         ) RETURNING id INTO NEW.id;
-        
+
         -- Sync NEW with the inserted state
         SELECT * INTO NEW FROM api.ship_breakdown_node_particulars WHERE id = NEW.id;
-        
+
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE iclass.ship_breakdown_node_particular SET
@@ -371,10 +371,10 @@ BEGIN
             is_modified = TRUE,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = OLD.id;
-        
+
         -- Sync NEW with the updated state
         SELECT * INTO NEW FROM api.ship_breakdown_node_particulars WHERE id = OLD.id;
-        
+
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         DELETE FROM iclass.ship_breakdown_node_particular WHERE id = OLD.id;
@@ -398,7 +398,7 @@ FROM iclass.checklist_result;
 
 DROP VIEW IF EXISTS api.checklist_items CASCADE;
 CREATE OR REPLACE VIEW api.checklist_items AS
-SELECT 
+SELECT
     id, code, item_number, section_id, content, description,
     breakdown_template_node_id,
     reg_reference, referenced_item_id,
@@ -408,7 +408,7 @@ FROM iclass.checklist_item;
 DROP VIEW IF EXISTS api.checklist_item_particulars CASCADE;
 CREATE OR REPLACE VIEW api.checklist_item_particulars AS
 SELECT
-    id, checklist_item_id, attr_key, attr_title, data_type, unit, 
+    id, checklist_item_id, attr_key, attr_title, data_type, unit,
     default_value, selection_options, is_required, sort_order, description,
     created_at, updated_at
 FROM iclass.checklist_item_particular;
@@ -416,14 +416,14 @@ FROM iclass.checklist_item_particular;
 DROP VIEW IF EXISTS api.survey_checklists CASCADE;
 CREATE OR REPLACE VIEW api.survey_checklists AS
 SELECT
-    id, survey_job_id, survey_line_id, survey_audit_id, item_id, 
+    id, survey_job_id, survey_line_id, survey_audit_id, item_id,
     ship_breakdown_node_id, result, report_by, report_at
 FROM iclass.survey_checklist;
 
 DROP VIEW IF EXISTS api.audit_checklists CASCADE;
 CREATE OR REPLACE VIEW api.audit_checklists AS
 SELECT
-    id, audit_job_id, audit_line_id, survey_audit_id, item_id, 
+    id, audit_job_id, audit_line_id, survey_audit_id, item_id,
     ship_breakdown_node_id, result, report_by, report_at
 FROM iclass.audit_checklist;
 

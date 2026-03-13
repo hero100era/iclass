@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 
-
 /**
  * AUTO-GENERATED FILE - DO NOT EDIT!
  *
@@ -10,11 +9,31 @@
  *
  */
 
-
 export type Json = unknown;
-export type certificate_applicability_enum = 'Company' | 'Vessel';
-export type data_type_enum = 'boolean' | 'date' | 'datetime' | 'decimal' | 'integer' | 'multi_select' | 'selection' | 'text';
-export type task_status_enum = 'accepted' | 'approved' | 'assigned' | 'cancelled' | 'completed' | 'draft' | 'executing' | 'partial' | 'pending_review' | 'planning' | 'rejected' | 'scheduled' | 'submitted';
+export type certificate_applicability_enum = "Company" | "Vessel";
+export type data_type_enum =
+  | "boolean"
+  | "date"
+  | "datetime"
+  | "decimal"
+  | "integer"
+  | "multi_select"
+  | "selection"
+  | "text";
+export type task_status_enum =
+  | "accepted"
+  | "approved"
+  | "assigned"
+  | "cancelled"
+  | "completed"
+  | "draft"
+  | "executing"
+  | "partial"
+  | "pending_review"
+  | "planning"
+  | "rejected"
+  | "scheduled"
+  | "submitted";
 
 // Table administration_type
 export interface AdministrationType {
@@ -26,13 +45,13 @@ export interface AdministrationTypeInput {
   name: string;
 }
 const administration_type = {
-  tableName: 'administration_type',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "administration_type",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as AdministrationType,
-  $input: null as unknown as AdministrationTypeInput
+  $input: null as unknown as AdministrationTypeInput,
 } as const;
 
 // Table audit_checklist
@@ -61,21 +80,60 @@ export interface AuditChecklistInput {
   report_at?: Date | null;
 }
 const audit_checklist = {
-  tableName: 'audit_checklist',
-  columns: ['id', 'audit_job_id', 'audit_line_id', 'survey_audit_id', 'item_id', 'ship_breakdown_node_id', 'result', 'metadata', 'report_by', 'report_at'],
+  tableName: "audit_checklist",
+  columns: [
+    "id",
+    "audit_job_id",
+    "audit_line_id",
+    "survey_audit_id",
+    "item_id",
+    "ship_breakdown_node_id",
+    "result",
+    "metadata",
+    "report_by",
+    "report_at",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    audit_job_id: { table: 'audit_job', column: 'id', $type: null as unknown as AuditJob },
-    audit_line_id: { table: 'audit_line', column: 'id', $type: null as unknown as AuditLine },
-    survey_audit_id: { table: 'survey_audit', column: 'id', $type: null as unknown as SurveyAudit },
-    item_id: { table: 'checklist_item', column: 'id', $type: null as unknown as ChecklistItem },
-    ship_breakdown_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
-    result: { table: 'checklist_result', column: 'code', $type: null as unknown as ChecklistResult },
-    report_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    audit_job_id: {
+      table: "audit_job",
+      column: "id",
+      $type: null as unknown as AuditJob,
+    },
+    audit_line_id: {
+      table: "audit_line",
+      column: "id",
+      $type: null as unknown as AuditLine,
+    },
+    survey_audit_id: {
+      table: "survey_audit",
+      column: "id",
+      $type: null as unknown as SurveyAudit,
+    },
+    item_id: {
+      table: "checklist_item",
+      column: "id",
+      $type: null as unknown as ChecklistItem,
+    },
+    ship_breakdown_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
+    result: {
+      table: "checklist_result",
+      column: "code",
+      $type: null as unknown as ChecklistResult,
+    },
+    report_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as AuditChecklist,
-  $input: null as unknown as AuditChecklistInput
+  $input: null as unknown as AuditChecklistInput,
 } as const;
 
 // Table audit_checklist_item_particular
@@ -112,17 +170,44 @@ export interface AuditChecklistItemParticularInput {
   updated_at?: Date;
 }
 const audit_checklist_item_particular = {
-  tableName: 'audit_checklist_item_particular',
-  columns: ['id', 'audit_checklist_id', 'source_particular_id', 'ship_breakdown_node_id', 'attr_key', 'attr_title', 'data_type', 'unit', 'selection_options', 'is_required', 'sort_order', 'attr_result', 'created_at', 'updated_at'],
-  requiredForInsert: ['audit_checklist_id', 'attr_key', 'attr_title'],
-  primaryKey: 'id',
+  tableName: "audit_checklist_item_particular",
+  columns: [
+    "id",
+    "audit_checklist_id",
+    "source_particular_id",
+    "ship_breakdown_node_id",
+    "attr_key",
+    "attr_title",
+    "data_type",
+    "unit",
+    "selection_options",
+    "is_required",
+    "sort_order",
+    "attr_result",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["audit_checklist_id", "attr_key", "attr_title"],
+  primaryKey: "id",
   foreignKeys: {
-    audit_checklist_id: { table: 'audit_checklist', column: 'id', $type: null as unknown as AuditChecklist },
-    source_particular_id: { table: 'checklist_item_particular', column: 'id', $type: null as unknown as ChecklistItemParticular },
-    ship_breakdown_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
+    audit_checklist_id: {
+      table: "audit_checklist",
+      column: "id",
+      $type: null as unknown as AuditChecklist,
+    },
+    source_particular_id: {
+      table: "checklist_item_particular",
+      column: "id",
+      $type: null as unknown as ChecklistItemParticular,
+    },
+    ship_breakdown_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
   },
   $type: null as unknown as AuditChecklistItemParticular,
-  $input: null as unknown as AuditChecklistItemParticularInput
+  $input: null as unknown as AuditChecklistItemParticularInput,
 } as const;
 
 // Table audit_job
@@ -149,20 +234,46 @@ export interface AuditJobInput {
   initialized?: boolean | null;
 }
 const audit_job = {
-  tableName: 'audit_job',
-  columns: ['id', 'job_id', 'parent_id', 'ship_id', 'company_id', 'auditor_id', 'reviewer_id', 'description', 'initialized'],
+  tableName: "audit_job",
+  columns: [
+    "id",
+    "job_id",
+    "parent_id",
+    "ship_id",
+    "company_id",
+    "auditor_id",
+    "reviewer_id",
+    "description",
+    "initialized",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'job', column: 'id', $type: null as unknown as Job },
-    parent_id: { table: 'audit_job', column: 'id', $type: null as unknown as AuditJob },
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    auditor_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    reviewer_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    job_id: { table: "job", column: "id", $type: null as unknown as Job },
+    parent_id: {
+      table: "audit_job",
+      column: "id",
+      $type: null as unknown as AuditJob,
+    },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    auditor_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    reviewer_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as AuditJob,
-  $input: null as unknown as AuditJobInput
+  $input: null as unknown as AuditJobInput,
 } as const;
 
 // Table audit_line
@@ -183,17 +294,36 @@ export interface AuditLineInput {
   credit_periodical?: boolean | null;
 }
 const audit_line = {
-  tableName: 'audit_line',
-  columns: ['id', 'job_id', 'survey_audit_id', 'pool_id', 'initialized', 'credit_periodical'],
+  tableName: "audit_line",
+  columns: [
+    "id",
+    "job_id",
+    "survey_audit_id",
+    "pool_id",
+    "initialized",
+    "credit_periodical",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'audit_job', column: 'id', $type: null as unknown as AuditJob },
-    survey_audit_id: { table: 'survey_audit', column: 'id', $type: null as unknown as SurveyAudit },
-    pool_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool },
+    job_id: {
+      table: "audit_job",
+      column: "id",
+      $type: null as unknown as AuditJob,
+    },
+    survey_audit_id: {
+      table: "survey_audit",
+      column: "id",
+      $type: null as unknown as SurveyAudit,
+    },
+    pool_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
   },
   $type: null as unknown as AuditLine,
-  $input: null as unknown as AuditLineInput
+  $input: null as unknown as AuditLineInput,
 } as const;
 
 // Table breakdown_template
@@ -226,13 +356,32 @@ export interface BreakdownTemplateInput {
   updated_at?: Date;
 }
 const breakdown_template = {
-  tableName: 'breakdown_template',
-  columns: ['id', 'code', 'name', 'description', 'vessel_type', 'version', 'is_active', 'parent_template_id', 'created_by', 'updated_by', 'created_at', 'updated_at'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'id',
-  foreignKeys: { parent_template_id: { table: 'breakdown_template', column: 'id', $type: null as unknown as BreakdownTemplate }, },
+  tableName: "breakdown_template",
+  columns: [
+    "id",
+    "code",
+    "name",
+    "description",
+    "vessel_type",
+    "version",
+    "is_active",
+    "parent_template_id",
+    "created_by",
+    "updated_by",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "id",
+  foreignKeys: {
+    parent_template_id: {
+      table: "breakdown_template",
+      column: "id",
+      $type: null as unknown as BreakdownTemplate,
+    },
+  },
   $type: null as unknown as BreakdownTemplate,
-  $input: null as unknown as BreakdownTemplateInput
+  $input: null as unknown as BreakdownTemplateInput,
 } as const;
 
 // Table breakdown_template_node
@@ -277,16 +426,43 @@ export interface BreakdownTemplateNodeInput {
   updated_at?: Date;
 }
 const breakdown_template_node = {
-  tableName: 'breakdown_template_node',
-  columns: ['id', 'template_id', 'parent_node_id', 'code', 'name', 'description', 'category', 'node_type', 'level', 'sort_order', 'is_instantiable', 'default_quantity', 'is_active', 'metadata', 'is_mandatory', 'is_leaf', 'created_at', 'updated_at'],
-  requiredForInsert: ['template_id', 'code', 'name'],
-  primaryKey: 'id',
+  tableName: "breakdown_template_node",
+  columns: [
+    "id",
+    "template_id",
+    "parent_node_id",
+    "code",
+    "name",
+    "description",
+    "category",
+    "node_type",
+    "level",
+    "sort_order",
+    "is_instantiable",
+    "default_quantity",
+    "is_active",
+    "metadata",
+    "is_mandatory",
+    "is_leaf",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["template_id", "code", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    template_id: { table: 'breakdown_template', column: 'id', $type: null as unknown as BreakdownTemplate },
-    parent_node_id: { table: 'breakdown_template_node', column: 'id', $type: null as unknown as BreakdownTemplateNode },
+    template_id: {
+      table: "breakdown_template",
+      column: "id",
+      $type: null as unknown as BreakdownTemplate,
+    },
+    parent_node_id: {
+      table: "breakdown_template_node",
+      column: "id",
+      $type: null as unknown as BreakdownTemplateNode,
+    },
   },
   $type: null as unknown as BreakdownTemplateNode,
-  $input: null as unknown as BreakdownTemplateNodeInput
+  $input: null as unknown as BreakdownTemplateNodeInput,
 } as const;
 
 // Table breakdown_template_node_particular
@@ -319,13 +495,37 @@ export interface BreakdownTemplateNodeParticularInput {
   updated_at?: Date;
 }
 const breakdown_template_node_particular = {
-  tableName: 'breakdown_template_node_particular',
-  columns: ['id', 'template_node_id', 'attr_key', 'attr_title', 'data_type', 'default_value', 'selection_options', 'unit', 'is_required', 'sort_order', 'created_at', 'updated_at'],
-  requiredForInsert: ['template_node_id', 'attr_key', 'attr_title', 'data_type'],
-  primaryKey: 'id',
-  foreignKeys: { template_node_id: { table: 'breakdown_template_node', column: 'id', $type: null as unknown as BreakdownTemplateNode }, },
+  tableName: "breakdown_template_node_particular",
+  columns: [
+    "id",
+    "template_node_id",
+    "attr_key",
+    "attr_title",
+    "data_type",
+    "default_value",
+    "selection_options",
+    "unit",
+    "is_required",
+    "sort_order",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: [
+    "template_node_id",
+    "attr_key",
+    "attr_title",
+    "data_type",
+  ],
+  primaryKey: "id",
+  foreignKeys: {
+    template_node_id: {
+      table: "breakdown_template_node",
+      column: "id",
+      $type: null as unknown as BreakdownTemplateNode,
+    },
+  },
   $type: null as unknown as BreakdownTemplateNodeParticular,
-  $input: null as unknown as BreakdownTemplateNodeParticularInput
+  $input: null as unknown as BreakdownTemplateNodeParticularInput,
 } as const;
 
 // Table certificate
@@ -384,23 +584,91 @@ export interface CertificateInput {
   is_active?: boolean | null;
 }
 const certificate = {
-  tableName: 'certificate',
-  columns: ['id', 'certificate_id', 'version', 'ship_id', 'company_id', 'certificate_template_code', 'status', 'remark', 'issued_by', 'cert_code', 'validity_type', 'category', 'internal_category', 'description', 'issue_date', 'expiry_date', 'mlc_declaration_date', 'mlc_declaration_place', 'doc_administration', 'extended_date', 'file_path_cert', 'file_path_draft', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['version', 'status', 'remark', 'issued_by', 'cert_code', 'validity_type', 'category', 'internal_category', 'issue_date'],
-  primaryKey: 'id',
+  tableName: "certificate",
+  columns: [
+    "id",
+    "certificate_id",
+    "version",
+    "ship_id",
+    "company_id",
+    "certificate_template_code",
+    "status",
+    "remark",
+    "issued_by",
+    "cert_code",
+    "validity_type",
+    "category",
+    "internal_category",
+    "description",
+    "issue_date",
+    "expiry_date",
+    "mlc_declaration_date",
+    "mlc_declaration_place",
+    "doc_administration",
+    "extended_date",
+    "file_path_cert",
+    "file_path_draft",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: [
+    "version",
+    "status",
+    "remark",
+    "issued_by",
+    "cert_code",
+    "validity_type",
+    "category",
+    "internal_category",
+    "issue_date",
+  ],
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    certificate_template_code: { table: 'certificate_template', column: 'code', $type: null as unknown as CertificateTemplate },
-    status: { table: 'certificate_status', column: 'code', $type: null as unknown as CertificateStatus },
-    issued_by: { table: 'classification_society', column: 'code', $type: null as unknown as ClassificationSociety },
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    validity_type: { table: 'certificate_validity_type', column: 'code', $type: null as unknown as CertificateValidityType },
-    category: { table: 'certificate_category', column: 'code', $type: null as unknown as CertificateCategory },
-    internal_category: { table: 'certificate_internal_category', column: 'code', $type: null as unknown as CertificateInternalCategory },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    certificate_template_code: {
+      table: "certificate_template",
+      column: "code",
+      $type: null as unknown as CertificateTemplate,
+    },
+    status: {
+      table: "certificate_status",
+      column: "code",
+      $type: null as unknown as CertificateStatus,
+    },
+    issued_by: {
+      table: "classification_society",
+      column: "code",
+      $type: null as unknown as ClassificationSociety,
+    },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    validity_type: {
+      table: "certificate_validity_type",
+      column: "code",
+      $type: null as unknown as CertificateValidityType,
+    },
+    category: {
+      table: "certificate_category",
+      column: "code",
+      $type: null as unknown as CertificateCategory,
+    },
+    internal_category: {
+      table: "certificate_internal_category",
+      column: "code",
+      $type: null as unknown as CertificateInternalCategory,
+    },
   },
   $type: null as unknown as Certificate,
-  $input: null as unknown as CertificateInput
+  $input: null as unknown as CertificateInput,
 } as const;
 
 // Table certificate_action
@@ -413,13 +681,13 @@ export interface CertificateActionInput {
   name: string;
 }
 const certificate_action = {
-  tableName: 'certificate_action',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "certificate_action",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateAction,
-  $input: null as unknown as CertificateActionInput
+  $input: null as unknown as CertificateActionInput,
 } as const;
 
 // Table certificate_category
@@ -432,13 +700,13 @@ export interface CertificateCategoryInput {
   name: string;
 }
 const certificate_category = {
-  tableName: 'certificate_category',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "certificate_category",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateCategory,
-  $input: null as unknown as CertificateCategoryInput
+  $input: null as unknown as CertificateCategoryInput,
 } as const;
 
 // Table certificate_internal_category
@@ -453,13 +721,13 @@ export interface CertificateInternalCategoryInput {
   description?: string | null;
 }
 const certificate_internal_category = {
-  tableName: 'certificate_internal_category',
-  columns: ['code', 'name', 'description'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "certificate_internal_category",
+  columns: ["code", "name", "description"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateInternalCategory,
-  $input: null as unknown as CertificateInternalCategoryInput
+  $input: null as unknown as CertificateInternalCategoryInput,
 } as const;
 
 // Table certificate_line
@@ -490,20 +758,56 @@ export interface CertificateLineInput {
   file_path_cert?: string | null;
 }
 const certificate_line = {
-  tableName: 'certificate_line',
-  columns: ['id', 'survey_job_id', 'audit_job_id', 'ms_job_id', 'certificate_id', 'action_code', 'issued_by', 'issue_date', 'extended_date', 'file_path_draft', 'file_path_cert'],
-  requiredForInsert: ['action_code'],
-  primaryKey: 'id',
+  tableName: "certificate_line",
+  columns: [
+    "id",
+    "survey_job_id",
+    "audit_job_id",
+    "ms_job_id",
+    "certificate_id",
+    "action_code",
+    "issued_by",
+    "issue_date",
+    "extended_date",
+    "file_path_draft",
+    "file_path_cert",
+  ],
+  requiredForInsert: ["action_code"],
+  primaryKey: "id",
   foreignKeys: {
-    survey_job_id: { table: 'survey_job', column: 'id', $type: null as unknown as SurveyJob },
-    audit_job_id: { table: 'audit_job', column: 'id', $type: null as unknown as AuditJob },
-    ms_job_id: { table: 'ms_job', column: 'id', $type: null as unknown as MsJob },
-    certificate_id: { table: 'certificate', column: 'id', $type: null as unknown as Certificate },
-    action_code: { table: 'certificate_action', column: 'code', $type: null as unknown as CertificateAction },
-    issued_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    survey_job_id: {
+      table: "survey_job",
+      column: "id",
+      $type: null as unknown as SurveyJob,
+    },
+    audit_job_id: {
+      table: "audit_job",
+      column: "id",
+      $type: null as unknown as AuditJob,
+    },
+    ms_job_id: {
+      table: "ms_job",
+      column: "id",
+      $type: null as unknown as MsJob,
+    },
+    certificate_id: {
+      table: "certificate",
+      column: "id",
+      $type: null as unknown as Certificate,
+    },
+    action_code: {
+      table: "certificate_action",
+      column: "code",
+      $type: null as unknown as CertificateAction,
+    },
+    issued_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as CertificateLine,
-  $input: null as unknown as CertificateLineInput
+  $input: null as unknown as CertificateLineInput,
 } as const;
 
 // Table certificate_status
@@ -516,13 +820,13 @@ export interface CertificateStatusInput {
   name: string;
 }
 const certificate_status = {
-  tableName: 'certificate_status',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "certificate_status",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateStatus,
-  $input: null as unknown as CertificateStatusInput
+  $input: null as unknown as CertificateStatusInput,
 } as const;
 
 // Table certificate_survey_pool
@@ -535,13 +839,13 @@ export interface CertificateSurveyPoolInput {
   description: string;
 }
 const certificate_survey_pool = {
-  tableName: 'certificate_survey_pool',
-  columns: ['code', 'description'],
-  requiredForInsert: ['code', 'description'],
-  primaryKey: 'code',
+  tableName: "certificate_survey_pool",
+  columns: ["code", "description"],
+  requiredForInsert: ["code", "description"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateSurveyPool,
-  $input: null as unknown as CertificateSurveyPoolInput
+  $input: null as unknown as CertificateSurveyPoolInput,
 } as const;
 
 // Table certificate_template
@@ -580,18 +884,50 @@ export interface CertificateTemplateInput {
   is_active?: boolean | null;
 }
 const certificate_template = {
-  tableName: 'certificate_template',
-  columns: ['code', 'name', 'version', 'cert_code', 'validity_type', 'category', 'internal_category', 'file_path_xml', 'file_path_html', 'file_path_pdf', 'description', 'applicability', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['code', 'name', 'version'],
-  primaryKey: 'code',
+  tableName: "certificate_template",
+  columns: [
+    "code",
+    "name",
+    "version",
+    "cert_code",
+    "validity_type",
+    "category",
+    "internal_category",
+    "file_path_xml",
+    "file_path_html",
+    "file_path_pdf",
+    "description",
+    "applicability",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["code", "name", "version"],
+  primaryKey: "code",
   foreignKeys: {
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    validity_type: { table: 'certificate_validity_type', column: 'code', $type: null as unknown as CertificateValidityType },
-    category: { table: 'certificate_category', column: 'code', $type: null as unknown as CertificateCategory },
-    internal_category: { table: 'certificate_internal_category', column: 'code', $type: null as unknown as CertificateInternalCategory },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    validity_type: {
+      table: "certificate_validity_type",
+      column: "code",
+      $type: null as unknown as CertificateValidityType,
+    },
+    category: {
+      table: "certificate_category",
+      column: "code",
+      $type: null as unknown as CertificateCategory,
+    },
+    internal_category: {
+      table: "certificate_internal_category",
+      column: "code",
+      $type: null as unknown as CertificateInternalCategory,
+    },
   },
   $type: null as unknown as CertificateTemplate,
-  $input: null as unknown as CertificateTemplateInput
+  $input: null as unknown as CertificateTemplateInput,
 } as const;
 
 // Table certificate_validity_type
@@ -604,13 +940,13 @@ export interface CertificateValidityTypeInput {
   name: string;
 }
 const certificate_validity_type = {
-  tableName: 'certificate_validity_type',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "certificate_validity_type",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CertificateValidityType,
-  $input: null as unknown as CertificateValidityTypeInput
+  $input: null as unknown as CertificateValidityTypeInput,
 } as const;
 
 // Table checklist_item
@@ -647,17 +983,44 @@ export interface ChecklistItemInput {
   is_active?: boolean | null;
 }
 const checklist_item = {
-  tableName: 'checklist_item',
-  columns: ['id', 'code', 'item_number', 'section_id', 'content', 'description', 'breakdown_template_node_id', 'reg_reference', 'referenced_item_id', 'is_mandatory', 'sort_order', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['item_number'],
-  primaryKey: 'id',
+  tableName: "checklist_item",
+  columns: [
+    "id",
+    "code",
+    "item_number",
+    "section_id",
+    "content",
+    "description",
+    "breakdown_template_node_id",
+    "reg_reference",
+    "referenced_item_id",
+    "is_mandatory",
+    "sort_order",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["item_number"],
+  primaryKey: "id",
   foreignKeys: {
-    section_id: { table: 'checklist_section', column: 'id', $type: null as unknown as ChecklistSection },
-    breakdown_template_node_id: { table: 'breakdown_template_node', column: 'id', $type: null as unknown as BreakdownTemplateNode },
-    referenced_item_id: { table: 'checklist_item', column: 'id', $type: null as unknown as ChecklistItem },
+    section_id: {
+      table: "checklist_section",
+      column: "id",
+      $type: null as unknown as ChecklistSection,
+    },
+    breakdown_template_node_id: {
+      table: "breakdown_template_node",
+      column: "id",
+      $type: null as unknown as BreakdownTemplateNode,
+    },
+    referenced_item_id: {
+      table: "checklist_item",
+      column: "id",
+      $type: null as unknown as ChecklistItem,
+    },
   },
   $type: null as unknown as ChecklistItem,
-  $input: null as unknown as ChecklistItemInput
+  $input: null as unknown as ChecklistItemInput,
 } as const;
 
 // Table checklist_item_particular
@@ -692,13 +1055,33 @@ export interface ChecklistItemParticularInput {
   updated_at?: Date;
 }
 const checklist_item_particular = {
-  tableName: 'checklist_item_particular',
-  columns: ['id', 'checklist_item_id', 'attr_key', 'attr_title', 'data_type', 'unit', 'default_value', 'selection_options', 'is_required', 'sort_order', 'description', 'created_at', 'updated_at'],
-  requiredForInsert: ['checklist_item_id', 'attr_key', 'attr_title'],
-  primaryKey: 'id',
-  foreignKeys: { checklist_item_id: { table: 'checklist_item', column: 'id', $type: null as unknown as ChecklistItem }, },
+  tableName: "checklist_item_particular",
+  columns: [
+    "id",
+    "checklist_item_id",
+    "attr_key",
+    "attr_title",
+    "data_type",
+    "unit",
+    "default_value",
+    "selection_options",
+    "is_required",
+    "sort_order",
+    "description",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["checklist_item_id", "attr_key", "attr_title"],
+  primaryKey: "id",
+  foreignKeys: {
+    checklist_item_id: {
+      table: "checklist_item",
+      column: "id",
+      $type: null as unknown as ChecklistItem,
+    },
+  },
   $type: null as unknown as ChecklistItemParticular,
-  $input: null as unknown as ChecklistItemParticularInput
+  $input: null as unknown as ChecklistItemParticularInput,
 } as const;
 
 // Table checklist_result
@@ -711,13 +1094,13 @@ export interface ChecklistResultInput {
   description: string;
 }
 const checklist_result = {
-  tableName: 'checklist_result',
-  columns: ['code', 'description'],
-  requiredForInsert: ['code', 'description'],
-  primaryKey: 'code',
+  tableName: "checklist_result",
+  columns: ["code", "description"],
+  requiredForInsert: ["code", "description"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as ChecklistResult,
-  $input: null as unknown as ChecklistResultInput
+  $input: null as unknown as ChecklistResultInput,
 } as const;
 
 // Table checklist_section
@@ -740,13 +1123,27 @@ export interface ChecklistSectionInput {
   is_active?: boolean | null;
 }
 const checklist_section = {
-  tableName: 'checklist_section',
-  columns: ['id', 'survey_id', 'code', 'section_number', 'title', 'description', 'is_active'],
-  requiredForInsert: ['code', 'section_number', 'title'],
-  primaryKey: 'id',
-  foreignKeys: { survey_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool }, },
+  tableName: "checklist_section",
+  columns: [
+    "id",
+    "survey_id",
+    "code",
+    "section_number",
+    "title",
+    "description",
+    "is_active",
+  ],
+  requiredForInsert: ["code", "section_number", "title"],
+  primaryKey: "id",
+  foreignKeys: {
+    survey_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
+  },
   $type: null as unknown as ChecklistSection,
-  $input: null as unknown as ChecklistSectionInput
+  $input: null as unknown as ChecklistSectionInput,
 } as const;
 
 // Table class_status
@@ -759,13 +1156,13 @@ export interface ClassStatusInput {
   name: string;
 }
 const class_status = {
-  tableName: 'class_status',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "class_status",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as ClassStatus,
-  $input: null as unknown as ClassStatusInput
+  $input: null as unknown as ClassStatusInput,
 } as const;
 
 // Table classification_society
@@ -778,13 +1175,13 @@ export interface ClassificationSocietyInput {
   name: string;
 }
 const classification_society = {
-  tableName: 'classification_society',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "classification_society",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as ClassificationSociety,
-  $input: null as unknown as ClassificationSocietyInput
+  $input: null as unknown as ClassificationSocietyInput,
 } as const;
 
 // Table comment_line
@@ -803,16 +1200,20 @@ export interface CommentLineInput {
   updated_at?: Date | null;
 }
 const comment_line = {
-  tableName: 'comment_line',
-  columns: ['id', 'job_id', 'finding_comment_id', 'created_at', 'updated_at'],
+  tableName: "comment_line",
+  columns: ["id", "job_id", "finding_comment_id", "created_at", "updated_at"],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'job', column: 'id', $type: null as unknown as Job },
-    finding_comment_id: { table: 'finding_comment', column: 'id', $type: null as unknown as FindingComment },
+    job_id: { table: "job", column: "id", $type: null as unknown as Job },
+    finding_comment_id: {
+      table: "finding_comment",
+      column: "id",
+      $type: null as unknown as FindingComment,
+    },
   },
   $type: null as unknown as CommentLine,
-  $input: null as unknown as CommentLineInput
+  $input: null as unknown as CommentLineInput,
 } as const;
 
 // Table comment_status
@@ -825,13 +1226,13 @@ export interface CommentStatusInput {
   name: string;
 }
 const comment_status = {
-  tableName: 'comment_status',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "comment_status",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CommentStatus,
-  $input: null as unknown as CommentStatusInput
+  $input: null as unknown as CommentStatusInput,
 } as const;
 
 // Table comment_type
@@ -844,13 +1245,13 @@ export interface CommentTypeInput {
   name: string;
 }
 const comment_type = {
-  tableName: 'comment_type',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "comment_type",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as CommentType,
-  $input: null as unknown as CommentTypeInput
+  $input: null as unknown as CommentTypeInput,
 } as const;
 
 // Table contract_history
@@ -879,16 +1280,35 @@ export interface ContractHistoryInput {
   is_active?: boolean | null;
 }
 const contract_history = {
-  tableName: 'contract_history',
-  columns: ['id', 'organization_id', 'employee_id', 'contract_file', 'contract_end', 'contract_start', 'notes', 'created_at', 'updated_at', 'is_active'],
+  tableName: "contract_history",
+  columns: [
+    "id",
+    "organization_id",
+    "employee_id",
+    "contract_file",
+    "contract_end",
+    "contract_start",
+    "notes",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as ContractHistory,
-  $input: null as unknown as ContractHistoryInput
+  $input: null as unknown as ContractHistoryInput,
 } as const;
 
 // Table customer
@@ -915,16 +1335,30 @@ export interface CustomerInput {
   is_active?: boolean | null;
 }
 const customer = {
-  tableName: 'customer',
-  columns: ['id', 'name', 'phone', 'tax', 'contact', 'company_id', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['id', 'name'],
-  primaryKey: 'id',
+  tableName: "customer",
+  columns: [
+    "id",
+    "name",
+    "phone",
+    "tax",
+    "contact",
+    "company_id",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["id", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    id: { table: 'user', column: 'id', $type: null as unknown /* user */ },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
+    id: { table: "user", column: "id", $type: null as unknown /* user */ },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
   },
   $type: null as unknown as Customer,
-  $input: null as unknown as CustomerInput
+  $input: null as unknown as CustomerInput,
 } as const;
 
 // Table department
@@ -957,16 +1391,37 @@ export interface DepartmentInput {
   is_active?: boolean | null;
 }
 const department = {
-  tableName: 'department',
-  columns: ['id', 'organization_id', 'parent_department_id', 'name', 'code', 'description', 'cost_center', 'level', 'path', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['organization_id', 'name'],
-  primaryKey: 'id',
+  tableName: "department",
+  columns: [
+    "id",
+    "organization_id",
+    "parent_department_id",
+    "name",
+    "code",
+    "description",
+    "cost_center",
+    "level",
+    "path",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["organization_id", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    parent_department_id: { table: 'department', column: 'id', $type: null as unknown as Department },
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    parent_department_id: {
+      table: "department",
+      column: "id",
+      $type: null as unknown as Department,
+    },
   },
   $type: null as unknown as Department,
-  $input: null as unknown as DepartmentInput
+  $input: null as unknown as DepartmentInput,
 } as const;
 
 // Table department_history
@@ -989,16 +1444,32 @@ export interface DepartmentHistoryInput {
   created_at?: Date | null;
 }
 const department_history = {
-  tableName: 'department_history',
-  columns: ['id', 'employee_id', 'department_id', 'start_date', 'end_date', 'is_primary', 'created_at'],
-  requiredForInsert: ['employee_id', 'department_id', 'start_date'],
-  primaryKey: 'id',
+  tableName: "department_history",
+  columns: [
+    "id",
+    "employee_id",
+    "department_id",
+    "start_date",
+    "end_date",
+    "is_primary",
+    "created_at",
+  ],
+  requiredForInsert: ["employee_id", "department_id", "start_date"],
+  primaryKey: "id",
   foreignKeys: {
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    department_id: { table: 'department', column: 'id', $type: null as unknown as Department },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    department_id: {
+      table: "department",
+      column: "id",
+      $type: null as unknown as Department,
+    },
   },
   $type: null as unknown as DepartmentHistory,
-  $input: null as unknown as DepartmentHistoryInput
+  $input: null as unknown as DepartmentHistoryInput,
 } as const;
 
 // Table document
@@ -1031,16 +1502,33 @@ export interface DocumentInput {
   is_active?: boolean | null;
 }
 const document = {
-  tableName: 'document',
-  columns: ['id', 'ship_id', 'company_id', 'name', 'type', 'file_path', 'upload_date', 'expiry_date', 'status', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['name'],
-  primaryKey: 'id',
+  tableName: "document",
+  columns: [
+    "id",
+    "ship_id",
+    "company_id",
+    "name",
+    "type",
+    "file_path",
+    "upload_date",
+    "expiry_date",
+    "status",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["name"],
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
   },
   $type: null as unknown as Document,
-  $input: null as unknown as DocumentInput
+  $input: null as unknown as DocumentInput,
 } as const;
 
 // Table dotted_line_relationship
@@ -1069,16 +1557,35 @@ export interface DottedLineRelationshipInput {
   is_active?: boolean | null;
 }
 const dotted_line_relationship = {
-  tableName: 'dotted_line_relationship',
-  columns: ['id', 'employee_id', 'dotted_line_manager_id', 'relationship_type', 'description', 'start_date', 'end_date', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['employee_id', 'dotted_line_manager_id'],
-  primaryKey: 'id',
+  tableName: "dotted_line_relationship",
+  columns: [
+    "id",
+    "employee_id",
+    "dotted_line_manager_id",
+    "relationship_type",
+    "description",
+    "start_date",
+    "end_date",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["employee_id", "dotted_line_manager_id"],
+  primaryKey: "id",
   foreignKeys: {
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    dotted_line_manager_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    dotted_line_manager_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as DottedLineRelationship,
-  $input: null as unknown as DottedLineRelationshipInput
+  $input: null as unknown as DottedLineRelationshipInput,
 } as const;
 
 // Table employee
@@ -1153,20 +1660,80 @@ export interface EmployeeInput {
   is_active?: boolean | null;
 }
 const employee = {
-  tableName: 'employee',
-  columns: ['id', 'user_id', 'organization_id', 'azure_ad_id', 'user_principal_name', 'employee_number', 'first_name', 'last_name', 'display_name', 'preferred_name', 'email', 'secondary_email', 'business_phone', 'mobile_phone', 'address', 'job_title_id', 'job_title_custom', 'department_id', 'location_id', 'manager_id', 'profile_photo_url', 'about_me', 'skills', 'interests', 'schools', 'birthday', 'hire_date', 'employment_type', 'employment_status', 'created_at', 'updated_at', 'last_synced_at', 'is_active'],
-  requiredForInsert: ['organization_id', 'first_name', 'last_name', 'display_name', 'email'],
-  primaryKey: 'id',
+  tableName: "employee",
+  columns: [
+    "id",
+    "user_id",
+    "organization_id",
+    "azure_ad_id",
+    "user_principal_name",
+    "employee_number",
+    "first_name",
+    "last_name",
+    "display_name",
+    "preferred_name",
+    "email",
+    "secondary_email",
+    "business_phone",
+    "mobile_phone",
+    "address",
+    "job_title_id",
+    "job_title_custom",
+    "department_id",
+    "location_id",
+    "manager_id",
+    "profile_photo_url",
+    "about_me",
+    "skills",
+    "interests",
+    "schools",
+    "birthday",
+    "hire_date",
+    "employment_type",
+    "employment_status",
+    "created_at",
+    "updated_at",
+    "last_synced_at",
+    "is_active",
+  ],
+  requiredForInsert: [
+    "organization_id",
+    "first_name",
+    "last_name",
+    "display_name",
+    "email",
+  ],
+  primaryKey: "id",
   foreignKeys: {
-    user_id: { table: 'user', column: 'id', $type: null as unknown /* user */ },
-    organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    job_title_id: { table: 'job_title', column: 'id', $type: null as unknown as JobTitle },
-    department_id: { table: 'department', column: 'id', $type: null as unknown as Department },
-    location_id: { table: 'location', column: 'id', $type: null as unknown as Location },
-    manager_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    user_id: { table: "user", column: "id", $type: null as unknown /* user */ },
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    job_title_id: {
+      table: "job_title",
+      column: "id",
+      $type: null as unknown as JobTitle,
+    },
+    department_id: {
+      table: "department",
+      column: "id",
+      $type: null as unknown as Department,
+    },
+    location_id: {
+      table: "location",
+      column: "id",
+      $type: null as unknown as Location,
+    },
+    manager_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as Employee,
-  $input: null as unknown as EmployeeInput
+  $input: null as unknown as EmployeeInput,
 } as const;
 
 // Table employee_organizational_role
@@ -1187,16 +1754,31 @@ export interface EmployeeOrganizationalRoleInput {
   created_at?: Date | null;
 }
 const employee_organizational_role = {
-  tableName: 'employee_organizational_role',
-  columns: ['id', 'employee_id', 'role_id', 'start_date', 'end_date', 'created_at'],
-  requiredForInsert: ['employee_id', 'role_id'],
-  primaryKey: 'id',
+  tableName: "employee_organizational_role",
+  columns: [
+    "id",
+    "employee_id",
+    "role_id",
+    "start_date",
+    "end_date",
+    "created_at",
+  ],
+  requiredForInsert: ["employee_id", "role_id"],
+  primaryKey: "id",
   foreignKeys: {
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    role_id: { table: 'organizational_role', column: 'id', $type: null as unknown as OrganizationalRole },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    role_id: {
+      table: "organizational_role",
+      column: "id",
+      $type: null as unknown as OrganizationalRole,
+    },
   },
   $type: null as unknown as EmployeeOrganizationalRole,
-  $input: null as unknown as EmployeeOrganizationalRoleInput
+  $input: null as unknown as EmployeeOrganizationalRoleInput,
 } as const;
 
 // Table finding_comment
@@ -1205,7 +1787,7 @@ export interface FindingComment {
   ship_id: number | null;
   company_id: number | null;
   comment_type: string;
-  private: boolean | null;
+  is_private: boolean | null;
   certificates: string | null;
   date_issued: Date;
   place_issued: string | null;
@@ -1226,7 +1808,7 @@ export interface FindingCommentInput {
   ship_id?: number | null;
   company_id?: number | null;
   comment_type: string;
-  private?: boolean | null;
+  is_private?: boolean | null;
   certificates?: string | null;
   date_issued: Date;
   place_issued?: string | null;
@@ -1243,18 +1825,56 @@ export interface FindingCommentInput {
   is_active?: boolean | null;
 }
 const finding_comment = {
-  tableName: 'finding_comment',
-  columns: ['id', 'ship_id', 'company_id', 'comment_type', 'private', 'certificates', 'date_issued', 'place_issued', 'due_date', 'expiry_survey_audits', 'status', 'postponed_due_date', 'postponed_expiry_survey_audits', 'mms_reference', 'subject', 'text', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['comment_type', 'date_issued', 'status', 'subject', 'text'],
-  primaryKey: 'id',
+  tableName: "finding_comment",
+  columns: [
+    "id",
+    "ship_id",
+    "company_id",
+    "comment_type",
+    "is_private",
+    "certificates",
+    "date_issued",
+    "place_issued",
+    "due_date",
+    "expiry_survey_audits",
+    "status",
+    "postponed_due_date",
+    "postponed_expiry_survey_audits",
+    "mms_reference",
+    "subject",
+    "text",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: [
+    "comment_type",
+    "date_issued",
+    "status",
+    "subject",
+    "text",
+  ],
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    comment_type: { table: 'comment_type', column: 'code', $type: null as unknown as CommentType },
-    status: { table: 'comment_status', column: 'code', $type: null as unknown as CommentStatus },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    comment_type: {
+      table: "comment_type",
+      column: "code",
+      $type: null as unknown as CommentType,
+    },
+    status: {
+      table: "comment_status",
+      column: "code",
+      $type: null as unknown as CommentStatus,
+    },
   },
   $type: null as unknown as FindingComment,
-  $input: null as unknown as FindingCommentInput
+  $input: null as unknown as FindingCommentInput,
 } as const;
 
 // Table flag
@@ -1287,13 +1907,26 @@ export interface FlagInput {
   is_active?: boolean | null;
 }
 const flag = {
-  tableName: 'flag',
-  columns: ['code', 'name', 'fullname', 'email', 'tel', 'fax', 'contact', 'contract_file', 'contract_start', 'contract_end', 'is_hssc', 'is_active'],
-  requiredForInsert: ['code', 'name', 'fullname'],
-  primaryKey: 'code',
+  tableName: "flag",
+  columns: [
+    "code",
+    "name",
+    "fullname",
+    "email",
+    "tel",
+    "fax",
+    "contact",
+    "contract_file",
+    "contract_start",
+    "contract_end",
+    "is_hssc",
+    "is_active",
+  ],
+  requiredForInsert: ["code", "name", "fullname"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as Flag,
-  $input: null as unknown as FlagInput
+  $input: null as unknown as FlagInput,
 } as const;
 
 // Table flag_cert_authorization
@@ -1320,19 +1953,49 @@ export interface FlagCertAuthorizationInput {
   is_active?: boolean | null;
 }
 const flag_cert_authorization = {
-  tableName: 'flag_cert_authorization',
-  columns: ['id', 'flag_code', 'cert_code', 'validity_type', 'category', 'internal_category', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['flag_code', 'cert_code'],
-  primaryKey: 'id',
+  tableName: "flag_cert_authorization",
+  columns: [
+    "id",
+    "flag_code",
+    "cert_code",
+    "validity_type",
+    "category",
+    "internal_category",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["flag_code", "cert_code"],
+  primaryKey: "id",
   foreignKeys: {
-    flag_code: { table: 'flag', column: 'code', $type: null as unknown as Flag },
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    validity_type: { table: 'certificate_validity_type', column: 'code', $type: null as unknown as CertificateValidityType },
-    category: { table: 'certificate_category', column: 'code', $type: null as unknown as CertificateCategory },
-    internal_category: { table: 'certificate_internal_category', column: 'code', $type: null as unknown as CertificateInternalCategory },
+    flag_code: {
+      table: "flag",
+      column: "code",
+      $type: null as unknown as Flag,
+    },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    validity_type: {
+      table: "certificate_validity_type",
+      column: "code",
+      $type: null as unknown as CertificateValidityType,
+    },
+    category: {
+      table: "certificate_category",
+      column: "code",
+      $type: null as unknown as CertificateCategory,
+    },
+    internal_category: {
+      table: "certificate_internal_category",
+      column: "code",
+      $type: null as unknown as CertificateInternalCategory,
+    },
   },
   $type: null as unknown as FlagCertAuthorization,
-  $input: null as unknown as FlagCertAuthorizationInput
+  $input: null as unknown as FlagCertAuthorizationInput,
 } as const;
 
 // Table flag_staff
@@ -1359,16 +2022,30 @@ export interface FlagStaffInput {
   is_active?: boolean | null;
 }
 const flag_staff = {
-  tableName: 'flag_staff',
-  columns: ['id', 'name', 'phone', 'tax', 'contact', 'flag_code', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['id', 'name'],
-  primaryKey: 'id',
+  tableName: "flag_staff",
+  columns: [
+    "id",
+    "name",
+    "phone",
+    "tax",
+    "contact",
+    "flag_code",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["id", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    id: { table: 'user', column: 'id', $type: null as unknown /* user */ },
-    flag_code: { table: 'flag', column: 'code', $type: null as unknown as Flag },
+    id: { table: "user", column: "id", $type: null as unknown /* user */ },
+    flag_code: {
+      table: "flag",
+      column: "code",
+      $type: null as unknown as Flag,
+    },
   },
   $type: null as unknown as FlagStaff,
-  $input: null as unknown as FlagStaffInput
+  $input: null as unknown as FlagStaffInput,
 } as const;
 
 // Table flag_survey_authorization
@@ -1391,17 +2068,37 @@ export interface FlagSurveyAuthorizationInput {
   is_active?: boolean | null;
 }
 const flag_survey_authorization = {
-  tableName: 'flag_survey_authorization',
-  columns: ['id', 'flag_code', 'cert_code', 'survey_type', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['flag_code', 'cert_code'],
-  primaryKey: 'id',
+  tableName: "flag_survey_authorization",
+  columns: [
+    "id",
+    "flag_code",
+    "cert_code",
+    "survey_type",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["flag_code", "cert_code"],
+  primaryKey: "id",
   foreignKeys: {
-    flag_code: { table: 'flag', column: 'code', $type: null as unknown as Flag },
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    survey_type: { table: 'survey_audit_type', column: 'code', $type: null as unknown as SurveyAuditType },
+    flag_code: {
+      table: "flag",
+      column: "code",
+      $type: null as unknown as Flag,
+    },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    survey_type: {
+      table: "survey_audit_type",
+      column: "code",
+      $type: null as unknown as SurveyAuditType,
+    },
   },
   $type: null as unknown as FlagSurveyAuthorization,
-  $input: null as unknown as FlagSurveyAuthorizationInput
+  $input: null as unknown as FlagSurveyAuthorizationInput,
 } as const;
 
 // Table job
@@ -1432,13 +2129,25 @@ export interface JobInput {
   is_active?: boolean | null;
 }
 const job = {
-  tableName: 'job',
-  columns: ['id', 'file_path_report', 'file_path_draft', 'comments', 'additional', 'location', 'fee', 'job_status', 'created_at', 'updated_at', 'is_active'],
+  tableName: "job",
+  columns: [
+    "id",
+    "file_path_report",
+    "file_path_draft",
+    "comments",
+    "additional",
+    "location",
+    "fee",
+    "job_status",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {},
   $type: null as unknown as Job,
-  $input: null as unknown as JobInput
+  $input: null as unknown as JobInput,
 } as const;
 
 // Table job_participant
@@ -1459,17 +2168,36 @@ export interface JobParticipantInput {
   is_trainee?: boolean | null;
 }
 const job_participant = {
-  tableName: 'job_participant',
-  columns: ['id', 'survey_job_id', 'audit_job_id', 'employee_id', 'is_monitor', 'is_trainee'],
+  tableName: "job_participant",
+  columns: [
+    "id",
+    "survey_job_id",
+    "audit_job_id",
+    "employee_id",
+    "is_monitor",
+    "is_trainee",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    survey_job_id: { table: 'survey_job', column: 'id', $type: null as unknown as SurveyJob },
-    audit_job_id: { table: 'audit_job', column: 'id', $type: null as unknown as AuditJob },
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    survey_job_id: {
+      table: "survey_job",
+      column: "id",
+      $type: null as unknown as SurveyJob,
+    },
+    audit_job_id: {
+      table: "audit_job",
+      column: "id",
+      $type: null as unknown as AuditJob,
+    },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as JobParticipant,
-  $input: null as unknown as JobParticipantInput
+  $input: null as unknown as JobParticipantInput,
 } as const;
 
 // Table job_title
@@ -1496,13 +2224,29 @@ export interface JobTitleInput {
   is_active?: boolean | null;
 }
 const job_title = {
-  tableName: 'job_title',
-  columns: ['id', 'organization_id', 'title', 'level', 'job_family', 'description', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['organization_id', 'title'],
-  primaryKey: 'id',
-  foreignKeys: { organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization }, },
+  tableName: "job_title",
+  columns: [
+    "id",
+    "organization_id",
+    "title",
+    "level",
+    "job_family",
+    "description",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["organization_id", "title"],
+  primaryKey: "id",
+  foreignKeys: {
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+  },
   $type: null as unknown as JobTitle,
-  $input: null as unknown as JobTitleInput
+  $input: null as unknown as JobTitleInput,
 } as const;
 
 // Table location
@@ -1541,13 +2285,35 @@ export interface LocationInput {
   is_active?: boolean | null;
 }
 const location = {
-  tableName: 'location',
-  columns: ['id', 'organization_id', 'name', 'address_line1', 'address_line2', 'city', 'state_province', 'post_code', 'country', 'country_code', 'timezone', 'is_headquarter', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['organization_id', 'name'],
-  primaryKey: 'id',
-  foreignKeys: { organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization }, },
+  tableName: "location",
+  columns: [
+    "id",
+    "organization_id",
+    "name",
+    "address_line1",
+    "address_line2",
+    "city",
+    "state_province",
+    "post_code",
+    "country",
+    "country_code",
+    "timezone",
+    "is_headquarter",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["organization_id", "name"],
+  primaryKey: "id",
+  foreignKeys: {
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+  },
   $type: null as unknown as Location,
-  $input: null as unknown as LocationInput
+  $input: null as unknown as LocationInput,
 } as const;
 
 // Table manager_history
@@ -1572,17 +2338,38 @@ export interface ManagerHistoryInput {
   created_by?: number | null;
 }
 const manager_history = {
-  tableName: 'manager_history',
-  columns: ['id', 'employee_id', 'manager_id', 'start_date', 'end_date', 'change_reason', 'created_at', 'created_by'],
-  requiredForInsert: ['employee_id', 'start_date'],
-  primaryKey: 'id',
+  tableName: "manager_history",
+  columns: [
+    "id",
+    "employee_id",
+    "manager_id",
+    "start_date",
+    "end_date",
+    "change_reason",
+    "created_at",
+    "created_by",
+  ],
+  requiredForInsert: ["employee_id", "start_date"],
+  primaryKey: "id",
   foreignKeys: {
-    employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    manager_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    created_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    manager_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    created_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as ManagerHistory,
-  $input: null as unknown as ManagerHistoryInput
+  $input: null as unknown as ManagerHistoryInput,
 } as const;
 
 // Table ms_job
@@ -1605,19 +2392,39 @@ export interface MsJobInput {
   initialized?: boolean | null;
 }
 const ms_job = {
-  tableName: 'ms_job',
-  columns: ['id', 'job_id', 'ship_id', 'company_id', 'issued_by', 'reviewed_by', 'initialized'],
+  tableName: "ms_job",
+  columns: [
+    "id",
+    "job_id",
+    "ship_id",
+    "company_id",
+    "issued_by",
+    "reviewed_by",
+    "initialized",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'job', column: 'id', $type: null as unknown as Job },
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    issued_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    reviewed_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    job_id: { table: "job", column: "id", $type: null as unknown as Job },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    issued_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    reviewed_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as MsJob,
-  $input: null as unknown as MsJobInput
+  $input: null as unknown as MsJobInput,
 } as const;
 
 // Table ms_line
@@ -1632,13 +2439,15 @@ export interface MsLineInput {
   initialized?: boolean | null;
 }
 const ms_line = {
-  tableName: 'ms_line',
-  columns: ['id', 'job_id', 'initialized'],
+  tableName: "ms_line",
+  columns: ["id", "job_id", "initialized"],
   requiredForInsert: [],
-  primaryKey: 'id',
-  foreignKeys: { job_id: { table: 'ms_job', column: 'id', $type: null as unknown as MsJob }, },
+  primaryKey: "id",
+  foreignKeys: {
+    job_id: { table: "ms_job", column: "id", $type: null as unknown as MsJob },
+  },
   $type: null as unknown as MsLine,
-  $input: null as unknown as MsLineInput
+  $input: null as unknown as MsLineInput,
 } as const;
 
 // Table organization
@@ -1671,13 +2480,26 @@ export interface OrganizationInput {
   is_active?: boolean | null;
 }
 const organization = {
-  tableName: 'organization',
-  columns: ['id', 'tenant_id', 'name', 'display_name', 'domain', 'logo_url', 'imo_number', 'mlc_responsibility', 'doc_ships_types', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['name'],
-  primaryKey: 'id',
+  tableName: "organization",
+  columns: [
+    "id",
+    "tenant_id",
+    "name",
+    "display_name",
+    "domain",
+    "logo_url",
+    "imo_number",
+    "mlc_responsibility",
+    "doc_ships_types",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["name"],
+  primaryKey: "id",
   foreignKeys: {},
   $type: null as unknown as Organization,
-  $input: null as unknown as OrganizationInput
+  $input: null as unknown as OrganizationInput,
 } as const;
 
 // Table organizational_role
@@ -1698,13 +2520,26 @@ export interface OrganizationalRoleInput {
   is_active?: boolean | null;
 }
 const organizational_role = {
-  tableName: 'organizational_role',
-  columns: ['id', 'organization_id', 'name', 'description', 'created_at', 'is_active'],
-  requiredForInsert: ['organization_id', 'name'],
-  primaryKey: 'id',
-  foreignKeys: { organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization }, },
+  tableName: "organizational_role",
+  columns: [
+    "id",
+    "organization_id",
+    "name",
+    "description",
+    "created_at",
+    "is_active",
+  ],
+  requiredForInsert: ["organization_id", "name"],
+  primaryKey: "id",
+  foreignKeys: {
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+  },
   $type: null as unknown as OrganizationalRole,
-  $input: null as unknown as OrganizationalRoleInput
+  $input: null as unknown as OrganizationalRoleInput,
 } as const;
 
 // Table report_template
@@ -1735,13 +2570,31 @@ export interface ReportTemplateInput {
   is_active?: boolean | null;
 }
 const report_template = {
-  tableName: 'report_template',
-  columns: ['code', 'survey_id', 'name', 'version', 'file_path_rml', 'file_path_html', 'file_path_pdf', 'description', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['code', 'survey_id', 'name', 'version'],
-  primaryKey: 'code',
-  foreignKeys: { survey_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool }, },
+  tableName: "report_template",
+  columns: [
+    "code",
+    "survey_id",
+    "name",
+    "version",
+    "file_path_rml",
+    "file_path_html",
+    "file_path_pdf",
+    "description",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["code", "survey_id", "name", "version"],
+  primaryKey: "code",
+  foreignKeys: {
+    survey_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
+  },
   $type: null as unknown as ReportTemplate,
-  $input: null as unknown as ReportTemplateInput
+  $input: null as unknown as ReportTemplateInput,
 } as const;
 
 // Table ship
@@ -1858,26 +2711,129 @@ export interface ShipInput {
   is_active?: boolean | null;
 }
 const ship = {
-  tableName: 'ship',
-  columns: ['id', 'class_number', 'name', 'previous_names', 'build_date', 'commissioning_date', 'keel_laid_date', 'contract_date', 'class_entry_date', 'imo_number', 'administration_types', 'administration_country', 'classed_by', 'port_of_registry', 'date_of_registry', 'registry_number', 'call_sign', 'official_number', 'type_iacs', 'type_other', 'type_mms', 'class_status', 'ship_status', 'class_notation', 'service_notation', 'navigation_notation', 'additional_notation', 'gross_tons', 'national_tons', 'deadweight', 'registered_owner_id', 'ism_owner_id', 'mlc_owner_id', 'flag_code', 'registration_port', 'mmsi_number', 'main_class', 'net_tons', 'light_ship', 'ballast_capacity', 'equipment_number', 'length', 'length_oa', 'length_bp', 'moulded_depth', 'moulded_breadth', 'moulded_draft', 'design_draft', 'dual_class', 'signal_letter', 'breakdown_template_id', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['name', 'type_iacs'],
-  primaryKey: 'id',
+  tableName: "ship",
+  columns: [
+    "id",
+    "class_number",
+    "name",
+    "previous_names",
+    "build_date",
+    "commissioning_date",
+    "keel_laid_date",
+    "contract_date",
+    "class_entry_date",
+    "imo_number",
+    "administration_types",
+    "administration_country",
+    "classed_by",
+    "port_of_registry",
+    "date_of_registry",
+    "registry_number",
+    "call_sign",
+    "official_number",
+    "type_iacs",
+    "type_other",
+    "type_mms",
+    "class_status",
+    "ship_status",
+    "class_notation",
+    "service_notation",
+    "navigation_notation",
+    "additional_notation",
+    "gross_tons",
+    "national_tons",
+    "deadweight",
+    "registered_owner_id",
+    "ism_owner_id",
+    "mlc_owner_id",
+    "flag_code",
+    "registration_port",
+    "mmsi_number",
+    "main_class",
+    "net_tons",
+    "light_ship",
+    "ballast_capacity",
+    "equipment_number",
+    "length",
+    "length_oa",
+    "length_bp",
+    "moulded_depth",
+    "moulded_breadth",
+    "moulded_draft",
+    "design_draft",
+    "dual_class",
+    "signal_letter",
+    "breakdown_template_id",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["name", "type_iacs"],
+  primaryKey: "id",
   foreignKeys: {
-    administration_types: { table: 'administration_type', column: 'code', $type: null as unknown as AdministrationType },
-    classed_by: { table: 'classification_society', column: 'code', $type: null as unknown as ClassificationSociety },
-    type_iacs: { table: 'vessel_type_iacs', column: 'code', $type: null as unknown as VesselTypeIacs },
-    type_mms: { table: 'vessel_type_mms', column: 'code', $type: null as unknown as VesselTypeMms },
-    class_status: { table: 'class_status', column: 'code', $type: null as unknown as ClassStatus },
-    ship_status: { table: 'ship_status', column: 'code', $type: null as unknown as ShipStatus },
-    registered_owner_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    ism_owner_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    mlc_owner_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    flag_code: { table: 'flag', column: 'code', $type: null as unknown as Flag },
-    dual_class: { table: 'classification_society', column: 'code', $type: null as unknown as ClassificationSociety },
-    breakdown_template_id: { table: 'breakdown_template', column: 'id', $type: null as unknown as BreakdownTemplate },
+    administration_types: {
+      table: "administration_type",
+      column: "code",
+      $type: null as unknown as AdministrationType,
+    },
+    classed_by: {
+      table: "classification_society",
+      column: "code",
+      $type: null as unknown as ClassificationSociety,
+    },
+    type_iacs: {
+      table: "vessel_type_iacs",
+      column: "code",
+      $type: null as unknown as VesselTypeIacs,
+    },
+    type_mms: {
+      table: "vessel_type_mms",
+      column: "code",
+      $type: null as unknown as VesselTypeMms,
+    },
+    class_status: {
+      table: "class_status",
+      column: "code",
+      $type: null as unknown as ClassStatus,
+    },
+    ship_status: {
+      table: "ship_status",
+      column: "code",
+      $type: null as unknown as ShipStatus,
+    },
+    registered_owner_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    ism_owner_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    mlc_owner_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    flag_code: {
+      table: "flag",
+      column: "code",
+      $type: null as unknown as Flag,
+    },
+    dual_class: {
+      table: "classification_society",
+      column: "code",
+      $type: null as unknown as ClassificationSociety,
+    },
+    breakdown_template_id: {
+      table: "breakdown_template",
+      column: "id",
+      $type: null as unknown as BreakdownTemplate,
+    },
   },
   $type: null as unknown as Ship,
-  $input: null as unknown as ShipInput
+  $input: null as unknown as ShipInput,
 } as const;
 
 // Table ship_breakdown
@@ -1908,16 +2864,32 @@ export interface ShipBreakdownInput {
   updated_at?: Date;
 }
 const ship_breakdown = {
-  tableName: 'ship_breakdown',
-  columns: ['id', 'ship_id', 'template_id', 'name', 'description', 'revision', 'is_active', 'applied_at', 'applied_by', 'created_at', 'updated_at'],
-  requiredForInsert: ['ship_id', 'name'],
-  primaryKey: 'id',
+  tableName: "ship_breakdown",
+  columns: [
+    "id",
+    "ship_id",
+    "template_id",
+    "name",
+    "description",
+    "revision",
+    "is_active",
+    "applied_at",
+    "applied_by",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["ship_id", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    template_id: { table: 'breakdown_template', column: 'id', $type: null as unknown as BreakdownTemplate },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    template_id: {
+      table: "breakdown_template",
+      column: "id",
+      $type: null as unknown as BreakdownTemplate,
+    },
   },
   $type: null as unknown as ShipBreakdown,
-  $input: null as unknown as ShipBreakdownInput
+  $input: null as unknown as ShipBreakdownInput,
 } as const;
 
 // Table ship_breakdown_node
@@ -1962,18 +2934,49 @@ export interface ShipBreakdownNodeInput {
   updated_at?: Date;
 }
 const ship_breakdown_node = {
-  tableName: 'ship_breakdown_node',
-  columns: ['id', 'ship_id', 'ship_breakdown_id', 'parent_node_id', 'template_node_id', 'code', 'name', 'description', 'category', 'node_type', 'level', 'sort_order', 'is_from_template', 'is_modified', 'is_active', 'metadata', 'created_at', 'updated_at'],
-  requiredForInsert: ['ship_id', 'ship_breakdown_id', 'code', 'name'],
-  primaryKey: 'id',
+  tableName: "ship_breakdown_node",
+  columns: [
+    "id",
+    "ship_id",
+    "ship_breakdown_id",
+    "parent_node_id",
+    "template_node_id",
+    "code",
+    "name",
+    "description",
+    "category",
+    "node_type",
+    "level",
+    "sort_order",
+    "is_from_template",
+    "is_modified",
+    "is_active",
+    "metadata",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["ship_id", "ship_breakdown_id", "code", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    ship_breakdown_id: { table: 'ship_breakdown', column: 'id', $type: null as unknown as ShipBreakdown },
-    parent_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
-    template_node_id: { table: 'breakdown_template_node', column: 'id', $type: null as unknown as BreakdownTemplateNode },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    ship_breakdown_id: {
+      table: "ship_breakdown",
+      column: "id",
+      $type: null as unknown as ShipBreakdown,
+    },
+    parent_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
+    template_node_id: {
+      table: "breakdown_template_node",
+      column: "id",
+      $type: null as unknown as BreakdownTemplateNode,
+    },
   },
   $type: null as unknown as ShipBreakdownNode,
-  $input: null as unknown as ShipBreakdownNodeInput
+  $input: null as unknown as ShipBreakdownNodeInput,
 } as const;
 
 // Table ship_breakdown_node_particular
@@ -2008,16 +3011,38 @@ export interface ShipBreakdownNodeParticularInput {
   updated_at?: Date;
 }
 const ship_breakdown_node_particular = {
-  tableName: 'ship_breakdown_node_particular',
-  columns: ['id', 'ship_breakdown_node_id', 'template_particular_id', 'attr_key', 'attr_title', 'attr_value', 'selection_options', 'data_type', 'unit', 'is_modified', 'sort_order', 'created_at', 'updated_at'],
-  requiredForInsert: ['ship_breakdown_node_id', 'attr_key', 'attr_title'],
-  primaryKey: 'id',
+  tableName: "ship_breakdown_node_particular",
+  columns: [
+    "id",
+    "ship_breakdown_node_id",
+    "template_particular_id",
+    "attr_key",
+    "attr_title",
+    "attr_value",
+    "selection_options",
+    "data_type",
+    "unit",
+    "is_modified",
+    "sort_order",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["ship_breakdown_node_id", "attr_key", "attr_title"],
+  primaryKey: "id",
   foreignKeys: {
-    ship_breakdown_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
-    template_particular_id: { table: 'breakdown_template_node_particular', column: 'id', $type: null as unknown as BreakdownTemplateNodeParticular },
+    ship_breakdown_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
+    template_particular_id: {
+      table: "breakdown_template_node_particular",
+      column: "id",
+      $type: null as unknown as BreakdownTemplateNodeParticular,
+    },
   },
   $type: null as unknown as ShipBreakdownNodeParticular,
-  $input: null as unknown as ShipBreakdownNodeParticularInput
+  $input: null as unknown as ShipBreakdownNodeParticularInput,
 } as const;
 
 // Table ship_status
@@ -2030,13 +3055,13 @@ export interface ShipStatusInput {
   name: string;
 }
 const ship_status = {
-  tableName: 'ship_status',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "ship_status",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as ShipStatus,
-  $input: null as unknown as ShipStatusInput
+  $input: null as unknown as ShipStatusInput,
 } as const;
 
 // Table survey_audit
@@ -2079,17 +3104,47 @@ export interface SurveyAuditInput {
   is_active?: boolean | null;
 }
 const survey_audit = {
-  tableName: 'survey_audit',
-  columns: ['id', 'cert_code', 'certificate_id', 'pool_id', 'description', 'last_held_date', 'place_held', 'next_due_date', 'postponement_date', 'task_status', 'range_from_date', 'range_to_date', 'fee', 'is_ordered', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['description', 'last_held_date', 'place_held'],
-  primaryKey: 'id',
+  tableName: "survey_audit",
+  columns: [
+    "id",
+    "cert_code",
+    "certificate_id",
+    "pool_id",
+    "description",
+    "last_held_date",
+    "place_held",
+    "next_due_date",
+    "postponement_date",
+    "task_status",
+    "range_from_date",
+    "range_to_date",
+    "fee",
+    "is_ordered",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["description", "last_held_date", "place_held"],
+  primaryKey: "id",
   foreignKeys: {
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    certificate_id: { table: 'certificate', column: 'id', $type: null as unknown as Certificate },
-    pool_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    certificate_id: {
+      table: "certificate",
+      column: "id",
+      $type: null as unknown as Certificate,
+    },
+    pool_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
   },
   $type: null as unknown as SurveyAudit,
-  $input: null as unknown as SurveyAuditInput
+  $input: null as unknown as SurveyAuditInput,
 } as const;
 
 // Table survey_audit_status
@@ -2102,13 +3157,13 @@ export interface SurveyAuditStatusInput {
   name: string;
 }
 const survey_audit_status = {
-  tableName: 'survey_audit_status',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "survey_audit_status",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as SurveyAuditStatus,
-  $input: null as unknown as SurveyAuditStatusInput
+  $input: null as unknown as SurveyAuditStatusInput,
 } as const;
 
 // Table survey_audit_type
@@ -2123,13 +3178,13 @@ export interface SurveyAuditTypeInput {
   is_scheduled: boolean;
 }
 const survey_audit_type = {
-  tableName: 'survey_audit_type',
-  columns: ['code', 'name', 'is_scheduled'],
-  requiredForInsert: ['code', 'name', 'is_scheduled'],
-  primaryKey: 'code',
+  tableName: "survey_audit_type",
+  columns: ["code", "name", "is_scheduled"],
+  requiredForInsert: ["code", "name", "is_scheduled"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as SurveyAuditType,
-  $input: null as unknown as SurveyAuditTypeInput
+  $input: null as unknown as SurveyAuditTypeInput,
 } as const;
 
 // Table survey_checklist
@@ -2158,21 +3213,60 @@ export interface SurveyChecklistInput {
   report_at?: Date | null;
 }
 const survey_checklist = {
-  tableName: 'survey_checklist',
-  columns: ['id', 'survey_job_id', 'survey_line_id', 'survey_audit_id', 'item_id', 'ship_breakdown_node_id', 'result', 'metadata', 'report_by', 'report_at'],
+  tableName: "survey_checklist",
+  columns: [
+    "id",
+    "survey_job_id",
+    "survey_line_id",
+    "survey_audit_id",
+    "item_id",
+    "ship_breakdown_node_id",
+    "result",
+    "metadata",
+    "report_by",
+    "report_at",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    survey_job_id: { table: 'survey_job', column: 'id', $type: null as unknown as SurveyJob },
-    survey_line_id: { table: 'survey_line', column: 'id', $type: null as unknown as SurveyLine },
-    survey_audit_id: { table: 'survey_audit', column: 'id', $type: null as unknown as SurveyAudit },
-    item_id: { table: 'checklist_item', column: 'id', $type: null as unknown as ChecklistItem },
-    ship_breakdown_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
-    result: { table: 'checklist_result', column: 'code', $type: null as unknown as ChecklistResult },
-    report_by: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    survey_job_id: {
+      table: "survey_job",
+      column: "id",
+      $type: null as unknown as SurveyJob,
+    },
+    survey_line_id: {
+      table: "survey_line",
+      column: "id",
+      $type: null as unknown as SurveyLine,
+    },
+    survey_audit_id: {
+      table: "survey_audit",
+      column: "id",
+      $type: null as unknown as SurveyAudit,
+    },
+    item_id: {
+      table: "checklist_item",
+      column: "id",
+      $type: null as unknown as ChecklistItem,
+    },
+    ship_breakdown_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
+    result: {
+      table: "checklist_result",
+      column: "code",
+      $type: null as unknown as ChecklistResult,
+    },
+    report_by: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as SurveyChecklist,
-  $input: null as unknown as SurveyChecklistInput
+  $input: null as unknown as SurveyChecklistInput,
 } as const;
 
 // Table survey_checklist_item_particular
@@ -2209,17 +3303,44 @@ export interface SurveyChecklistItemParticularInput {
   updated_at?: Date;
 }
 const survey_checklist_item_particular = {
-  tableName: 'survey_checklist_item_particular',
-  columns: ['id', 'survey_checklist_id', 'source_particular_id', 'ship_breakdown_node_id', 'attr_key', 'attr_title', 'data_type', 'unit', 'selection_options', 'is_required', 'sort_order', 'attr_result', 'created_at', 'updated_at'],
-  requiredForInsert: ['survey_checklist_id', 'attr_key', 'attr_title'],
-  primaryKey: 'id',
+  tableName: "survey_checklist_item_particular",
+  columns: [
+    "id",
+    "survey_checklist_id",
+    "source_particular_id",
+    "ship_breakdown_node_id",
+    "attr_key",
+    "attr_title",
+    "data_type",
+    "unit",
+    "selection_options",
+    "is_required",
+    "sort_order",
+    "attr_result",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["survey_checklist_id", "attr_key", "attr_title"],
+  primaryKey: "id",
   foreignKeys: {
-    survey_checklist_id: { table: 'survey_checklist', column: 'id', $type: null as unknown as SurveyChecklist },
-    source_particular_id: { table: 'checklist_item_particular', column: 'id', $type: null as unknown as ChecklistItemParticular },
-    ship_breakdown_node_id: { table: 'ship_breakdown_node', column: 'id', $type: null as unknown as ShipBreakdownNode },
+    survey_checklist_id: {
+      table: "survey_checklist",
+      column: "id",
+      $type: null as unknown as SurveyChecklist,
+    },
+    source_particular_id: {
+      table: "checklist_item_particular",
+      column: "id",
+      $type: null as unknown as ChecklistItemParticular,
+    },
+    ship_breakdown_node_id: {
+      table: "ship_breakdown_node",
+      column: "id",
+      $type: null as unknown as ShipBreakdownNode,
+    },
   },
   $type: null as unknown as SurveyChecklistItemParticular,
-  $input: null as unknown as SurveyChecklistItemParticularInput
+  $input: null as unknown as SurveyChecklistItemParticularInput,
 } as const;
 
 // Table survey_documentation
@@ -2250,13 +3371,31 @@ export interface SurveyDocumentationInput {
   is_active?: boolean | null;
 }
 const survey_documentation = {
-  tableName: 'survey_documentation',
-  columns: ['id', 'survey_id', 'code', 'description', 'guidance', 'remarks', 'file_path', 'is_mandatory', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['survey_id'],
-  primaryKey: 'id',
-  foreignKeys: { survey_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool }, },
+  tableName: "survey_documentation",
+  columns: [
+    "id",
+    "survey_id",
+    "code",
+    "description",
+    "guidance",
+    "remarks",
+    "file_path",
+    "is_mandatory",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["survey_id"],
+  primaryKey: "id",
+  foreignKeys: {
+    survey_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
+  },
   $type: null as unknown as SurveyDocumentation,
-  $input: null as unknown as SurveyDocumentationInput
+  $input: null as unknown as SurveyDocumentationInput,
 } as const;
 
 // Table survey_job
@@ -2281,19 +3420,40 @@ export interface SurveyJobInput {
   initialized?: boolean | null;
 }
 const survey_job = {
-  tableName: 'survey_job',
-  columns: ['id', 'job_id', 'parent_id', 'ship_id', 'surveyor_id', 'reviewer_id', 'description', 'initialized'],
+  tableName: "survey_job",
+  columns: [
+    "id",
+    "job_id",
+    "parent_id",
+    "ship_id",
+    "surveyor_id",
+    "reviewer_id",
+    "description",
+    "initialized",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'job', column: 'id', $type: null as unknown as Job },
-    parent_id: { table: 'survey_job', column: 'id', $type: null as unknown as SurveyJob },
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    surveyor_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
-    reviewer_id: { table: 'employee', column: 'id', $type: null as unknown as Employee },
+    job_id: { table: "job", column: "id", $type: null as unknown as Job },
+    parent_id: {
+      table: "survey_job",
+      column: "id",
+      $type: null as unknown as SurveyJob,
+    },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    surveyor_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+    reviewer_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
   },
   $type: null as unknown as SurveyJob,
-  $input: null as unknown as SurveyJobInput
+  $input: null as unknown as SurveyJobInput,
 } as const;
 
 // Table survey_line
@@ -2314,17 +3474,36 @@ export interface SurveyLineInput {
   credit_periodical?: boolean | null;
 }
 const survey_line = {
-  tableName: 'survey_line',
-  columns: ['id', 'job_id', 'survey_audit_id', 'pool_id', 'initialized', 'credit_periodical'],
+  tableName: "survey_line",
+  columns: [
+    "id",
+    "job_id",
+    "survey_audit_id",
+    "pool_id",
+    "initialized",
+    "credit_periodical",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    job_id: { table: 'survey_job', column: 'id', $type: null as unknown as SurveyJob },
-    survey_audit_id: { table: 'survey_audit', column: 'id', $type: null as unknown as SurveyAudit },
-    pool_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool },
+    job_id: {
+      table: "survey_job",
+      column: "id",
+      $type: null as unknown as SurveyJob,
+    },
+    survey_audit_id: {
+      table: "survey_audit",
+      column: "id",
+      $type: null as unknown as SurveyAudit,
+    },
+    pool_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
   },
   $type: null as unknown as SurveyLine,
-  $input: null as unknown as SurveyLineInput
+  $input: null as unknown as SurveyLineInput,
 } as const;
 
 // Table survey_pool
@@ -2369,16 +3548,43 @@ export interface SurveyPoolInput {
   is_active?: boolean | null;
 }
 const survey_pool = {
-  tableName: 'survey_pool',
-  columns: ['id', 'code', 'name', 'description', 'fee', 'cert_code', 'type', 'period', 'window_before', 'window_after', 'is_statutory', 'is_audit', 'is_doc', 'is_mandatory', 'is_periodical', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'id',
+  tableName: "survey_pool",
+  columns: [
+    "id",
+    "code",
+    "name",
+    "description",
+    "fee",
+    "cert_code",
+    "type",
+    "period",
+    "window_before",
+    "window_after",
+    "is_statutory",
+    "is_audit",
+    "is_doc",
+    "is_mandatory",
+    "is_periodical",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "id",
   foreignKeys: {
-    cert_code: { table: 'certificate_survey_pool', column: 'code', $type: null as unknown as CertificateSurveyPool },
-    type: { table: 'survey_audit_type', column: 'code', $type: null as unknown as SurveyAuditType },
+    cert_code: {
+      table: "certificate_survey_pool",
+      column: "code",
+      $type: null as unknown as CertificateSurveyPool,
+    },
+    type: {
+      table: "survey_audit_type",
+      column: "code",
+      $type: null as unknown as SurveyAuditType,
+    },
   },
   $type: null as unknown as SurveyPool,
-  $input: null as unknown as SurveyPoolInput
+  $input: null as unknown as SurveyPoolInput,
 } as const;
 
 // Table survey_preparation
@@ -2407,13 +3613,30 @@ export interface SurveyPreparationInput {
   is_active?: boolean | null;
 }
 const survey_preparation = {
-  tableName: 'survey_preparation',
-  columns: ['id', 'survey_id', 'code', 'category', 'description', 'guidance', 'remarks', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['survey_id'],
-  primaryKey: 'id',
-  foreignKeys: { survey_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool }, },
+  tableName: "survey_preparation",
+  columns: [
+    "id",
+    "survey_id",
+    "code",
+    "category",
+    "description",
+    "guidance",
+    "remarks",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["survey_id"],
+  primaryKey: "id",
+  foreignKeys: {
+    survey_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
+  },
   $type: null as unknown as SurveyPreparation,
-  $input: null as unknown as SurveyPreparationInput
+  $input: null as unknown as SurveyPreparationInput,
 } as const;
 
 // Table survey_preparation_section
@@ -2442,13 +3665,30 @@ export interface SurveyPreparationSectionInput {
   is_active?: boolean | null;
 }
 const survey_preparation_section = {
-  tableName: 'survey_preparation_section',
-  columns: ['id', 'survey_id', 'code', 'category', 'content', 'description', 'guidance', 'created_at', 'updated_at', 'is_active'],
-  requiredForInsert: ['survey_id'],
-  primaryKey: 'id',
-  foreignKeys: { survey_id: { table: 'survey_pool', column: 'id', $type: null as unknown as SurveyPool }, },
+  tableName: "survey_preparation_section",
+  columns: [
+    "id",
+    "survey_id",
+    "code",
+    "category",
+    "content",
+    "description",
+    "guidance",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
+  requiredForInsert: ["survey_id"],
+  primaryKey: "id",
+  foreignKeys: {
+    survey_id: {
+      table: "survey_pool",
+      column: "id",
+      $type: null as unknown as SurveyPool,
+    },
+  },
   $type: null as unknown as SurveyPreparationSection,
-  $input: null as unknown as SurveyPreparationSectionInput
+  $input: null as unknown as SurveyPreparationSectionInput,
 } as const;
 
 // Table survey_request
@@ -2499,17 +3739,47 @@ export interface SurveyRequestInput {
   is_active?: boolean | null;
 }
 const survey_request = {
-  tableName: 'survey_request',
-  columns: ['id', 'ship_id', 'company_id', 'ordered_by_id', 'location', 'estimated_date', 'contact_person', 'contact_phone', 'contact_email', 'alternative_contact', 'alternative_person', 'alternative_phone', 'alternative_email', 'alternative_mobile', 'is_assigned', 'comments', 'file_path', 'status', 'created_at', 'updated_at', 'is_active'],
+  tableName: "survey_request",
+  columns: [
+    "id",
+    "ship_id",
+    "company_id",
+    "ordered_by_id",
+    "location",
+    "estimated_date",
+    "contact_person",
+    "contact_phone",
+    "contact_email",
+    "alternative_contact",
+    "alternative_person",
+    "alternative_phone",
+    "alternative_email",
+    "alternative_mobile",
+    "is_assigned",
+    "comments",
+    "file_path",
+    "status",
+    "created_at",
+    "updated_at",
+    "is_active",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    ordered_by_id: { table: 'user', column: 'id', $type: null as unknown /* user */ },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    ordered_by_id: {
+      table: "user",
+      column: "id",
+      $type: null as unknown /* user */,
+    },
   },
   $type: null as unknown as SurveyRequest,
-  $input: null as unknown as SurveyRequestInput
+  $input: null as unknown as SurveyRequestInput,
 } as const;
 
 // Table survey_request_cart
@@ -2532,20 +3802,48 @@ export interface SurveyRequestCartInput {
   occ_survey_code?: string | null;
 }
 const survey_request_cart = {
-  tableName: 'survey_request_cart',
-  columns: ['id', 'ship_id', 'company_id', 'survey_request_id', 'survey_audit_id', 'comment_id', 'occ_survey_code'],
+  tableName: "survey_request_cart",
+  columns: [
+    "id",
+    "ship_id",
+    "company_id",
+    "survey_request_id",
+    "survey_audit_id",
+    "comment_id",
+    "occ_survey_code",
+  ],
   requiredForInsert: [],
-  primaryKey: 'id',
+  primaryKey: "id",
   foreignKeys: {
-    ship_id: { table: 'ship', column: 'id', $type: null as unknown as Ship },
-    company_id: { table: 'organization', column: 'id', $type: null as unknown as Organization },
-    survey_request_id: { table: 'survey_request', column: 'id', $type: null as unknown as SurveyRequest },
-    survey_audit_id: { table: 'survey_audit', column: 'id', $type: null as unknown as SurveyAudit },
-    comment_id: { table: 'finding_comment', column: 'id', $type: null as unknown as FindingComment },
-    occ_survey_code: { table: 'survey_pool', column: 'code', $type: null as unknown as SurveyPool },
+    ship_id: { table: "ship", column: "id", $type: null as unknown as Ship },
+    company_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+    survey_request_id: {
+      table: "survey_request",
+      column: "id",
+      $type: null as unknown as SurveyRequest,
+    },
+    survey_audit_id: {
+      table: "survey_audit",
+      column: "id",
+      $type: null as unknown as SurveyAudit,
+    },
+    comment_id: {
+      table: "finding_comment",
+      column: "id",
+      $type: null as unknown as FindingComment,
+    },
+    occ_survey_code: {
+      table: "survey_pool",
+      column: "code",
+      $type: null as unknown as SurveyPool,
+    },
   },
   $type: null as unknown as SurveyRequestCart,
-  $input: null as unknown as SurveyRequestCartInput
+  $input: null as unknown as SurveyRequestCartInput,
 } as const;
 
 // Table sync_log
@@ -2578,13 +3876,32 @@ export interface SyncLogInput {
   details?: Json | null;
 }
 const sync_log = {
-  tableName: 'sync_log',
-  columns: ['id', 'organization_id', 'sync_type', 'status', 'started_at', 'completed_at', 'records_processed', 'records_created', 'records_updated', 'records_failed', 'error_message', 'details'],
-  requiredForInsert: ['organization_id', 'sync_type', 'status'],
-  primaryKey: 'id',
-  foreignKeys: { organization_id: { table: 'organization', column: 'id', $type: null as unknown as Organization }, },
+  tableName: "sync_log",
+  columns: [
+    "id",
+    "organization_id",
+    "sync_type",
+    "status",
+    "started_at",
+    "completed_at",
+    "records_processed",
+    "records_created",
+    "records_updated",
+    "records_failed",
+    "error_message",
+    "details",
+  ],
+  requiredForInsert: ["organization_id", "sync_type", "status"],
+  primaryKey: "id",
+  foreignKeys: {
+    organization_id: {
+      table: "organization",
+      column: "id",
+      $type: null as unknown as Organization,
+    },
+  },
   $type: null as unknown as SyncLog,
-  $input: null as unknown as SyncLogInput
+  $input: null as unknown as SyncLogInput,
 } as const;
 
 // Table teams_presence
@@ -2607,13 +3924,27 @@ export interface TeamsPresenceInput {
   last_updated?: Date | null;
 }
 const teams_presence = {
-  tableName: 'teams_presence',
-  columns: ['id', 'employee_id', 'availability', 'activity', 'status_message', 'out_of_office_settings', 'last_updated'],
-  requiredForInsert: ['employee_id'],
-  primaryKey: 'id',
-  foreignKeys: { employee_id: { table: 'employee', column: 'id', $type: null as unknown as Employee }, },
+  tableName: "teams_presence",
+  columns: [
+    "id",
+    "employee_id",
+    "availability",
+    "activity",
+    "status_message",
+    "out_of_office_settings",
+    "last_updated",
+  ],
+  requiredForInsert: ["employee_id"],
+  primaryKey: "id",
+  foreignKeys: {
+    employee_id: {
+      table: "employee",
+      column: "id",
+      $type: null as unknown as Employee,
+    },
+  },
   $type: null as unknown as TeamsPresence,
-  $input: null as unknown as TeamsPresenceInput
+  $input: null as unknown as TeamsPresenceInput,
 } as const;
 
 // Table v_department_hierarchy
@@ -2636,13 +3967,21 @@ export interface VDepartmentHierarchyInput {
   path_ids?: number[] | null;
 }
 const v_department_hierarchy = {
-  tableName: 'v_department_hierarchy',
-  columns: ['id', 'organization_id', 'name', 'parent_department_id', 'level', 'full_path', 'path_ids'],
+  tableName: "v_department_hierarchy",
+  columns: [
+    "id",
+    "organization_id",
+    "name",
+    "parent_department_id",
+    "level",
+    "full_path",
+    "path_ids",
+  ],
   requiredForInsert: [],
   primaryKey: null,
   foreignKeys: {},
   $type: null as unknown as VDepartmentHierarchy,
-  $input: null as unknown as VDepartmentHierarchyInput
+  $input: null as unknown as VDepartmentHierarchyInput,
 } as const;
 
 // Table v_employee_full
@@ -2701,13 +4040,39 @@ export interface VEmployeeFullInput {
   organization_name?: string | null;
 }
 const v_employee_full = {
-  tableName: 'v_employee_full',
-  columns: ['id', 'employee_number', 'display_name', 'first_name', 'last_name', 'email', 'business_phone', 'mobile_phone', 'azure_ad_id', 'user_principal_name', 'profile_photo_url', 'job_title', 'department_name', 'department_id', 'location_name', 'city', 'country', 'manager_id', 'manager_name', 'manager_email', 'hire_date', 'employment_type', 'employment_status', 'is_active', 'organization_name'],
+  tableName: "v_employee_full",
+  columns: [
+    "id",
+    "employee_number",
+    "display_name",
+    "first_name",
+    "last_name",
+    "email",
+    "business_phone",
+    "mobile_phone",
+    "azure_ad_id",
+    "user_principal_name",
+    "profile_photo_url",
+    "job_title",
+    "department_name",
+    "department_id",
+    "location_name",
+    "city",
+    "country",
+    "manager_id",
+    "manager_name",
+    "manager_email",
+    "hire_date",
+    "employment_type",
+    "employment_status",
+    "is_active",
+    "organization_name",
+  ],
   requiredForInsert: [],
   primaryKey: null,
   foreignKeys: {},
   $type: null as unknown as VEmployeeFull,
-  $input: null as unknown as VEmployeeFullInput
+  $input: null as unknown as VEmployeeFullInput,
 } as const;
 
 // Table v_manager_direct_reports
@@ -2724,13 +4089,18 @@ export interface VManagerDirectReportsInput {
   direct_reports_count?: number | null;
 }
 const v_manager_direct_reports = {
-  tableName: 'v_manager_direct_reports',
-  columns: ['manager_id', 'manager_name', 'manager_email', 'direct_reports_count'],
+  tableName: "v_manager_direct_reports",
+  columns: [
+    "manager_id",
+    "manager_name",
+    "manager_email",
+    "direct_reports_count",
+  ],
   requiredForInsert: [],
   primaryKey: null,
   foreignKeys: {},
   $type: null as unknown as VManagerDirectReports,
-  $input: null as unknown as VManagerDirectReportsInput
+  $input: null as unknown as VManagerDirectReportsInput,
 } as const;
 
 // Table vessel_type_iacs
@@ -2743,13 +4113,13 @@ export interface VesselTypeIacsInput {
   name: string;
 }
 const vessel_type_iacs = {
-  tableName: 'vessel_type_iacs',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "vessel_type_iacs",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as VesselTypeIacs,
-  $input: null as unknown as VesselTypeIacsInput
+  $input: null as unknown as VesselTypeIacsInput,
 } as const;
 
 // Table vessel_type_mms
@@ -2762,15 +4132,14 @@ export interface VesselTypeMmsInput {
   name: string;
 }
 const vessel_type_mms = {
-  tableName: 'vessel_type_mms',
-  columns: ['code', 'name'],
-  requiredForInsert: ['code', 'name'],
-  primaryKey: 'code',
+  tableName: "vessel_type_mms",
+  columns: ["code", "name"],
+  requiredForInsert: ["code", "name"],
+  primaryKey: "code",
   foreignKeys: {},
   $type: null as unknown as VesselTypeMms,
-  $input: null as unknown as VesselTypeMmsInput
+  $input: null as unknown as VesselTypeMmsInput,
 } as const;
-
 
 export interface TableTypes {
   administration_type: {
@@ -3146,4 +4515,4 @@ export const tables = {
   v_manager_direct_reports,
   vessel_type_iacs,
   vessel_type_mms,
-}
+};

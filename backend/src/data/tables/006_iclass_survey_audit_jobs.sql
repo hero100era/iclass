@@ -54,12 +54,15 @@ CREATE TABLE IF NOT EXISTS iclass.job_participant (
   is_trainee boolean DEFAULT FALSE
 );
 
+CREATE SEQUENCE IF NOT EXISTS iclass.certificate_id_seq;
+
 CREATE TABLE IF NOT EXISTS iclass.certificate_line (
   id serial PRIMARY kEY,
   survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
   audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
   ms_job_id integer REFERENCES iclass.ms_job(id) on DELETE CASCADE,
-  certificate_id integer REFERENCES iclass.certificate(id) ON DELETE SET NULL,
+  certificate_id integer NOT NULL DEFAULT nextval('iclass.certificate_id_seq'),
+  ref_certificate_id integer REFERENCES iclass.certificate(id) ON DELETE SET NULL,
   action_code varchar(3) REFERENCES iclass.certificate_action(code) NOT NULL,
   certificate_template_code varchar(10) REFERENCES iclass.certificate_template(code) ON DELETE SET NULL,
   cert_code varchar(10) REFERENCES iclass.certificate_survey_pool(code) NOT NULL,
@@ -73,8 +76,6 @@ CREATE TABLE IF NOT EXISTS iclass.certificate_line (
   mlc_declaration_date date,
   mlc_declaration_place varchar(50),
   doc_administration char(3),
-  file_path_cert varchar(255),
-  file_path_draft varchar(255),
   version integer NOT NULL,
   file_path_draft varchar(255),
   file_path_cert varchar(255)
@@ -85,6 +86,12 @@ CREATE TABLE IF NOT EXISTS iclass.survey_line (
   job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
+  description varchar(120),
+  next_due_date date,
+  postponement_date date,
+  task_status iclass.task_status_enum,
+  range_from_date date,
+  range_to_date date,
   initialized boolean DEFAULT FALSE,
   credit_periodical boolean DEFAULT TRUE
 );
@@ -94,6 +101,12 @@ CREATE TABLE IF NOT EXISTS iclass.audit_line (
   job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
   survey_audit_id integer REFERENCES iclass.survey_audit(id) ON DELETE SET NULL,
   pool_id integer REFERENCES iclass.survey_pool(id) ON DELETE SET NULL,
+  description varchar(120),
+  next_due_date date,
+  postponement_date date,
+  task_status iclass.task_status_enum,
+  range_from_date date,
+  range_to_date date,
   initialized boolean DEFAULT FALSE,
   credit_periodical boolean DEFAULT TRUE
 );
@@ -173,8 +186,17 @@ CREATE TABLE IF NOT EXISTS iclass.audit_checklist_item_particular (
 -- Create table for linking Finding/Comments to Jobs (Reporting Scope)
 CREATE TABLE IF NOT EXISTS iclass.comment_line(
   id serial PRIMARY KEY,
-  job_id integer REFERENCES iclass.job(id) ON DELETE CASCADE,
-  finding_comment_id integer REFERENCES iclass.finding_comment(id) ON DELETE CASCADE,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+  survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
+  audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
+  finding_comment_id integer REFERENCES iclass.finding_comment(id) ON DELETE SET NULL,
+  is_private boolean DEFAULT false,
+  certificates varchar(500),
+  due_date date,
+  expiry_survey_audits varchar(500),
+  status varchar(1) REFERENCES iclass.comment_status(code),
+  postponed_due_date date,
+  postponed_expiry_survey_audits varchar(500),
+  mms_reference varchar(20),
+  subject varchar(500),
+  text varchar(10000)
 );

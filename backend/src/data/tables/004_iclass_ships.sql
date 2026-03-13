@@ -143,11 +143,9 @@ CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node_particular (
   CONSTRAINT uq_snode_attr UNIQUE (ship_breakdown_node_id, attr_key)
 );
 
-CREATE SEQUENCE IF NOT EXISTS iclass.certificate_id_seq;
-
 CREATE TABLE IF NOT EXISTS iclass.certificate(
   id serial PRIMARY KEY,
-  certificate_id integer NOT NULL DEFAULT nextval('iclass.certificate_id_seq'),
+  certificate_id integer,
   version integer NOT NULL,
   ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
   company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
@@ -179,7 +177,7 @@ CREATE TABLE IF NOT EXISTS iclass.finding_comment(
   ship_id integer REFERENCES iclass.ship(id) ON DELETE CASCADE,
   company_id integer REFERENCES iclass.organization(id) ON DELETE CASCADE,
   comment_type varchar(2) REFERENCES iclass.comment_type(code) NOT NULL,
-  private boolean DEFAULT false,
+  is_private boolean DEFAULT false,
   certificates varchar(500),
   date_issued date NOT NULL,
   place_issued varchar(50),
