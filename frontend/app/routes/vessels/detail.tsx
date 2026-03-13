@@ -87,8 +87,8 @@ function VesselDetailContent() {
         <VesselOverview vessel={vessel} />
         <Accordion type="multiple" className="space-y-4">
           <CertificatesTable certificates={certificates} />
-          <SurveysTable surveys={surveys} otherSurveys={otherSurveys} isItemSelected={isItemSelected} onToggleItem={handleToggle} />
-          <FindingsList findings={findings} isItemSelected={isItemSelected} onToggleItem={handleToggle} />
+          <SurveysTable surveys={surveys} otherSurveys={otherSurveys} isItemSelected={isItemSelected as any} onToggleItem={handleToggle as any} />
+          <FindingsList findings={findings} isItemSelected={isItemSelected as any} onToggleItem={handleToggle as any} />
         </Accordion>
       </div>
       <CartDrawer vesselId={vessel.id} companyId={vessel.registered_owner_id} />

@@ -159,8 +159,16 @@ FROM iclass.job_participant;
 DROP VIEW IF EXISTS api.comment_lines CASCADE;
 CREATE OR REPLACE VIEW api.comment_lines AS
 SELECT
-  id, survey_job_id, audit_job_id, finding_comment_id, is_private, certificates, due_date, expiry_survey_audits, status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
+  id, survey_job_id, audit_job_id, finding_comment_id, comment_type, is_private, certificates, due_date, expiry_survey_audits, status, postponed_due_date, postponed_expiry_survey_audits, mms_reference, subject, text
 FROM iclass.comment_line;
+
+DROP VIEW IF EXISTS api.comment_types CASCADE;
+CREATE OR REPLACE VIEW api.comment_types AS
+SELECT code, name FROM iclass.comment_type;
+
+DROP VIEW IF EXISTS api.comment_statuses CASCADE;
+CREATE OR REPLACE VIEW api.comment_statuses AS
+SELECT code, name FROM iclass.comment_status;
 
 -- Consolidated view for surveyor's job list
 DROP VIEW IF EXISTS api.surveyor_jobs CASCADE;
@@ -578,6 +586,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON api.survey_lines TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.audit_lines TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.comment_lines TO employees;
 GRANT SELECT, INSERT, UPDATE, DELETE ON api.job_participants TO employees;
+GRANT SELECT ON api.comment_types TO employees, customers, administrations, admingrp;
+GRANT SELECT ON api.comment_statuses TO employees, customers, administrations, admingrp;
 GRANT SELECT ON api.surveyor_jobs TO employees;
 
 -- Grants for employees and organizations

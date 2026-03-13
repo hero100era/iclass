@@ -189,6 +189,7 @@ CREATE TABLE IF NOT EXISTS iclass.comment_line(
   survey_job_id integer REFERENCES iclass.survey_job(id) ON DELETE CASCADE,
   audit_job_id integer REFERENCES iclass.audit_job(id) ON DELETE CASCADE,
   finding_comment_id integer REFERENCES iclass.finding_comment(id) ON DELETE SET NULL,
+  comment_type varchar(2) REFERENCES iclass.comment_type(code),
   is_private boolean DEFAULT false,
   certificates varchar(500),
   due_date date,

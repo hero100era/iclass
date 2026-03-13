@@ -16,8 +16,8 @@ interface Finding {
 
 interface FindingsListProps {
     findings: Finding[];
-    isItemSelected: (id: number, type: string) => boolean;
-    onToggleItem: (item: Finding, type: "finding") => void;
+    isItemSelected: (id: number | string, type: string) => boolean;
+    onToggleItem: (item: any, type: string) => void;
 }
 
 export function FindingsList({ findings, isItemSelected, onToggleItem }: FindingsListProps) {

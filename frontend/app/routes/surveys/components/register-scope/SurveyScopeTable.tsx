@@ -38,7 +38,7 @@ export function SurveyScopeTable({
                     ) : (
                         lines.map((line) => (
                             <tr key={line.id} className="hover:bg-slate-50/50">
-                                <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.cert_code || line.survey_pool?.cert_code || line.survey_pool?.code}</td>
+                                <td className="px-4 py-2 font-mono text-slate-600">{line.survey_audits?.code || line.survey_pool?.code}</td>
                                 <td className="px-4 py-2 font-medium text-slate-900">{line.survey_audits?.description || line.survey_pool?.description}</td>
                                 <td className="px-4 py-2">
                                     <div className="text-slate-500">{formatDate(line.survey_audits?.range_from_date)} - {formatDate(line.survey_audits?.range_to_date)}</div>

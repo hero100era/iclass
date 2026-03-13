@@ -22,6 +22,7 @@ export default [
     route("assign-surveyor", "routes/surveys/assign-surveyor.tsx"),
     route("register-scope", "routes/surveys/register-scope.tsx"),
     route("checklist", "routes/surveys/checklist.tsx"),
+    route("memo-finding", "routes/surveys/memo-finding.tsx"),
   ]),
   route("login", "routes/login.tsx"),
   route("login/oauth/:provider", "routes/oauth.tsx"),

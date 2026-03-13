@@ -60,8 +60,8 @@ export function SurveyJobRow({
                 </td>
                 <td className="px-4 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => onCreateAttached("attached_survey", survey)} className="text-[10px] font-bold text-primary hover:underline">Add Survey</button>
-                        <button onClick={() => onCreateAttached("ms_job", survey)} className="text-[10px] font-bold text-primary hover:underline">Add MS</button>
+                        <button onClick={() => onCreateAttached("attached_survey", survey)} className="text-[10px] font-bold text-primary hover:underline">Creat Sub Survey Job</button>
+                        <button onClick={() => onCreateAttached("ms_job", survey)} className="text-[10px] font-bold text-primary hover:underline">Create MS Job</button>
                     </div>
                 </td>
             </tr>

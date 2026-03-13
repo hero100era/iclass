@@ -24,8 +24,8 @@ interface OtherSurvey {
 interface SurveysTableProps {
     surveys: Survey[];
     otherSurveys: OtherSurvey[];
-    isItemSelected: (id: number, type: string) => boolean;
-    onToggleItem: (item: any, type: "survey" | "other") => void;
+    isItemSelected: (id: number | string, type: string) => boolean;
+    onToggleItem: (item: any, type: string) => void;
 }
 
 export function SurveysTable({ surveys, otherSurveys, isItemSelected, onToggleItem }: SurveysTableProps) {

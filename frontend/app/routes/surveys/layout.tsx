@@ -59,8 +59,10 @@ export default function JobLayout() {
       items: [
         { id: "checklist", label: "2.1 Checklist" },
         { id: "memo-finding", label: "2.2 Memo and finding" },
-        { id: "issue-statement", label: "2.3 Issue statement" },
-        { id: "attach-documents-reporting", label: "2.4 Attach documents" },
+        { id: "manage-survey", label: "2.3 Manage Survey" },
+        { id: "manage-certificate", label: "2.4 Manage Certificate" },
+        { id: "issue-statement", label: "2.5 Issue Statement" },
+        { id: "attach-documents-reporting", label: "2.6 Attach documents" },
       ],
     },
     {
