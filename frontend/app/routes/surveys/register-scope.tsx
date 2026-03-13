@@ -20,30 +20,10 @@ import type {
   SurveyJob,
   SurveyAudit,
   FindingComment,
+  SurveyLine,
+  CommentLine,
+  SurveyPool,
 } from "~/definitions/database.iclass.types";
-
-interface SurveyLineWithDetails {
-  id: number;
-  job_id: number;
-  survey_audit_id: number | null;
-  pool_id: number | null;
-  credit_periodical: boolean | null;
-  survey_audits?: {
-    description: string | null;
-    pool_id: number | null;
-    status: string | null;
-    range_from_date: string | null;
-    range_to_date: string | null;
-    next_due_date: string | null;
-    is_ordered: boolean | null;
-    cert_code: string | null;
-  };
-  survey_pool?: {
-    code: string | null;
-    description: string | null;
-    cert_code: string | null;
-  };
-}
 
 interface PoolItem {
   id: number;
@@ -51,24 +31,6 @@ interface PoolItem {
   description: string;
   cert_code: string;
   is_active: boolean;
-}
-
-interface CommentLineWithFinding {
-  id: number;
-  survey_job_id: number | null;
-  audit_job_id: number | null;
-  finding_comment_id: number | null;
-  finding_comment?: {
-    comment_type?: string;
-    text?: string;
-    date_issued?: string;
-    due_date?: string;
-    mms_reference?: string;
-  };
-}
-
-interface SurveyLineWithType extends SurveyLineWithDetails {
-  type: "survey";
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -86,10 +48,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   // 2. Get survey lines and comment lines
   const [{ data: surveyLines }, { data: commentLines }] = await Promise.all([
-    db.get<any[]>("/survey_lines", {
+    db.get<SurveyLine[]>("/survey_lines", {
       filters: { job_id: `eq.${surveyJob.id}` },
     }),
-    db.get<any[]>("/comment_lines", {
+    db.get<CommentLine[]>("/comment_lines", {
       filters: { survey_job_id: `eq.${surveyJob.id}` },
     }),
   ]);
@@ -105,28 +67,33 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     .filter((l) => l.finding_comment_id)
     .map((l) => l.finding_comment_id);
 
-  const [{ data: surveyAudits }, { data: surveyPools }, { data: findingComments }] =
-    await Promise.all([
-      surveyAuditIds.length > 0
-        ? db.get<any[]>("/survey_audits", {
-            filters: { id: `in.(${surveyAuditIds.join(",")})` },
-          })
-        : Promise.resolve({ data: [] }),
-      poolIds.length > 0
-        ? db.get<any[]>("/survey_pool", {
-            filters: { id: `in.(${poolIds.join(",")})` },
-          })
-        : Promise.resolve({ data: [] }),
-      commentIds.length > 0
-        ? db.get<any[]>("/finding_comments", {
-            filters: { id: `in.(${commentIds.join(",")})` },
-          })
-        : Promise.resolve({ data: [] }),
-    ]);
+  const [
+    { data: surveyAudits },
+    { data: surveyPools },
+    { data: findingComments },
+  ] = await Promise.all([
+    surveyAuditIds.length > 0
+      ? db.get<SurveyAudit[]>("/survey_audits", {
+          filters: { id: `in.(${surveyAuditIds.join(",")})` },
+        })
+      : Promise.resolve({ data: [] }),
+    poolIds.length > 0
+      ? db.get<SurveyPool[]>("/survey_pool", {
+          filters: { id: `in.(${poolIds.join(",")})` },
+        })
+      : Promise.resolve({ data: [] }),
+    commentIds.length > 0
+      ? db.get<FindingComment[]>("/finding_comments", {
+          filters: { id: `in.(${commentIds.join(",")})` },
+        })
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const surveyAuditMap = new Map((surveyAudits || []).map((s) => [s.id, s]));
   const surveyPoolMap = new Map((surveyPools || []).map((p) => [p.id, p]));
-  const findingCommentMap = new Map((findingComments || []).map((c) => [c.id, c]));
+  const findingCommentMap = new Map(
+    (findingComments || []).map((c) => [c.id, c]),
+  );
 
   const enrichedSurveyLines = (surveyLines || []).map((line) => ({
     ...line,
@@ -151,7 +118,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const usedSurveyAuditIds = new Set(
     (surveyLines || [])
       .filter((l) => l.survey_audit_id)
-      .map((l) => l.survey_audit_id)
+      .map((l) => l.survey_audit_id),
   );
 
   if (shipId) {
@@ -165,7 +132,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ]);
     // Filter out surveys already in scope
     availableSurveys = (surveys || []).filter(
-      (s) => !usedSurveyAuditIds.has(s.id)
+      (s) => !usedSurveyAuditIds.has(s.id),
     );
     availableFindings = findings || [];
   }
@@ -348,7 +315,7 @@ export default function RegisterScope() {
                 </td>
               </tr>
             ) : (
-              allLines.map((line: SurveyLineWithType) => (
+              allLines.map((line) => (
                 <tr
                   key={line.id}
                   className="hover:bg-slate-50/50 transition-colors group"
@@ -364,8 +331,17 @@ export default function RegisterScope() {
                   </td>
                   <td className="px-4 py-2">
                     <div className="text-slate-500">
-                      {line.survey_audits?.range_from_date || "N/A"} to{" "}
-                      {line.survey_audits?.range_to_date || "N/A"}
+                      {line.survey_audits?.range_from_date
+                        ? new Date(
+                            line.survey_audits.range_from_date,
+                          ).toLocaleDateString()
+                        : "N/A"}{" "}
+                      to{" "}
+                      {line.survey_audits?.range_to_date
+                        ? new Date(
+                            line.survey_audits.range_to_date,
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </div>
                     <div className="text-[10px] text-slate-400 font-bold">
                       DUE:{" "}
@@ -537,7 +513,7 @@ export default function RegisterScope() {
                 </td>
               </tr>
             ) : (
-              commentLines.map((line: CommentLineWithFinding) => (
+              commentLines.map((line) => (
                 <tr
                   key={line.id}
                   className="hover:bg-slate-50/50 transition-colors"
@@ -574,8 +550,7 @@ export default function RegisterScope() {
                       className={cn(
                         "font-bold",
                         line.finding_comment?.due_date &&
-                          new Date(line.finding_comment.due_date) <
-                            new Date()
+                          new Date(line.finding_comment.due_date) < new Date()
                           ? "text-destructive"
                           : "text-slate-600",
                       )}

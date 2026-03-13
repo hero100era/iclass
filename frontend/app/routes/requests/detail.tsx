@@ -15,28 +15,19 @@ import {
   useActionData,
   redirect,
 } from "react-router";
-import { type Employee } from "~/definitions/database.iclass.types";
+import { type Employee, type SurveyAudit, type FindingComment } from "~/definitions/database.iclass.types";
 import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/detail";
 
 interface CartItem {
   id: number;
+  survey_request_id: number;
   survey_audit_id?: number;
   comment_id?: number;
   occ_survey_code?: string;
-  survey_audit?: {
-    code?: string;
-    description?: string;
-    range_from_date?: string;
-    range_to_date?: string;
-  };
-  finding_comment?: {
-    comment_type?: string;
-    text?: string;
-    due_date?: string;
-    status?: string;
-  };
+  survey_audit?: SurveyAudit | null;
+  finding_comment?: FindingComment | null;
 }
 
 interface SurveyRequest {
@@ -57,8 +48,8 @@ interface SurveyRequestCart {
   survey_audit_id?: number;
   comment_id?: number;
   occ_survey_code?: string;
-  survey_audit?: { cert_code?: string; code?: string; description?: string; range_from_date?: string; range_to_date?: string };
-  finding_comment?: { comment_type?: string; text?: string; due_date?: string; status?: string };
+  survey_audit?: SurveyAudit | null;
+  finding_comment?: FindingComment | null;
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -94,12 +85,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const [{ data: surveyAudits }, { data: findingComments }] = await Promise.all(
     [
       surveyAuditIds.length > 0
-        ? db.get<any[]>("/survey_audits", {
+        ? db.get<SurveyAudit[]>("/survey_audits", {
             filters: { id: `in.(${surveyAuditIds.join(",")})` },
           })
         : Promise.resolve({ data: [] }),
       commentIds.length > 0
-        ? db.get<any[]>("/finding_comments", {
+        ? db.get<FindingComment[]>("/finding_comments", {
             filters: { id: `in.(${commentIds.join(",")})` },
           })
         : Promise.resolve({ data: [] }),
@@ -273,13 +264,13 @@ export default function RequestDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {surveyItems.map((item: CartItem) => (
+                  {surveyItems.map((item) => (
                     <tr
                       key={item.id}
                       className="hover:bg-muted/30 transition-colors"
                     >
                       <td className="px-6 py-4 font-mono text-sm">
-                        {item.survey_audit?.code || item.occ_survey_code}
+                        {item.survey_audit?.cert_code || item.occ_survey_code}
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium">
@@ -290,8 +281,8 @@ export default function RequestDetail() {
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {item.survey_audit ? (
                           <span>
-                            {item.survey_audit?.range_from_date} -{" "}
-                            {item.survey_audit?.range_to_date}
+                            {String(item.survey_audit?.range_from_date)} -{" "}
+                            {String(item.survey_audit?.range_to_date)}
                           </span>
                         ) : (
                           <span className="italic">Occasional item</span>
@@ -328,7 +319,7 @@ export default function RequestDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {findingItems.map((item: CartItem) => (
+                  {findingItems.map((item) => (
                     <tr
                       key={item.id}
                       className="hover:bg-muted/30 transition-colors"
@@ -344,7 +335,7 @@ export default function RequestDetail() {
                         </p>
                         {item.finding_comment?.due_date && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Due: {item.finding_comment?.due_date}
+                            Due: {String(item.finding_comment?.due_date)}
                           </p>
                         )}
                       </td>
