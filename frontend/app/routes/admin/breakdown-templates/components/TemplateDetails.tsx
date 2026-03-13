@@ -1,10 +1,11 @@
-import { Settings2, Save, Trash2, Layers, X, Network } from "lucide-react";
+import { Settings2, Save, Layers, X, Network } from "lucide-react";
 import { Link } from "react-router";
-import { cn } from "~/lib/utils";
+
+import type { BreakdownTemplateData } from "../index";
 
 interface TemplateDetailsProps {
-    template: any;
-    editForm: any;
+    template: BreakdownTemplateData | null;
+    editForm: Partial<BreakdownTemplateData>;
     isEditing: boolean;
     isSubmitting: boolean;
     error?: string;
@@ -12,7 +13,7 @@ interface TemplateDetailsProps {
     onCancel: () => void;
     onSave: () => void;
     onDelete: (id: number) => void;
-    onFormUpdate: (form: any) => void;
+    onFormUpdate: (form: Partial<BreakdownTemplateData>) => void;
 }
 
 export function TemplateDetails({
@@ -46,9 +47,9 @@ export function TemplateDetails({
                         </>
                     ) : (
                         <>
-                            <button onClick={() => onDelete(template.id)} className="text-[11px] font-bold text-red-500 px-3 py-1 hover:bg-red-50 rounded">Delete</button>
+                            {template && <button onClick={() => onDelete(template.id)} className="text-[11px] font-bold text-red-500 px-3 py-1 hover:bg-red-50 rounded">Delete</button>}
                             <button onClick={onEdit} className="text-[11px] font-bold text-slate-600 border px-3 py-1 rounded">Edit Info</button>
-                            <Link to={`/admin/breakdown-templates/${template.id}`} className="bg-primary text-white text-[11px] font-bold px-3 py-1 rounded flex items-center gap-1.5"><Layers size={12} /> Edit Tree</Link>
+                            {template && <Link to={`/admin/breakdown-templates/${template.id}`} className="bg-primary text-white text-[11px] font-bold px-3 py-1 rounded flex items-center gap-1.5"><Layers size={12} /> Edit Tree</Link>}
                         </>
                     )}
                 </div>
@@ -59,23 +60,23 @@ export function TemplateDetails({
                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Code</label>
-                        {isEditing ? <input className="w-full text-xs font-mono px-3 py-2 border rounded" value={data.code} onChange={e => onFormUpdate({ ...data, code: e.target.value })} /> : <div className="text-xs font-mono font-bold bg-slate-50 p-2 border rounded">{data.code}</div>}
+                        {isEditing ? <input className="w-full text-xs font-mono px-3 py-2 border rounded" value={data?.code || ""} onChange={e => onFormUpdate({ ...data!, code: e.target.value })} /> : <div className="text-xs font-mono font-bold bg-slate-50 p-2 border rounded">{data?.code}</div>}
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Vessel Type</label>
-                        {isEditing ? <input className="w-full text-xs px-3 py-2 border rounded" value={data.vessel_type} onChange={e => onFormUpdate({ ...data, vessel_type: e.target.value })} /> : <div className="text-xs font-medium bg-slate-50 p-2 border rounded">{data.vessel_type || "-"}</div>}
+                        {isEditing ? <input className="w-full text-xs px-3 py-2 border rounded" value={data?.vessel_type || ""} onChange={e => onFormUpdate({ ...data!, vessel_type: e.target.value })} /> : <div className="text-xs font-medium bg-slate-50 p-2 border rounded">{data?.vessel_type || "-"}</div>}
                     </div>
                     <div className="col-span-2 space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Template Name</label>
-                        {isEditing ? <input className="w-full text-xs px-3 py-2 border rounded" value={data.name} onChange={e => onFormUpdate({ ...data, name: e.target.value })} /> : <div className="text-xs font-bold bg-slate-50 p-2 border rounded">{data.name}</div>}
+                        {isEditing ? <input className="w-full text-xs px-3 py-2 border rounded" value={data?.name || ""} onChange={e => onFormUpdate({ ...data!, name: e.target.value })} /> : <div className="text-xs font-bold bg-slate-50 p-2 border rounded">{data?.name}</div>}
                     </div>
                     <div className="col-span-2 space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
-                        {isEditing ? <textarea rows={3} className="w-full text-xs px-3 py-2 border rounded" value={data.description} onChange={e => onFormUpdate({ ...data, description: e.target.value })} /> : <div className="text-xs text-slate-600 bg-slate-50 p-2 border rounded whitespace-pre-wrap">{data.description || "-"}</div>}
+                        {isEditing ? <textarea rows={3} className="w-full text-xs px-3 py-2 border rounded" value={data?.description || ""} onChange={e => onFormUpdate({ ...data!, description: e.target.value })} /> : <div className="text-xs text-slate-600 bg-slate-50 p-2 border rounded whitespace-pre-wrap">{data?.description || "-"}</div>}
                     </div>
                 </div>
 
-                {!isEditing && (
+                {(!isEditing && template) && (
                     <div className="mt-8 p-12 text-center bg-slate-50 border border-dashed rounded-2xl">
                         <Network size={32} className="mx-auto text-slate-300 mb-3" />
                         <h4 className="text-sm font-bold text-slate-600">Template Logic</h4>

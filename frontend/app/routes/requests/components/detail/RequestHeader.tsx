@@ -2,15 +2,33 @@ import { ArrowLeft, UserPlus, FileText, Loader2, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useFetcher } from "react-router";
 
+export interface EmployeeInfo {
+    id: number;
+    display_name: string;
+    job_title: string;
+}
+
+export interface RequestDetailData {
+    id: number;
+    status: string;
+    contact_person?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    location?: string;
+    estimated_date?: string;
+    ships?: { name: string; imo_number?: string }[];
+    organizations?: { name: string }[];
+}
+
 interface RequestHeaderProps {
-    request: any;
-    employees: any[];
+    request: RequestDetailData;
+    employees: EmployeeInfo[];
     hasSurvey: boolean;
     hasAudit: boolean;
 }
 
 export function RequestHeader({ request, employees, hasSurvey, hasAudit }: RequestHeaderProps) {
-    const fetcher = useFetcher<any>();
+    const fetcher = useFetcher<{ error?: string }>();
     const isProcessing = fetcher.state !== "idle";
     const error = fetcher.data?.error;
     const [isAssigning, setIsAssigning] = useState(false);

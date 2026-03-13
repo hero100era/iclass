@@ -3,9 +3,22 @@ import { Form } from "react-router";
 import { formatDate } from "~/lib/format";
 import { cn } from "~/lib/utils";
 
+export interface FindingCommentProps {
+    id: number;
+    comment_type?: string;
+    text?: string;
+    date_issued?: string;
+    due_date?: string;
+}
+
+export interface CommentLineProps {
+    id: number;
+    finding_comment?: FindingCommentProps;
+}
+
 interface FindingsScopeTableProps {
-    commentLines: any[];
-    availableFindings: any[];
+    commentLines: CommentLineProps[];
+    availableFindings: FindingCommentProps[];
     isSubmitting: boolean;
     jobId: number;
 }

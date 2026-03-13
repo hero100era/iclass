@@ -1,7 +1,20 @@
-import { AlertCircle } from "lucide-react";
+export interface RequestCartItem {
+    id: number;
+    occ_survey_code?: string;
+    survey_audit?: {
+        description: string;
+        cert_code: string;
+        next_due_date: string;
+    };
+    finding_comment?: {
+        text: string;
+        comment_type: string;
+        due_date: string;
+    };
+}
 
 interface RequestCartTableProps {
-    items: any[];
+    items: RequestCartItem[];
 }
 
 export function RequestCartTable({ items }: RequestCartTableProps) {
@@ -23,9 +36,9 @@ export function RequestCartTable({ items }: RequestCartTableProps) {
                     {items.map((item) => {
                         const isSurvey = !!item.survey_audit;
                         const isFinding = !!item.finding_comment;
-                        const desc = isSurvey ? item.survey_audit.description : isFinding ? item.finding_comment.text : item.occ_survey_code;
-                        const code = isSurvey ? item.survey_audit.cert_code : isFinding ? item.finding_comment.comment_type : item.occ_survey_code;
-                        const date = isSurvey ? item.survey_audit.next_due_date : isFinding ? item.finding_comment.due_date : "-";
+                        const desc = isSurvey ? item.survey_audit?.description : isFinding ? item.finding_comment?.text : item.occ_survey_code;
+                        const code = isSurvey ? item.survey_audit?.cert_code : isFinding ? item.finding_comment?.comment_type : item.occ_survey_code;
+                        const date = isSurvey ? item.survey_audit?.next_due_date : isFinding ? item.finding_comment?.due_date : "-";
 
                         return (
                             <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">

@@ -1,4 +1,4 @@
-import { ClipboardCheck, Info, ListChecks } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { useLoaderData, useSubmit } from "react-router";
 import {
   getChecklistData,
@@ -7,13 +7,43 @@ import {
 } from "./checklist.server";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
-import { ParticularsTable } from "./components/checklist/ParticularsTable";
+import { ParticularsTable, type ParticularItem } from "./components/checklist/ParticularsTable";
 
-interface LoaderArgs { request: Request; params: { id: string }; }
+import type { SurveyLine, SurveyChecklist, ChecklistResult } from "~/definitions/database.iclass.types";
+import type { Route } from "./+types/checklist";
 
-export async function loader(args: LoaderArgs) { return await getChecklistData(args); }
+interface ExtendedChecklist extends SurveyChecklist {
+  checklist_items: {
+    id: number;
+    content: string;
+    item_number: number;
+    reg_reference?: string;
+    checklist_sections: {
+      id: number;
+      title: string;
+      section_number: string;
+    };
+  };
+  particulars?: ParticularItem[];
+}
 
-export async function action(args: any) {
+interface SectionGroup {
+  section: {
+    id: number;
+    title: string;
+    section_number: string;
+  };
+  items: ExtendedChecklist[][];
+}
+
+interface ExtendedSurveyLine extends SurveyLine {
+  survey_audits?: { description: string; cert_code: string; };
+  survey_pool?: { name: string; code: string; };
+}
+
+export async function loader(args: Route.LoaderArgs) { return await getChecklistData(args); }
+
+export async function action(args: Route.ActionArgs) {
   const formData = await args.request.formData();
   const intent = formData.get("intent");
   if (intent === "update_result") {
@@ -26,26 +56,32 @@ export async function action(args: any) {
 }
 
 export default function JobChecklist() {
-  const { surveyLines, surveyChecklists, checklistResults } = useLoaderData<typeof loader>();
+  const { surveyLines, surveyChecklists, checklistResults } = useLoaderData<typeof loader>() as unknown as {
+    surveyLines: ExtendedSurveyLine[];
+    surveyChecklists: ExtendedChecklist[];
+    checklistResults: ChecklistResult[];
+  };
   const submit = useSubmit();
   const [activeLineId, setActiveLineId] = useState<number | null>(surveyLines?.[0]?.id || null);
 
-  const currentChecklist = (surveyChecklists || []).filter((c: any) => c.survey_line_id === activeLineId);
+  const currentChecklist = (surveyChecklists || []).filter((c) => c.survey_line_id === activeLineId);
 
-  const sections: Record<string, any> = {};
-  currentChecklist.forEach((c: any) => {
+  const sections: Record<string, SectionGroup> = {};
+  currentChecklist.forEach((c) => {
     const sec = c.checklist_items?.checklist_sections;
     if (sec?.id) sections[sec.id] = { section: sec, items: [] };
   });
 
-  const sortedSections = Object.values(sections).sort((a: any, b: any) =>
+  const sortedSections = Object.values(sections).sort((a, b) =>
     (a.section.section_number || "").localeCompare(b.section.section_number || "", undefined, { numeric: true })
   );
 
-  sortedSections.forEach((s: any) => {
-    const grouped: Record<number, any[]> = {};
-    currentChecklist.filter((item: any) => item.checklist_items?.checklist_sections?.id === s.section.id)
-      .forEach((item: any) => (grouped[item.item_id] ||= []).push(item));
+  sortedSections.forEach((s) => {
+    const grouped: Record<number, ExtendedChecklist[]> = {};
+    currentChecklist.filter((item) => item.checklist_items?.checklist_sections?.id === s.section.id)
+      .forEach((item) => {
+        if (item.item_id) (grouped[item.item_id] ||= []).push(item);
+      });
     s.items = Object.values(grouped).sort((a, b) => (a[0].checklist_items?.item_number || 0) - (b[0].checklist_items?.item_number || 0));
   });
 
@@ -61,7 +97,7 @@ export default function JobChecklist() {
       <div className="flex gap-4 items-start">
         <aside className="w-64 shrink-0 space-y-2">
           <div className="text-[10px] font-bold text-slate-400 uppercase px-2 mb-1">Surveys in Scope</div>
-          {surveyLines.map((line: any) => (
+          {surveyLines.map((line) => (
             <button
               key={line.id}
               onClick={() => setActiveLineId(line.id)}
@@ -82,14 +118,14 @@ export default function JobChecklist() {
             <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-500">Select a survey to begin.</div>
           ) : sortedSections.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-500">No checklist items found.</div>
-          ) : sortedSections.map((sect: any) => (
+          ) : sortedSections.map((sect) => (
             <div key={sect.section.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
               <div className="px-3 py-1.5 bg-slate-50 border-b flex items-center gap-2">
                 <span className="text-xs font-mono font-bold text-slate-400">{sect.section.section_number}</span>
                 <h3 className="text-[11px] font-bold text-slate-700 uppercase">{sect.section.title}</h3>
               </div>
               <div className="divide-y">
-                {sect.items.map((instances: any[]) => (
+                {sect.items.map((instances) => (
                   <div key={instances[0].id} className="p-3 space-y-2">
                     <div className="flex items-start gap-4">
                       <div className="flex-1 flex gap-2">
@@ -104,10 +140,10 @@ export default function JobChecklist() {
                         onChange={(e) => instances.forEach(i => submit({ intent: "update_result", id: i.id.toString(), result: e.target.value }, { method: "post" }))}
                         className="bg-slate-100 border rounded-md py-0.5 px-2 text-[10px] font-bold"
                       >
-                        {checklistResults.map((res: any) => <option key={res.code} value={res.code}>{res.code}</option>)}
+                        {checklistResults.map((res) => <option key={res.code} value={res.code}>{res.code}</option>)}
                       </select>
                     </div>
-                    <ParticularsTable particulars={instances.flatMap((i: any) => i.particulars || [])} submit={submit} />
+                    <ParticularsTable particulars={instances.flatMap((i) => i.particulars || [])} submit={submit} />
                   </div>
                 ))}
               </div>

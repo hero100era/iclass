@@ -6,11 +6,10 @@ import {
     AlertCircle,
     Clock,
     CheckCircle2,
-    MoreVertical,
     X,
     Save,
 } from "lucide-react";
-import { useLoaderData, useSubmit, useNavigation, useParams } from "react-router";
+import { useLoaderData, useSubmit, useNavigation } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
@@ -24,27 +23,62 @@ const formatDate = (dateString: string) => {
     }).format(new Date(dateString));
 };
 
+interface CommentType {
+    code: string;
+    name: string;
+}
+
+interface CommentStatus {
+    code: string;
+    name: string;
+}
+
+interface FindingComment {
+    id: number;
+    ship_id: number;
+    subject: string;
+    text: string;
+    comment_type: string;
+    status: string;
+    date_issued: string;
+    due_date?: string;
+    mms_reference?: string;
+}
+
+interface CommentLine {
+    id: number;
+    survey_job_id: number;
+    finding_comment_id?: number;
+    comment_type?: string;
+    subject?: string;
+    text?: string;
+    status?: string;
+    due_date?: string;
+    mms_reference?: string;
+    is_private: boolean;
+    finding_comment?: FindingComment;
+}
+
 export async function loader({ params, request }: Route.LoaderArgs) {
     const { id } = params;
     const db = await getDb(request);
 
     // 1. Get the survey_job to get ship_id and company_id
-    const { data: surveyJob } = await db.getOne<any>("/survey_jobs", {
+    const { data: surveyJob } = await db.getOne<Record<string, unknown>>("/survey_jobs", {
         filters: { id: `eq.${id}` },
     });
 
     // 2. Fetch comment lines for this survey job
-    // We attempt to select finding_comments to get base data if this is a link
-    const { data: commentLines } = await db.get<any[]>("/comment_lines", {
+    const { data: commentLines } = await db.get<CommentLine[]>("/comment_lines", {
         filters: { survey_job_id: `eq.${id}` },
         select: "*,finding_comment:finding_comments(*)",
         order: "id.desc",
     });
 
     // 3. Fetch all active findings for the ship (Existing conditions)
-    const { data: shipFindings } = await db.get<any[]>("/finding_comments", {
+    const { data: shipFindings } = await db.get<FindingComment[]>("/finding_comments", {
         filters: {
-            ship_id: `eq.${surveyJob.ship_id}`,
+            ship_id: `eq.${surveyJob?.ship_id}`,
             status: "neq.C", // Not Closed
             is_active: "is.true"
         },
@@ -52,8 +86,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     });
 
     // 4. Fetch types and statuses
-    const { data: commentTypes } = await db.get<any[]>("/comment_types");
-    const { data: commentStatuses } = await db.get<any[]>("/comment_statuses");
+    const { data: commentTypes } = await db.get<CommentType[]>("/comment_types");
+    const { data: commentStatuses } = await db.get<CommentStatus[]>("/comment_statuses");
 
     return {
         commentLines: commentLines || [],
@@ -117,11 +151,10 @@ export async function action({ params, request }: Route.ActionArgs) {
 }
 
 export default function MemoFindingPage() {
-    const { commentLines, shipFindings, commentTypes, commentStatuses, surveyJob } =
+    const { commentLines, shipFindings, commentTypes, commentStatuses } =
         useLoaderData<typeof loader>();
     const submit = useSubmit();
     const navigation = useNavigation();
-    const { id } = useParams();
 
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -137,7 +170,7 @@ export default function MemoFindingPage() {
         setEditingId(null);
     };
 
-    const handleEdit = (finding: any) => {
+    const handleEdit = (finding: CommentLine) => {
         setEditingId(finding.id);
         setIsAdding(false);
     };
@@ -157,8 +190,8 @@ export default function MemoFindingPage() {
     const getStatusLabel = (code: string | undefined) =>
         commentStatuses.find((s) => s.code === code)?.name || code || "Unknown";
 
-    const getDisplayData = (finding: any) => {
-        const base = finding.finding_comment || {};
+    const getDisplayData = (finding: CommentLine) => {
+        const base = finding.finding_comment || {} as FindingComment;
         return {
             subject: finding.subject || base.subject || "No Subject",
             text: finding.text || base.text || "No description provided.",
@@ -373,10 +406,18 @@ export default function MemoFindingPage() {
     );
 }
 
-function FindingForm({ commentTypes, commentStatuses, onCancel, finding, isSubmitting }: any) {
+interface FindingFormProps {
+    commentTypes: CommentType[];
+    commentStatuses: CommentStatus[];
+    onCancel: () => void;
+    finding?: CommentLine;
+    isSubmitting: boolean;
+}
+
+function FindingForm({ commentTypes, commentStatuses, onCancel, finding, isSubmitting }: FindingFormProps) {
     const submit = useSubmit();
 
-    const base = finding?.finding_comment || {};
+    const base = (finding?.finding_comment || {}) as FindingComment;
     const initialData = {
         subject: finding?.subject || base.subject || "",
         text: finding?.text || base.text || "",
@@ -420,7 +461,7 @@ function FindingForm({ commentTypes, commentStatuses, onCancel, finding, isSubmi
                             className="w-full bg-slate-50 border-none rounded-lg p-2 text-xs focus:ring-2 focus:ring-primary font-medium"
                             required
                         >
-                            {commentTypes.map((t: any) => (
+                            {commentTypes.map((t) => (
                                 <option key={t.code} value={t.code}>{t.name}</option>
                             ))}
                         </select>
@@ -433,7 +474,7 @@ function FindingForm({ commentTypes, commentStatuses, onCancel, finding, isSubmi
                             className="w-full bg-slate-50 border-none rounded-lg p-2 text-xs focus:ring-2 focus:ring-primary font-medium"
                             required
                         >
-                            {commentStatuses.map((s: any) => (
+                            {commentStatuses.map((s) => (
                                 <option key={s.code} value={s.code}>{s.name}</option>
                             ))}
                         </select>

@@ -2,20 +2,20 @@ import { ClipboardList, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useLoaderData, useActionData, useNavigation } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import type { Route } from "./+types/register-scope";
-import { SurveyScopeTable } from "./components/register-scope/SurveyScopeTable";
-import { FindingsScopeTable } from "./components/register-scope/FindingsScopeTable";
+import { SurveyScopeTable, type SurveyLineProps, type SurveyAuditProps, type PoolOptionProps } from "./components/register-scope/SurveyScopeTable";
+import { FindingsScopeTable, type CommentLineProps, type FindingCommentProps } from "./components/register-scope/FindingsScopeTable";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const db = await getDb(request);
-  const { data: job } = await db.getOne<any>("/survey_jobs", { filters: { id: `eq.${params.id}` } });
+  const { data: job } = await db.getOne<{ id: number; ship_id: number; job_id: number }>("/survey_jobs", { filters: { id: `eq.${params.id}` } });
   if (!job) throw new Response("Job not found", { status: 404 });
 
   const [{ data: sLines }, { data: cLines }, { data: audits }, { data: findings }, { data: pool }] = await Promise.all([
-    db.get<any[]>("/survey_lines", { filters: { job_id: `eq.${job.id}` }, select: "*,survey_audits(*),survey_pool(*)" }),
-    db.get<any[]>("/comment_lines", { filters: { survey_job_id: `eq.${job.id}` }, select: "*,finding_comment:finding_comments(*)" }),
-    db.get<any[]>("/survey_audits", { filters: { ship_id: `eq.${job.ship_id}`, is_active: "eq.true" } }),
-    db.get<any[]>("/finding_comments", { filters: { ship_id: `eq.${job.ship_id}`, is_active: "eq.true" } }),
-    db.get<any[]>("/survey_pool", { filters: { is_active: "eq.true" } }),
+    db.get<SurveyLineProps[]>("/survey_lines", { filters: { job_id: `eq.${job.id}` }, select: "*,survey_audits(*),survey_pool(*)" }),
+    db.get<CommentLineProps[]>("/comment_lines", { filters: { survey_job_id: `eq.${job.id}` }, select: "*,finding_comment:finding_comments(*)" }),
+    db.get<SurveyAuditProps[]>("/survey_audits", { filters: { ship_id: `eq.${job.ship_id}`, is_active: "eq.true" } }),
+    db.get<FindingCommentProps[]>("/finding_comments", { filters: { ship_id: `eq.${job.ship_id}`, is_active: "eq.true" } }),
+    db.get<PoolOptionProps[]>("/survey_pool", { filters: { is_active: "eq.true" } }),
   ]);
 
   const usedAuditIds = new Set((sLines || []).map(l => l.survey_audit_id).filter(Boolean));
@@ -26,7 +26,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return { surveyJob: job, surveyLines: sLines || [], commentLines: cLines || [], availableAudits, availableFindings: findings || [], availablePool };
 }
 
-export async function action({ request, params }: any) {
+export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const db = await getDb(request);
@@ -56,14 +56,14 @@ export async function action({ request, params }: any) {
 
 export default function RegisterScope() {
   const { surveyJob, surveyLines, commentLines, availableAudits, availableFindings, availablePool } = useLoaderData<typeof loader>();
-  const actionData = useActionData<any>();
+  const actionData = useActionData<{ error?: string; success?: string }>();
   const navigation = useNavigation();
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><ClipboardList size={20} className="text-primary" /> Register Survey Scope</h2>
-        <p className="text-sm text-slate-500">Add or remove surveys and recommendations from this job's scope.</p>
+        <p className="text-sm text-slate-500">Add or remove surveys and recommendations from this job&apos;s scope.</p>
       </div>
 
       {actionData?.error && <div className="p-3 bg-red-50 text-red-600 rounded flex items-center gap-2 text-xs font-bold"><AlertCircle size={14} />{actionData.error}</div>}

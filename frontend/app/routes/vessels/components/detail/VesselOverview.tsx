@@ -2,11 +2,31 @@ import { Info, FileBadge, Ship as ShipIcon, Activity, FileText, MapPin, Calendar
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
 import { GridItem, StatusBadge } from "~/components/ui/DetailHelpers";
 
+import type { Ship } from "~/definitions/database.iclass.types";
+
+interface ShipDetail extends Ship {
+    delivery_date?: string | Date | null;
+    class_id?: string | null;
+    vessel_status?: string | null;
+    owner_name?: string | null;
+    gross_tonnage?: number | string | null;
+    net_tonnage?: number | string | null;
+    length_overall?: number | string | null;
+    breadth_moulded?: number | string | null;
+    depth_moulded?: number | string | null;
+    draught?: number | string | null;
+}
+
 interface VesselOverviewProps {
-    vessel: any;
+    vessel: ShipDetail;
 }
 
 export function VesselOverview({ vessel }: VesselOverviewProps) {
+    const formatDate = (date: Date | string | null | undefined) => {
+        if (!date) return "-";
+        if (date instanceof Date) return date.toLocaleDateString();
+        return String(date);
+    };
     return (
         <Accordion type="multiple" defaultValue={["identity", "class", "dimensions"]} className="space-y-4">
             {/* Identification */}
@@ -24,8 +44,8 @@ export function VesselOverview({ vessel }: VesselOverviewProps) {
                         <GridItem label="Official Number" value={vessel.official_number} icon={FileText} />
                         <GridItem label="Port of Registry" value={vessel.port_of_registry} icon={MapPin} />
                         <GridItem label="Flag" value={vessel.flag_code} icon={Flag} />
-                        <GridItem label="Keel Laid" value={vessel.keel_laid_date} icon={Calendar} />
-                        <GridItem label="Delivery Date" value={vessel.delivery_date} icon={Calendar} />
+                        <GridItem label="Keel Laid" value={formatDate(vessel.keel_laid_date)} icon={Calendar} />
+                        <GridItem label="Delivery Date" value={formatDate(vessel.delivery_date)} icon={Calendar} />
                     </div>
                 </AccordionContent>
             </AccordionItem>

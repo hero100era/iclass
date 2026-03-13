@@ -1,18 +1,7 @@
 import { ChevronRight, ChevronDown, Plus, Copy, Trash2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
-interface BreakdownNode {
-    id: number;
-    template_id: number;
-    parent_node_id: number | null;
-    code: string;
-    name: string;
-    category?: string;
-    node_type?: string;
-    sort_order: number;
-    level: number;
-    children?: BreakdownNode[];
-}
+import type { BreakdownNode } from "../breakdown-templates.types";
 
 interface TemplateTreeProps {
     nodes: BreakdownNode[];

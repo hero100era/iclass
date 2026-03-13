@@ -2,14 +2,10 @@ import { Anchor, Flag, Network } from "lucide-react";
 import { Link } from "react-router";
 import { StatusBadge } from "~/components/ui/DetailHelpers";
 
+import type { Ship } from "~/definitions/database.iclass.types";
+
 interface VesselHeaderProps {
-    vessel: {
-        id: number;
-        name: string;
-        status?: string;
-        imo_number?: string;
-        flag_code?: string;
-    };
+    vessel: Ship & { status?: string };
 }
 
 export function VesselHeader({ vessel }: VesselHeaderProps) {

@@ -1,20 +1,13 @@
-import { Info, Save, Layers, Plus, X } from "lucide-react";
+import { Info, Layers, X } from "lucide-react";
 
-interface Particular {
-    id?: number;
-    template_node_id?: number;
-    attr_key: string;
-    attr_title: string;
-    data_type: string;
-    sort_order: number;
-}
+import type { Particular, BreakdownNode } from "../breakdown-templates.types";
 
 interface TemplateNodeEditorProps {
-    node: any;
+    node: BreakdownNode;
     particulars: Particular[];
     isSavingInfo: boolean;
     isSavingParticulars: boolean;
-    onUpdateNode: (node: any) => void;
+    onUpdateNode: (node: BreakdownNode) => void;
     onSaveNode: () => void;
     onUpdateParticulars: (parts: Particular[]) => void;
     onSaveParticulars: () => void;
@@ -39,7 +32,7 @@ export function TemplateNodeEditor({
         }]);
     };
 
-    const updateParticular = (idx: number, field: string, value: any) => {
+    const updateParticular = (idx: number, field: keyof Particular, value: string | number) => {
         const next = [...particulars];
         next[idx] = { ...next[idx], [field]: value };
         onUpdateParticulars(next);

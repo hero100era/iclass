@@ -16,8 +16,6 @@ import {
   Plus,
   Settings2,
 } from "lucide-react";
-import { cn } from "~/lib/utils";
-import type { Ship } from "~/definitions/database.iclass.types";
 
 import { loader, action } from "./breakdowns.server";
 import { BreakdownTree } from "./components/BreakdownTree";
@@ -27,30 +25,8 @@ import { AddNodeModal } from "./components/AddNodeModal";
 export { loader, action };
 export const handle = { fluid: true };
 
-interface BreakdownNode {
-  id: number;
-  parent_node_id: number | null;
-  code: string;
-  name: string;
-  category?: string;
-  node_type?: string;
-  description?: string;
-  sort_order?: number;
-  template_node_id?: number;
-  is_modified?: boolean;
-  children?: BreakdownNode[];
-}
-
-interface Particular {
-  id?: number;
-  ship_breakdown_node_id?: number;
-  attr_key: string;
-  attr_title: string;
-  attr_value: string | null | undefined;
-  data_type: string;
-  unit: string | null;
-  sort_order: number;
-}
+import type { BreakdownNode, Particular, NewNodeData } from "./breakdowns.types";
+import type { BreakdownTemplate, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
 
 export default function VesselBreakdown() {
   const { vessel, activeBreakdown, tree, allParticulars, templates, templateNodes, vesselId } = useLoaderData<typeof loader>();
@@ -64,31 +40,42 @@ export default function VesselBreakdown() {
   const [editingParticulars, setEditingParticulars] = useState<Particular[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
   const [showAddNodeModal, setShowAddNodeModal] = useState(false);
-  const [newNodeData, setNewNodeData] = useState({
-    parentId: null as number | null,
-    parentTemplateNodeId: null as number | null,
+  const [newNodeData, setNewNodeData] = useState<NewNodeData>({
+    parentId: null,
+    parentTemplateNodeId: null,
     code: "",
     name: "",
     category: "EQUIPMENT",
-    templateNodeId: null as number | null,
+    templateNodeId: null,
   });
 
   const isSavingNode = navigation.state === "submitting" && navigation.formData?.get("intent") === "update_node_info";
   const isSavingParticulars = navigation.state === "submitting" && navigation.formData?.get("intent") === "save_particulars";
 
-  // Sync editing state with selected node
-  useEffect(() => {
-    if (selectedNode) {
-      setEditingNode({ ...selectedNode });
+  const handleSelectNode = (node: BreakdownNode | null) => {
+    setSelectedNode(node);
+    if (node) {
+      setEditingNode({ ...node });
       const particulars = (allParticulars as unknown as Particular[]).filter(
-        (p) => p.ship_breakdown_node_id === selectedNode.id
+        (p) => p.ship_breakdown_node_id === node.id
       );
       setEditingParticulars(particulars);
     } else {
       setEditingNode(null);
       setEditingParticulars([]);
     }
-  }, [selectedNode, allParticulars]);
+  };
+
+  // Sync editing particulars when the source data changes (e.g. after revalidation)
+  const [prevAllParticulars, setPrevAllParticulars] = useState(allParticulars);
+  if (allParticulars !== prevAllParticulars) {
+    setPrevAllParticulars(allParticulars);
+    if (selectedNode && !isSavingParticulars) {
+      setEditingParticulars((allParticulars as unknown as Particular[]).filter(
+        (p) => p.ship_breakdown_node_id === selectedNode.id
+      ));
+    }
+  }
 
   // Refresh tree after success
   useEffect(() => {
@@ -98,22 +85,22 @@ export default function VesselBreakdown() {
   }, [actionData, navigation.state, revalidator]);
 
   const treeStructure = useMemo(() => {
-    const build = (nodes: any[], parentId: number | null = null): any[] => {
+    const build = (nodes: BreakdownNode[], parentId: number | null = null): BreakdownNode[] => {
       return nodes
         .filter((n) => n.parent_node_id === parentId)
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
         .map((n) => ({ ...n, children: build(nodes, n.id) }));
     };
-    return build(tree);
+    return build(tree as unknown as BreakdownNode[]);
   }, [tree]);
 
   const availableTemplateNodes = useMemo(() => {
     if (!showAddNodeModal) return [];
     if (newNodeData.parentTemplateNodeId) {
-      return templateNodes.filter((tn: any) => tn.parent_node_id === newNodeData.parentTemplateNodeId);
+      return templateNodes.filter((tn: BreakdownTemplateNode) => tn.parent_node_id === newNodeData.parentTemplateNodeId);
     }
     if (!newNodeData.parentId && activeBreakdown?.template_id) {
-      return templateNodes.filter((tn: any) => tn.template_id === activeBreakdown.template_id && !tn.parent_node_id);
+      return templateNodes.filter((tn: BreakdownTemplateNode) => tn.template_id === activeBreakdown.template_id && !tn.parent_node_id);
     }
     return [];
   }, [showAddNodeModal, newNodeData, activeBreakdown, templateNodes]);
@@ -129,7 +116,7 @@ export default function VesselBreakdown() {
 
   const handleSaveNodeInfo = () => {
     if (!editingNode) return;
-    submit({ intent: "update_node_info", ...editingNode } as any, { method: "post" });
+    submit({ intent: "update_node_info", ...editingNode } as unknown as Record<string, string>, { method: "post" });
   };
 
   const handleSaveParticulars = () => {
@@ -155,7 +142,11 @@ export default function VesselBreakdown() {
   const handleAddNodeSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const intent = newNodeData.templateNodeId ? "add_template_node" : "add_custom_node";
-    const data: any = { intent, ...newNodeData, breakdown_id: activeBreakdown?.id.toString() };
+    const data: Record<string, string> = {
+      intent,
+      ...Object.fromEntries(Object.entries(newNodeData).map(([k, v]) => [k, v?.toString() || ""])),
+      breakdown_id: activeBreakdown?.id.toString() || ""
+    };
     submit(data, { method: "post" });
     setShowAddNodeModal(false);
     setNewNodeData({ parentId: null, parentTemplateNodeId: null, code: "", name: "", category: "EQUIPMENT", templateNodeId: null });
@@ -200,7 +191,7 @@ export default function VesselBreakdown() {
               <span className="text-xs font-bold text-slate-700">Manual Initialization</span>
               <Plus size={16} className="text-slate-300" />
             </button>
-            {templates.map((tmpl: any) => (
+            {templates.map((tmpl: BreakdownTemplate) => (
               <button key={tmpl.id} onClick={() => handleApplyTemplate(tmpl.id)} className="w-full p-4 bg-white border border-slate-200 rounded-xl hover:border-primary hover:bg-primary/5 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-slate-700">{tmpl.name}</div>
@@ -218,7 +209,7 @@ export default function VesselBreakdown() {
               rootNodes={treeStructure}
               selectedNodeId={selectedNode?.id}
               expandedNodes={expandedNodes}
-              onSelect={setSelectedNode}
+              onSelect={handleSelectNode}
               onToggleExpand={(id) => {
                 const next = new Set(expandedNodes);
                 if (next.has(id)) next.delete(id); else next.add(id);

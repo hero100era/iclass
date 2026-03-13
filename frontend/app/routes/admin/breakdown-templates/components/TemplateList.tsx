@@ -1,10 +1,12 @@
 import { ChevronRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+import type { BreakdownTemplateData } from "../index";
+
 interface TemplateListProps {
-    templates: any[];
+    templates: BreakdownTemplateData[];
     selectedId?: number;
-    onSelect: (tmpl: any) => void;
+    onSelect: (tmpl: BreakdownTemplateData) => void;
 }
 
 export function TemplateList({ templates, selectedId, onSelect }: TemplateListProps) {

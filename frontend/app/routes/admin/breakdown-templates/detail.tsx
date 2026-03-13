@@ -1,25 +1,29 @@
-import { useLoaderData, useSubmit, useNavigation, useActionData, Link } from "react-router";
+import { useLoaderData, useSubmit, useNavigation, Link } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import { useState, useEffect } from "react";
-import { Plus, Settings2, ArrowLeft, Layers, Save, X } from "lucide-react";
+import { Settings2, ArrowLeft, Layers } from "lucide-react";
 
 import { TemplateTree } from "./components/TemplateTree";
 import { TemplateNodeEditor } from "./components/TemplateNodeEditor";
 import { TemplateAddNodeModal } from "./components/TemplateAddNodeModal";
 
+import type { BreakdownTemplate, BreakdownTemplateNode } from "~/definitions/database.iclass.types";
+import type { Route } from "./+types/detail";
+import type { BreakdownNode, Particular } from "./breakdown-templates.types";
+
 export const handle = { fluid: true };
 
-export async function loader({ request, params }: any) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const db = await getDb(request);
   const [{ data: templates }, { data: nodes }] = await Promise.all([
-    db.get<any[]>("/breakdown_templates", { filters: { id: `eq.${params.id}` } }),
-    db.get<any[]>("/breakdown_template_nodes", { filters: { template_id: `eq.${params.id}` }, order: "sort_order.asc" }),
+    db.get<BreakdownTemplate[]>("/breakdown_templates", { filters: { id: `eq.${params.id}` } }),
+    db.get<BreakdownTemplateNode[]>("/breakdown_template_nodes", { filters: { template_id: `eq.${params.id}` }, order: "sort_order.asc" }),
   ]);
   if (!templates?.[0]) throw new Response("Template not found", { status: 404 });
   return { template: templates[0], nodes: nodes || [] };
 }
 
-export async function action({ request, params }: any) {
+export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const db = await getDb(request);
@@ -50,7 +54,7 @@ export async function action({ request, params }: any) {
     const particulars = JSON.parse(formData.get("particulars") as string);
     await db.delete("/breakdown_template_node_particulars", { filters: { template_node_id: `eq.${nodeId}` } });
     if (particulars.length > 0) {
-      await db.post("/breakdown_template_node_particulars", { body: particulars.map((p: any) => ({ ...p, template_node_id: Number(nodeId) })) });
+      await db.post("/breakdown_template_node_particulars", { body: particulars.map((p: Particular) => ({ ...p, template_node_id: Number(nodeId) })) });
     }
     return { success: true };
   }
@@ -59,15 +63,14 @@ export async function action({ request, params }: any) {
 
 export default function TemplateTreeAdmin() {
   const { template, nodes } = useLoaderData<typeof loader>();
-  const [selectedNode, setSelectedNode] = useState<any | null>(null);
-  const [particulars, setParticulars] = useState<any[]>([]);
+  const [selectedNode, setSelectedNode] = useState<BreakdownNode | null>(null);
+  const [particulars, setParticulars] = useState<Particular[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalProps, setAddModalProps] = useState({ parentId: null as number | null, level: 0 });
 
   const submit = useSubmit();
   const navigation = useNavigation();
-  const actionData = useActionData<typeof action>();
 
   useEffect(() => {
     if (selectedNode) {
@@ -76,8 +79,8 @@ export default function TemplateTreeAdmin() {
     }
   }, [selectedNode]);
 
-  const buildTree = (flat: any[], pid: number | null = null): any[] =>
-    flat.filter(n => n.parent_node_id === pid).sort((a, b) => a.sort_order - b.sort_order).map(n => ({ ...n, children: buildTree(flat, n.id) }));
+  const buildTree = (flat: BreakdownTemplateNode[], pid: number | null = null): BreakdownNode[] =>
+    flat.filter(n => n.parent_node_id === pid).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(n => ({ ...n, children: buildTree(flat, n.id) })) as BreakdownNode[];
 
   const rootNodes = buildTree(nodes);
 
@@ -121,7 +124,7 @@ export default function TemplateTreeAdmin() {
               isSavingInfo={navigation.state === "submitting" && navigation.formData?.get("intent") === "save_node"}
               isSavingParticulars={navigation.state === "submitting" && navigation.formData?.get("intent") === "save_particulars"}
               onUpdateNode={setSelectedNode}
-              onSaveNode={() => submit({ intent: "save_node", ...selectedNode }, { method: "post" })}
+              onSaveNode={() => submit({ intent: "save_node", ...(selectedNode as unknown as Record<string, string>) }, { method: "post" })}
               onUpdateParticulars={setParticulars}
               onSaveParticulars={() => submit({ intent: "save_particulars", node_id: selectedNode.id.toString(), particulars: JSON.stringify(particulars) }, { method: "post" })}
             />
@@ -140,7 +143,7 @@ export default function TemplateTreeAdmin() {
           level={addModalProps.level}
           onClose={() => setShowAddModal(false)}
           onSubmit={(data) => {
-            submit({ intent: "save_node", ...data }, { method: "post" });
+            submit({ intent: "save_node", ...data as unknown as Record<string, string> }, { method: "post" });
             setShowAddModal(false);
           }}
         />

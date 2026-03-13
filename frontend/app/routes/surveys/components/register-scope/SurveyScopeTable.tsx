@@ -3,10 +3,36 @@ import { Form } from "react-router";
 import { formatDate } from "~/lib/format";
 import { cn } from "~/lib/utils";
 
+export interface SurveyAuditProps {
+    id: number;
+    code?: string;
+    description?: string;
+    range_from_date?: string;
+    range_to_date?: string;
+    next_due_date?: string;
+    cert_code?: string;
+    pool_id?: number;
+}
+
+export interface PoolOptionProps {
+    id: number;
+    description?: string;
+    cert_code?: string;
+    code?: string;
+}
+
+export interface SurveyLineProps {
+    id: number;
+    survey_audit_id?: number;
+    survey_audits?: SurveyAuditProps;
+    survey_pool?: PoolOptionProps;
+    credit_periodical?: boolean;
+}
+
 interface SurveyScopeTableProps {
-    lines: any[];
-    availableSurveys: any[];
-    availablePoolOptions: any[];
+    lines: SurveyLineProps[];
+    availableSurveys: SurveyAuditProps[];
+    availablePoolOptions: PoolOptionProps[];
     isSubmitting: boolean;
     onAddSurvey: (auditId: string, poolId: string) => void;
 }

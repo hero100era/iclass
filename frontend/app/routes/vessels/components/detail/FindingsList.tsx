@@ -2,6 +2,8 @@ import { MessageSquare, Lock, Plus, Minus } from "lucide-react";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
 import { StatusBadge } from "~/components/ui/DetailHelpers";
 
+import type { FindingComment } from "~/definitions/database.iclass.types";
+
 interface Finding {
     id: number;
     comment_type: string;
@@ -16,8 +18,8 @@ interface Finding {
 
 interface FindingsListProps {
     findings: Finding[];
-    isItemSelected: (id: number | string, type: string) => boolean;
-    onToggleItem: (item: any, type: string) => void;
+    isItemSelected: (id: number | string, type: "survey" | "finding" | "other") => boolean;
+    onToggleItem: (item: Finding | FindingComment, type: "survey" | "finding" | "other") => void;
 }
 
 export function FindingsList({ findings, isItemSelected, onToggleItem }: FindingsListProps) {
@@ -51,8 +53,8 @@ export function FindingsList({ findings, isItemSelected, onToggleItem }: Finding
                                     <button
                                         onClick={() => onToggleItem(finding, "finding")}
                                         className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isItemSelected(finding.id, "finding")
-                                                ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                                : "bg-[#005EAA]/10 text-[#005EAA] hover:bg-[#005EAA]/20"
+                                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                            : "bg-[#005EAA]/10 text-[#005EAA] hover:bg-[#005EAA]/20"
                                             }`}
                                     >
                                         {isItemSelected(finding.id, "finding") ? <Minus size={16} /> : <Plus size={16} />}

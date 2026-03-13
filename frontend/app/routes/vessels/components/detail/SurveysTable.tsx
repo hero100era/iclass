@@ -1,4 +1,4 @@
-import { FileText, Plus, Minus, Activity } from "lucide-react";
+import { Plus, Minus, Activity } from "lucide-react";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
 import { StatusBadge } from "~/components/ui/DetailHelpers";
 import { useState } from "react";
@@ -24,8 +24,8 @@ interface OtherSurvey {
 interface SurveysTableProps {
     surveys: Survey[];
     otherSurveys: OtherSurvey[];
-    isItemSelected: (id: number | string, type: string) => boolean;
-    onToggleItem: (item: any, type: string) => void;
+    isItemSelected: (id: number | string, type: "survey" | "finding" | "other") => boolean;
+    onToggleItem: (item: Survey | OtherSurvey, type: "survey" | "finding" | "other") => void;
 }
 
 export function SurveysTable({ surveys, otherSurveys, isItemSelected, onToggleItem }: SurveysTableProps) {
@@ -69,10 +69,10 @@ export function SurveysTable({ surveys, otherSurveys, isItemSelected, onToggleIt
                                             onClick={() => onToggleItem(survey, "survey")}
                                             disabled={survey.is_ordered}
                                             className={`p-1.5 rounded-md transition-colors ${survey.is_ordered
-                                                    ? "bg-slate-50 text-slate-300 cursor-not-allowed"
-                                                    : isItemSelected(survey.id, "survey")
-                                                        ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                ? "bg-slate-50 text-slate-300 cursor-not-allowed"
+                                                : isItemSelected(survey.id, "survey")
+                                                    ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
+                                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                 }`}
                                         >
                                             {isItemSelected(survey.id, "survey") ? <Minus size={16} /> : <Plus size={16} />}

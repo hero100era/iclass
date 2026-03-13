@@ -1,21 +1,9 @@
 import { Info, Save, Layers, Plus, Trash2 } from "lucide-react";
-import { cn } from "~/lib/utils";
-import type { ShipBreakdownNodeParticular } from "~/definitions/database.iclass.types";
-
-interface Particular {
-    id?: number;
-    ship_breakdown_node_id?: number;
-    attr_key: string;
-    attr_title: string;
-    attr_value: string | null | undefined;
-    data_type: string;
-    unit: string | null;
-    sort_order: number;
-}
+import type { Particular, BreakdownNode } from "../breakdowns.types";
 
 interface NodeEditorProps {
-    selectedNode: any;
-    setSelectedNode: (node: any) => void;
+    selectedNode: BreakdownNode;
+    setSelectedNode: (node: BreakdownNode) => void;
     particulars: Particular[];
     setParticulars: (p: Particular[]) => void;
     onSaveInfo: () => void;

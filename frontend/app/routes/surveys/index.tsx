@@ -1,17 +1,21 @@
 import { useLoaderData, useSearchParams, useSubmit } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import { useState } from "react";
-import { SurveyJobRow } from "./components/dashboard/SurveyJobRow";
+import { SurveyJobRow, type SurveyJobItem } from "./components/dashboard/SurveyJobRow";
+
 import { SurveyFilters } from "./components/dashboard/SurveyFilters";
 
-export async function loader({ request }: any) {
+import type { Route } from "./+types/index";
+
+export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb(request);
   const url = new URL(request.url);
   const q = url.searchParams.get("q") || "";
   const page = Number(url.searchParams.get("page") || "1");
   const limit = 20;
 
-  const { data: surveys } = await db.get<any[]>("/survey_jobs", {
+  const { data: surveys } = await db.get<SurveyJobItem[]>("/survey_jobs", {
+
     select: "*,ships(*),jobs(*,ms_jobs(*,ships(*),organizations(*)),survey_jobs(*,ships(*))),survey_jobs(*,ships(*))",
     filters: { parent_id: "is.null" },
     order: "id.desc",
@@ -22,8 +26,7 @@ export async function loader({ request }: any) {
   return { surveys: surveys || [], q, page };
 }
 
-export async function action({ request }: any) {
-  const db = await getDb(request);
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   if (intent === "create_attached") {
@@ -34,8 +37,8 @@ export async function action({ request }: any) {
 }
 
 export default function SurveyDashboard() {
-  const { surveys, q, page } = useLoaderData<typeof loader>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { surveys, q } = useLoaderData<typeof loader>();
+  const [, setSearchParams] = useSearchParams();
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const submit = useSubmit();
 
@@ -74,7 +77,8 @@ export default function SurveyDashboard() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {surveys.map((survey: any) => (
+            {surveys.map((survey: SurveyJobItem) => (
+
               <SurveyJobRow
                 key={survey.id}
                 survey={survey}

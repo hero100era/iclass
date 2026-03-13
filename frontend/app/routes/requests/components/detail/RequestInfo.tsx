@@ -1,7 +1,9 @@
 import { MapPin, Calendar, Phone, Mail, User } from "lucide-react";
 
+import type { RequestDetailData } from "./RequestHeader";
+
 interface RequestInfoProps {
-    request: any;
+    request: RequestDetailData & { name?: string; imo_number?: string };
 }
 
 export function RequestInfo({ request }: RequestInfoProps) {

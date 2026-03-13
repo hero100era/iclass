@@ -1,6 +1,6 @@
 import { useSubmit } from "react-router";
 
-interface ParticularItem {
+export interface ParticularItem {
     ship_breakdown_node_id?: number;
     ship_breakdown_nodes?: {
         name: string;
@@ -15,6 +15,20 @@ interface ParticularItem {
     id: number;
 }
 
+interface NodeGroup {
+    id: number | string;
+    name: string;
+    code: string;
+    particulars: Record<string, ParticularItem>;
+}
+
+interface AttributeDef {
+    key: string;
+    title: string;
+    unit?: string;
+    type: string;
+}
+
 interface ParticularsTableProps {
     particulars: ParticularItem[];
     submit: ReturnType<typeof useSubmit>;
@@ -23,10 +37,10 @@ interface ParticularsTableProps {
 export function ParticularsTable({ particulars, submit }: ParticularsTableProps) {
     if (particulars.length === 0) return null;
 
-    const nodes: any[] = [];
-    const nodeMap: Record<string, any> = {};
+    const nodes: NodeGroup[] = [];
+    const nodeMap: Record<string, NodeGroup> = {};
     const attrKeys: string[] = [];
-    const attrMap: Record<string, any> = {};
+    const attrMap: Record<string, AttributeDef> = {};
 
     particulars.forEach((p) => {
         const nodeId = p.ship_breakdown_node_id || "default";

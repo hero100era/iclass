@@ -8,7 +8,6 @@ import {
 import { getDb } from "~/.server/lib/api";
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Settings2 } from "lucide-react";
-import { cn } from "~/lib/utils";
 
 import { SurveySidebar } from "./components/checklists/SurveySidebar";
 import { ParticularsEditor } from "./components/checklists/ParticularsEditor";
@@ -59,14 +58,15 @@ interface BreakdownNode {
   name: string;
 }
 
-export async function loader({ request }: any) {
+import type { Route } from "./+types/checklists";
+
+export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb(request);
-  const [{ data: surveys }, { data: results }, { data: breakdownNodes }] =
+  const [{ data: surveys }, { data: breakdownNodes }] =
     await Promise.all([
       db.get<Survey[]>("/survey_pool", {
         select: "*,checklist_sections(*,checklist_items(*,checklist_item_particulars(*)))",
       }),
-      db.get("/checklist_results"),
       db.get<BreakdownNode[]>("/breakdown_template_nodes", {
         select: "id,code,name",
         order: "name.asc",
@@ -76,7 +76,7 @@ export async function loader({ request }: any) {
   return { surveys: surveys || [], breakdownNodes: breakdownNodes || [] };
 }
 
-export async function action({ request }: any) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const db = await getDb(request);
@@ -86,7 +86,7 @@ export async function action({ request }: any) {
     const particulars = JSON.parse(formData.get("particulars") as string);
     await db.delete("/checklist_item_particulars", { filters: { checklist_item_id: `eq.${id}` } });
     if (particulars.length > 0) {
-      const toInsert = particulars.map((p: any) => ({
+      const toInsert = particulars.map((p: ChecklistItemParticular) => ({
         checklist_item_id: id,
         attr_key: p.attr_key,
         attr_title: p.attr_title,
@@ -147,7 +147,7 @@ export async function action({ request }: any) {
 }
 
 export default function AdminChecklists() {
-  const { surveys, breakdownNodes } = useLoaderData<typeof loader>();
+  const { surveys } = useLoaderData<typeof loader>();
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ content: "", breakdownNodeId: "" });
@@ -159,13 +159,18 @@ export default function AdminChecklists() {
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
 
-  useEffect(() => {
-    if (actionData?.success && navigation.state === "idle") revalidator.revalidate();
+  const [prevSurveys, setPrevSurveys] = useState(surveys);
+  if (surveys !== prevSurveys) {
+    setPrevSurveys(surveys);
     if (selectedSurvey) {
-      const fresh = surveys.find((s: any) => s.id === selectedSurvey.id);
+      const fresh = surveys.find((s: Survey) => s.id === selectedSurvey.id);
       if (fresh) setSelectedSurvey(fresh);
     }
-  }, [actionData, navigation.state, revalidator, surveys]);
+  }
+
+  useEffect(() => {
+    if (actionData?.success && navigation.state === "idle") revalidator.revalidate();
+  }, [actionData, navigation.state, revalidator]);
 
   const handleUpdateParticulars = (itemId: number, particulars: ChecklistItemParticular[]) => {
     if (!selectedSurvey) return;

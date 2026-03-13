@@ -1,13 +1,34 @@
-import { ChevronRight, ChevronDown, MoreVertical, Briefcase } from "lucide-react";
+import { ChevronRight, ChevronDown, Briefcase } from "lucide-react";
 import { Link } from "react-router";
 import { cn } from "~/lib/utils";
 
+export interface SurveyJobItem {
+    id: number;
+    description?: string;
+    created_at?: string;
+    survey_jobs?: SurveyJobItem[];
+    jobs?: {
+        job_status?: string;
+        survey_jobs?: SurveyJobItem[];
+        ms_jobs?: MSJobItem[];
+    };
+    ships?: {
+        name: string;
+        imo_number?: string;
+    };
+}
+
+export interface MSJobItem {
+    id: number;
+    organizations?: { name: string };
+}
+
 interface SurveyJobRowProps {
-    survey: any;
+    survey: SurveyJobItem;
     isExpanded: boolean;
     onToggle: () => void;
     statusColor: (status?: string | null) => string;
-    onCreateAttached: (type: string, survey: any) => void;
+    onCreateAttached: (type: string, survey: SurveyJobItem) => void;
 }
 
 export function SurveyJobRow({
@@ -18,7 +39,7 @@ export function SurveyJobRow({
     onCreateAttached,
 }: SurveyJobRowProps) {
     const childSurveys = survey.survey_jobs || [];
-    const siblingSurveys = (survey.jobs?.survey_jobs || []).filter((s: any) => s.id !== survey.id);
+    const siblingSurveys = (survey.jobs?.survey_jobs || []).filter((s: SurveyJobItem) => s.id !== survey.id);
     const msJobs = survey.jobs?.ms_jobs || [];
 
     const allAttached = [...childSurveys, ...siblingSurveys];
@@ -72,7 +93,7 @@ export function SurveyJobRow({
                         <div className="border-l-2 border-slate-200 ml-5 overflow-hidden">
                             <table className="w-full text-left">
                                 <tbody>
-                                    {allAttached.map((sub: any) => (
+                                    {allAttached.map((sub: SurveyJobItem) => (
                                         <tr key={sub.id} className="hover:bg-slate-100/50 transition-colors border-b border-slate-100 last:border-0">
                                             <td className="px-6 py-3">
                                                 <Link to={`/surveys/${sub.id}`} className="text-xs font-bold text-slate-700 hover:text-primary">Attached Survey</Link>
@@ -85,7 +106,7 @@ export function SurveyJobRow({
                                             </td>
                                         </tr>
                                     ))}
-                                    {msJobs.map((ms: any) => (
+                                    {msJobs.map((ms: MSJobItem) => (
                                         <tr key={ms.id} className="hover:bg-slate-100/50 transition-colors border-b border-slate-100 last:border-0">
                                             <td className="px-6 py-3">
                                                 <div className="text-xs font-bold text-amber-600">MS Job</div>

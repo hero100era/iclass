@@ -8,13 +8,15 @@ interface TemplateNode {
     name: string;
 }
 
+import type { NewNodeData } from "../breakdowns.types";
+
 interface AddNodeModalProps {
     show: boolean;
     onClose: () => void;
     onSubmit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
     availableTemplateNodes: TemplateNode[];
-    newNodeData: any;
-    setNewNodeData: (data: any) => void;
+    newNodeData: NewNodeData;
+    setNewNodeData: (data: NewNodeData) => void;
     hasTemplate: boolean;
 }
 

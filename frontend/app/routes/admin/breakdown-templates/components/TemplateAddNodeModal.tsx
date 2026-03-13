@@ -1,11 +1,13 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
+import type { NewNodeData } from "../breakdown-templates.types";
+
 interface TemplateAddNodeModalProps {
     parentId: number | null;
     level: number;
     onClose: () => void;
-    onSubmit: (data: any) => void;
+    onSubmit: (data: NewNodeData) => void;
 }
 
 export function TemplateAddNodeModal({ parentId, level, onClose, onSubmit }: TemplateAddNodeModalProps) {

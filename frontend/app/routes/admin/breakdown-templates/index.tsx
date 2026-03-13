@@ -8,13 +8,24 @@ import { TemplateDetails } from "./components/TemplateDetails";
 
 export const handle = { fluid: true };
 
-export async function loader({ request }: any) {
+import type { Route } from "./+types/index";
+
+export interface BreakdownTemplateData {
+  id: number;
+  code?: string;
+  name?: string;
+  vessel_type?: string;
+  version?: string;
+  description?: string;
+}
+
+export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb(request);
-  const { data: templates } = await db.get<any[]>("/breakdown_templates", { order: "name.asc" });
+  const { data: templates } = await db.get<BreakdownTemplateData[]>("/breakdown_templates", { order: "name.asc" });
   return { templates: templates || [] };
 }
 
-export async function action({ request }: any) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const db = await getDb(request);
@@ -34,13 +45,13 @@ export async function action({ request }: any) {
 
 export default function BreakdownTemplatesAdmin() {
   const { templates } = useLoaderData<typeof loader>();
-  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<BreakdownTemplateData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<Partial<BreakdownTemplateData>>({});
 
   const submit = useSubmit();
   const navigation = useNavigation();
-  const actionData = useActionData<any>();
+  const actionData = useActionData<{ error?: string }>();
 
   const handleNew = () => { setSelectedTemplate(null); setEditForm({ code: "", name: "", vessel_type: "", version: "1.0", description: "" }); setIsEditing(true); };
   const handleEdit = () => { if (selectedTemplate) setEditForm(selectedTemplate); setIsEditing(true); };

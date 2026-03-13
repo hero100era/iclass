@@ -1,4 +1,4 @@
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 interface ChecklistItemParticular {
     id?: number;
@@ -32,7 +32,7 @@ export function ParticularsEditor({ particulars, onUpdate, onSave }: Particulars
         onUpdate([...particulars, newField]);
     };
 
-    const updateField = (idx: number, field: string, value: any) => {
+    const updateField = (idx: number, field: keyof ChecklistItemParticular, value: string | boolean | string[] | null) => {
         const next = [...particulars];
         next[idx] = { ...next[idx], [field]: value };
         onUpdate(next);
