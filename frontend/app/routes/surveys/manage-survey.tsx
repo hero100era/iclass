@@ -39,10 +39,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return { surveyJob: job, surveyLines: sLines || [] };
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
     const formData = await request.formData();
     const intent = formData.get("intent");
-    const db = await getDb(request);
 
     if (intent === "save_survey_details") {
         // Implement survey saving logic here
@@ -53,7 +52,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function ManageSurvey() {
-    const { surveyJob, surveyLines } = useLoaderData<typeof loader>();
+    const { surveyLines } = useLoaderData<typeof loader>();
     const actionData = useActionData<{ error?: string; success?: string }>();
     const navigation = useNavigation();
     const isSubmitting = navigation.state !== "idle";

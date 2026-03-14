@@ -28,12 +28,18 @@ export type task_status_enum =
   | "completed"
   | "draft"
   | "executing"
-  | "partial"
   | "pending_review"
   | "planning"
   | "rejected"
   | "scheduled"
   | "submitted";
+
+export type survey_status_enum =
+  | "draft"
+  | "scheduled"
+  | "assigned"
+  | "completed"
+  | "cancelled";
 
 // Table administration_type
 export interface AdministrationType {
@@ -3075,7 +3081,7 @@ export interface SurveyAudit {
   place_held: string;
   next_due_date: Date | null;
   postponement_date: Date | null;
-  task_status: task_status_enum | null;
+  survey_status: task_status_enum | null;
   range_from_date: Date | null;
   range_to_date: Date | null;
   fee: number | null;
@@ -3094,7 +3100,7 @@ export interface SurveyAuditInput {
   place_held: string;
   next_due_date?: Date | null;
   postponement_date?: Date | null;
-  task_status?: task_status_enum | null;
+  survey_status?: survey_status_enum | null;
   range_from_date?: Date | null;
   range_to_date?: Date | null;
   fee?: number | null;
@@ -3115,7 +3121,7 @@ const survey_audit = {
     "place_held",
     "next_due_date",
     "postponement_date",
-    "task_status",
+    "survey_status",
     "range_from_date",
     "range_to_date",
     "fee",

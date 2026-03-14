@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_audit(
   place_held varchar(50) NOT NULL,
   next_due_date date,
   postponement_date date,
-  task_status iclass.task_status_enum,
+  survey_status iclass.survey_status_enum,
   range_from_date date,
   range_to_date date,
   fee DECIMAL(9, 2),

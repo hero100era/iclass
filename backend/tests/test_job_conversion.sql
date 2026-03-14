@@ -25,8 +25,8 @@ INSERT INTO iclass.survey_pool (id, code, name, type, cert_code)
 VALUES (10001, 'CL', 'Classification', 'A', 'CL'),
        (10002, 'LL', 'Load Line', 'O', 'LL');
 
-INSERT INTO iclass.survey_audit (id, pool_id, description, last_held_date, place_held, task_status)
-VALUES (10001, 10001, 'Classification', '2025-01-01', 'Test Port', 'draft');
+INSERT INTO iclass.survey_audit (id, pool_id, description, last_held_date, place_held, survey_status)
+VALUES (10001, 10001, 'Classification', '2025-01-01', 'Test Port', 'P');
 
 INSERT INTO iclass.finding_comment (id, ship_id, company_id, comment_type, status, date_issued, text)
 VALUES (10001, 10001, 10001, 'D', 'A', '2026-01-01', 'Test finding text');

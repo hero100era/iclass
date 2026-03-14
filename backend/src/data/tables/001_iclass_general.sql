@@ -326,7 +326,6 @@ DO $$ BEGIN
       'draft',
       'submitted',
       'accepted',
-      'partial',
       'assigned',
       'scheduled',
       'planning',
@@ -336,6 +335,18 @@ DO $$ BEGIN
       'completed',
       'cancelled',
       'rejected'
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'survey_status_enum') THEN
+    CREATE TYPE iclass.survey_status_enum AS ENUM (
+      'partial',
+      'scheduled',
+      'executing',
+      'completed',
+      'postponed'
     );
   END IF;
 END $$;

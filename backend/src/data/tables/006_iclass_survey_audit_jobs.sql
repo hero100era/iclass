@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_job(
   ship_id integer REFERENCES iclass.ship(id) ON DELETE SET NULL,
   surveyor_id integer REFERENCES iclass.employee(id),
   reviewer_id integer REFERENCES iclass.employee(id),
+  task_status iclass.task_status_enum,
   description varchar(200),
   initialized boolean DEFAULT FALSE
 );
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS iclass.audit_job (
   company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
   auditor_id integer REFERENCES iclass.employee(id),
   reviewer_id integer REFERENCES iclass.employee(id),
+  task_status iclass.task_status_enum,
   description varchar(200),
   initialized boolean DEFAULT FALSE
 );
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS iclass.ms_job (
   company_id integer REFERENCES iclass.organization(id) ON DELETE SET NULL,
   issued_by integer REFERENCES iclass.employee(id),
   reviewed_by integer REFERENCES iclass.employee(id),
+  task_status iclass.task_status_enum,
   initialized boolean DEFAULT FALSE
 );
 
@@ -89,7 +92,7 @@ CREATE TABLE IF NOT EXISTS iclass.survey_line (
   description varchar(120),
   next_due_date date,
   postponement_date date,
-  task_status iclass.task_status_enum,
+  survey_status iclass.survey_status_enum,
   range_from_date date,
   range_to_date date,
   initialized boolean DEFAULT FALSE,
@@ -104,7 +107,7 @@ CREATE TABLE IF NOT EXISTS iclass.audit_line (
   description varchar(120),
   next_due_date date,
   postponement_date date,
-  task_status iclass.task_status_enum,
+  survey_status iclass.survey_status_enum,
   range_from_date date,
   range_to_date date,
   initialized boolean DEFAULT FALSE,

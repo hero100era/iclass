@@ -119,7 +119,7 @@ function VesselDetailContent() {
     last_held_date: s.last_held_date instanceof Date ? s.last_held_date.toLocaleDateString() : String(s.last_held_date),
     place_held: s.place_held,
     next_due_date: s.next_due_date ? (s.next_due_date instanceof Date ? s.next_due_date.toLocaleDateString() : String(s.next_due_date)) : undefined,
-    status: s.task_status || undefined,
+    status: s.survey_status || undefined,
     is_ordered: !!s.is_ordered,
     pool_id: s.pool_id // Extra for handleToggle
   }));

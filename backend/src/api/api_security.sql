@@ -38,9 +38,9 @@ CREATE OR REPLACE VIEW api.survey_audits AS
 SELECT
   s.id, s.certificate_id, s.pool_id, s.description,
   s.last_held_date, s.place_held, s.next_due_date, s.postponement_date,
-  s.task_status,
+  s.survey_status,
   CASE
-    WHEN s.task_status = 'partial' THEN 'P'
+    WHEN s.survey_status = 'partial' THEN 'P'
     WHEN CURRENT_DATE < s.range_from_date THEN 'B'
     WHEN CURRENT_DATE >= s.range_from_date AND CURRENT_DATE <= s.range_to_date THEN 'D'
     WHEN CURRENT_DATE > s.range_to_date AND (s.postponement_date IS NULL OR CURRENT_DATE > s.postponement_date) THEN 'O'
