@@ -37,6 +37,7 @@ interface SectionGroup {
 }
 
 interface ExtendedSurveyLine extends SurveyLine {
+  survey_status?: 'partial' | 'scheduled' | 'executing' | 'completed' | 'postponed' | null;
   survey_audits?: { description: string; cert_code: string; };
   survey_pool?: { name: string; code: string; };
 }
@@ -106,7 +107,19 @@ export default function JobChecklist() {
                 activeLineId === line.id ? "bg-white border-primary border-2 shadow-md" : "bg-white border-slate-200 hover:border-slate-300"
               )}
             >
-              <span className="text-[9px] font-bold uppercase w-fit px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">survey</span>
+              <div className="flex items-center justify-between gap-1 w-full">
+                <span className="text-[9px] font-bold uppercase w-fit px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">survey</span>
+                {line.survey_status && (
+                  <span className={cn(
+                    "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded",
+                    line.survey_status === "completed" ? "bg-emerald-100 text-emerald-700" :
+                    line.survey_status === "postponed" ? "bg-amber-100 text-amber-700" :
+                    line.survey_status === "executing" ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
+                  )}>
+                    {line.survey_status}
+                  </span>
+                )}
+              </div>
               <span className="text-xs font-bold text-slate-700 line-clamp-2">{line.survey_audits?.description || line.survey_pool?.name}</span>
               <span className="text-[10px] font-mono text-slate-400">{line.survey_audits?.cert_code || line.survey_pool?.code}</span>
             </button>

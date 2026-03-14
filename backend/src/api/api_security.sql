@@ -141,7 +141,7 @@ FROM iclass.ms_job;
 DROP VIEW IF EXISTS api.survey_lines CASCADE;
 CREATE OR REPLACE VIEW api.survey_lines AS
 SELECT
-  id, job_id, survey_audit_id, pool_id, initialized, credit_periodical
+  id, job_id, survey_audit_id, pool_id, description, next_due_date, postponement_date, survey_status,range_from_date, range_to_date, initialized, credit_periodical
 FROM iclass.survey_line;
 
 DROP VIEW IF EXISTS api.audit_lines CASCADE;
