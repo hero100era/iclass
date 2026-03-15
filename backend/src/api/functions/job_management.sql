@@ -64,8 +64,8 @@ BEGIN
 
     -- 4. Create Survey Job if needed
     IF v_has_survey THEN
-        INSERT INTO iclass.survey_job(job_id, ship_id, surveyor_id, reviewer_id)
-        VALUES (v_job_id, v_ship_id, p_surveyor_id, p_reviewer_id)
+        INSERT INTO iclass.survey_job(job_id, ship_id, surveyor_id, reviewer_id, job_status)
+        VALUES (v_job_id, v_ship_id, p_surveyor_id, p_reviewer_id, 'planning')
         RETURNING id INTO v_survey_job_id;
 
         -- Add lines (mandatory surveys) — use sp.is_audit directly
@@ -88,8 +88,8 @@ BEGIN
 
     -- 5. Create Audit Job if needed
     IF v_has_audit THEN
-        INSERT INTO iclass.audit_job (job_id, ship_id, company_id, auditor_id, reviewer_id)
-        VALUES (v_job_id, v_ship_id, v_company_id, p_auditor_id, p_reviewer_id)
+        INSERT INTO iclass.audit_job (job_id, ship_id, company_id, auditor_id, reviewer_id, job_status)
+        VALUES (v_job_id, v_ship_id, v_company_id, p_auditor_id, p_reviewer_id, 'planning')
         RETURNING id INTO v_audit_job_id;
 
         -- Add lines (mandatory audits)

@@ -1,0 +1,30 @@
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+build/
+.react-router/
+
+# Environment files (sensitive)
+.env
+.env.*
+!.env.example
+
+# Git directory
+.git/
+
+# Docker
+.docker/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large log files
+*.log
+
+# Temporary files
+tmp/
+temp/
+current_build.sql
