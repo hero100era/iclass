@@ -186,7 +186,7 @@ INSERT INTO iclass.ref_special_module (code, description) VALUES
 -- Links Personnel -> Ship Type -> Survey Type (e.g., Bob -> Bulk -> NB Hull)
 CREATE TABLE iclass.qual_class_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.user(id),
+    user_id integer REFERENCES auth.user(id),
     ship_type_code VARCHAR(10) REFERENCES iclass.ref_ship_type(code),
     action_code VARCHAR(20) REFERENCES iclass.ref_class_action(code),
     
@@ -202,7 +202,7 @@ CREATE TABLE iclass.qual_class_matrix (
 -- Links Personnel -> Special Module (e.g., Bob -> Boiler)
 CREATE TABLE iclass.qual_module_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.user(id),
+    user_id integer REFERENCES auth.user(id),
     module_code VARCHAR(20) REFERENCES iclass.ref_special_module(code),
     
     is_authorized BOOLEAN DEFAULT FALSE,
@@ -214,7 +214,7 @@ CREATE TABLE iclass.qual_module_matrix (
 
 CREATE TABLE iclass.qual_statutory_matrix (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES auth.user(id),
+    user_id integer REFERENCES auth.user(id),
     cert_code VARCHAR(10) REFERENCES iclass.certificate_survey_pool(code),
     phase_code VARCHAR(2) REFERENCES iclass.survey_audit_type(code),
     

@@ -25,10 +25,7 @@ CREATE TABLE IF NOT EXISTS iclass.ship(
   type_mms varchar(2) REFERENCES iclass.vessel_type_mms(code),
   class_status varchar(2) REFERENCES iclass.class_status(code),
   ship_status varchar(2) REFERENCES iclass.ship_status(code),
-  class_notation varchar(500),
-  service_notation varchar(500),
-  navigation_notation varchar(500),
-  additional_notation varchar(500),
+  -- class notation will be store in other table.
   gross_tons DECIMAL(9, 2),
   national_tons DECIMAL(9, 2),
   deadweight integer,
@@ -62,17 +59,17 @@ CREATE TABLE IF NOT EXISTS iclass.ship(
 -- Ship Breakdown (header - links ship ↔ template)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.ship_breakdown (
-  id              serial PRIMARY KEY,
-  ship_id         integer   NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
-  template_id integer  REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- which template was used
-  name            VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
-  description     TEXT,
-  revision        INTEGER      NOT NULL DEFAULT 1,
-  is_active       BOOLEAN      NOT NULL DEFAULT TRUE,   -- only one active breakdown per ship
-  applied_at      TIMESTAMPTZ,                           -- when template was applied
-  applied_by      VARCHAR(100),
-  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+  id serial PRIMARY KEY,
+  ship_id integer NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  template_id integer REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- which template was used
+  name VARCHAR(200) NOT NULL,                -- e.g., 'MV Pacific Star - Breakdown Rev.3'
+  description TEXT,
+  revision INTEGER NOT NULL DEFAULT 1,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,   -- only one active breakdown per ship
+  applied_at TIMESTAMPTZ,                           -- when template was applied
+  applied_by VARCHAR(100),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Ensure only one active breakdown per ship
@@ -84,37 +81,37 @@ CREATE UNIQUE INDEX IF NOT EXISTS uidx_ship_active_breakdown ON iclass.ship_brea
 -- Ship Breakdown Node (ship-specific component tree)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node (
-  id                  serial PRIMARY KEY,
-  ship_id             integer  NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
-  ship_breakdown_id   integer  NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
-  parent_node_id      integer  REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
+  id serial PRIMARY KEY,
+  ship_id integer NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+  ship_breakdown_id integer NOT NULL REFERENCES iclass.ship_breakdown(id) ON DELETE CASCADE,
+  parent_node_id integer REFERENCES iclass.ship_breakdown_node(id) ON DELETE CASCADE,
 
   -- Traceability back to template
-  template_node_id integer   REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
+  template_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE SET NULL,
 
   -- Identification (can be customized per ship)
-  code                VARCHAR(50)  NOT NULL,
-  name                VARCHAR(200) NOT NULL,
-  description         TEXT,
+  code VARCHAR(50) NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
 
   -- Classification
-  category            VARCHAR(50),
-  node_type           VARCHAR(50),
+  category VARCHAR(50),
+  node_type VARCHAR(50),
 
   -- Hierarchy & ordering
-  level           INTEGER      NOT NULL DEFAULT 0,
-  sort_order      INTEGER      NOT NULL DEFAULT 0,
+  level INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
   -- path            LTREE,
 
   -- Customization tracking
-  is_from_template    BOOLEAN      NOT NULL DEFAULT TRUE,   -- FALSE if added ship-specifically
-  is_modified         BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE if template values were changed
-  is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+  is_from_template BOOLEAN NOT NULL DEFAULT TRUE,   -- FALSE if added ship-specifically
+  is_modified BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE if template values were changed
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
   -- Flexible properties (ship-specific overrides)
-  metadata            JSONB        DEFAULT '{}', -- JSONB data type for flexible properties
-  created_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  metadata JSONB DEFAULT '{}', -- JSONB data type for flexible properties
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_ship_node_code UNIQUE (ship_breakdown_id, code),
   CONSTRAINT chk_no_self_parent_ship CHECK (id != parent_node_id)
@@ -129,16 +126,16 @@ CREATE TABLE IF NOT EXISTS iclass.ship_breakdown_node_particular (
   -- Traceability
   template_particular_id integer REFERENCES iclass.breakdown_template_node_particular(id) ON DELETE SET NULL,
 
-  attr_key           VARCHAR(100) NOT NULL,
-  attr_title         VARCHAR(200) NOT NULL,
-  attr_value         TEXT,
-  selection_options  JSONB,
-  data_type          iclass.data_type_enum    DEFAULT 'text',
-  unit               VARCHAR(20),
-  is_modified        BOOLEAN      NOT NULL DEFAULT FALSE,
-  sort_order         INTEGER      NOT NULL DEFAULT 0,
-  created_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  attr_key VARCHAR(100) NOT NULL,
+  attr_title VARCHAR(200) NOT NULL,
+  attr_value TEXT,
+  selection_options JSONB,
+  data_type iclass.data_type_enum DEFAULT 'text',
+  unit VARCHAR(20),
+  is_modified BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_snode_attr UNIQUE (ship_breakdown_node_id, attr_key)
 );
@@ -213,4 +210,54 @@ CREATE TABLE IF NOT EXISTS iclass.survey_audit(
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
+);
+
+
+CREATE TABLE iclass.ship_class_notation (
+    id SERIAL PRIMARY KEY,
+    ship_id integer NOT NULL REFERENCES iclass.ship(id) ON DELETE CASCADE,
+    notation_id integer NOT NULL REFERENCES iclass.class_notation(id) ON DELETE CASCADE,
+    society_code VARCHAR(2) NOT NULL REFERENCES iclass.classification_society(code) ON DELETE CASCADE,
+    group_id integer NOT NULL REFERENCES iclass.notation_group(id) ON DELETE CASCADE,
+    
+    -- Status tracking
+    status iclass.notation_status_enum NOT NULL DEFAULT 'pending',
+
+    -- Display ordering within the group for this ship
+    display_order integer NOT NULL DEFAULT 0,
+
+    -- Dates
+    assigned_date DATE NOT NULL,            -- When first assigned
+    effective_date DATE,                              -- When it became effective
+    expiry_date DATE,                              -- For time-limited notations
+    suspended_date DATE,                              -- When last suspended
+    withdrawn_date DATE,                              -- When withdrawn
+    reinstated_date DATE,                              -- When last reinstated
+
+    -- Parameterization (for parameterized notations)
+    -- e.g., for BWM({method}), parameter_values = {"method": "T"}
+    parameter_values JSONB,
+    resolved_notation VARCHAR(200),                    -- Final display: 'BWM(T)' after parameter resolution
+
+    -- Survey linkage
+    last_survey_date DATE,
+    next_survey_due DATE,
+    survey_cycle_months integer,                               -- e.g., 60 for 5-year cycle
+
+    -- Approval
+    approved_by VARCHAR(200),                      -- Surveyor or authority
+    approval_reference VARCHAR(200),                      -- Approval document reference
+
+    -- Metadata
+    remarks TEXT,
+    is_current BOOLEAN NOT NULL DEFAULT TRUE,  -- Quick filter for current notations
+    version integer NOT NULL DEFAULT 1,     -- Optimistic locking
+    created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    created_by VARCHAR(200),
+    updated_by VARCHAR(200),
+
+    -- A ship should not have duplicate active notations of the same type
+    CONSTRAINT uq_active_ship_notation UNIQUE (ship_id, notation_id, society_code) 
+        -- Note: In practice, you might handle this with a partial unique index instead
 );

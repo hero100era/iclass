@@ -613,3 +613,267 @@ GRANT SELECT ON api.v_ship_breakdown_tree TO employees, admingrp;
 
 GRANT EXECUTE ON FUNCTION api.fn_copy_breakdown_template_node(INTEGER, INTEGER) TO employees, admingrp;
 GRANT EXECUTE ON FUNCTION api.fn_copy_ship_breakdown_node(INTEGER, INTEGER) TO employees, admingrp;
+
+
+-- Function to build the complete class notation string for a ship
+CREATE OR REPLACE FUNCTION api.fn_build_class_string(p_ship_id integer)
+RETURNS TEXT
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_class_string  TEXT := '';
+    v_group_string  TEXT;
+    v_separator     TEXT;
+    v_first_group   BOOLEAN := TRUE;
+    rec             RECORD;
+BEGIN
+    FOR rec IN
+        SELECT
+            ng.id,
+            ng.group_code,
+            ng.display_order AS group_order,
+            ng.separator_before,
+            ng.separator_within,
+            ng.is_prefix_group,
+            -- Aggregate all notations in this group for this ship
+            STRING_AGG(
+                COALESCE(scn.resolved_symbol, cn.notation_symbol)
+                ORDER BY scn.display_order, cn.display_order
+            ) AS group_notations,
+            COUNT(*) AS notation_count
+        FROM iclass.ship_class_notation scn
+        JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+        JOIN iclass.notation_group ng ON ng.id = scn.group_id
+        LEFT JOIN iclass.society_group_rendering sgr
+            ON sgr.society_id = scn.society_id AND sgr.group_id = scn.group_id
+        WHERE scn.ship_id = p_ship_id
+          AND scn.is_current = TRUE
+          AND scn.status IN ('active', 'conditional')
+        GROUP BY ng.id, ng.group_code, ng.display_order,
+                 ng.separator_before, ng.separator_within, ng.is_prefix_group,
+                 COALESCE(sgr.display_order, ng.display_order)
+        ORDER BY COALESCE(sgr.display_order, ng.display_order)
+    LOOP
+        -- Build separator
+        IF v_first_group OR rec.is_prefix_group THEN
+            v_separator := '';
+            v_first_group := FALSE;
+        ELSE
+            v_separator := COALESCE(rec.separator_before, ' · ');
+        END IF;
+
+        -- Replace default STRING_AGG comma with group-specific separator
+        v_group_string := REPLACE(
+            rec.group_notations,
+            ',',
+            COALESCE(rec.separator_within, ', ')
+        );
+
+        v_class_string := v_class_string || v_separator || v_group_string;
+    END LOOP;
+
+    RETURN TRIM(v_class_string);
+END;
+$$;
+
+
+-- ============================================================
+-- COMPOSITE CLASS STRING VIEW
+-- ============================================================
+
+CREATE VIEW api.vw_ship_full_class AS
+SELECT
+    s.id,
+    s.imo_number,
+    s.ship_name,
+    s.ship_type,
+    cs.society_code,
+    cs.society_name,
+    fn_build_class_string(s.id) AS full_class_string,
+
+    -- Individual groups broken out for structured access
+    (SELECT STRING_AGG(COALESCE(scn.resolved_symbol, cn.notation_symbol), ' ' ORDER BY scn.display_order)
+     FROM iclass.ship_class_notation scn
+     JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+     JOIN iclass.notation_group ng ON ng.id = scn.group_id
+     WHERE scn.ship_id = s.id AND scn.is_current = TRUE
+       AND scn.status IN ('active','conditional')
+       AND ng.group_code = 'SYM'
+    ) AS class_symbol,
+
+    (SELECT STRING_AGG(COALESCE(scn.resolved_symbol, cn.notation_symbol), ' ' ORDER BY scn.display_order)
+     FROM iclass.ship_class_notation scn
+     JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+     JOIN iclass.notation_group ng ON ng.id = scn.group_id
+     WHERE scn.ship_id = s.id AND scn.is_current = TRUE
+       AND scn.status IN ('active','conditional')
+       AND ng.group_code = 'MAIN'
+    ) AS main_class,
+
+    (SELECT STRING_AGG(COALESCE(scn.resolved_symbol, cn.notation_symbol), ', ' ORDER BY scn.display_order)
+     FROM iclass.ship_class_notation scn
+     JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+     JOIN iclass.notation_group ng ON ng.id = scn.group_id
+     WHERE scn.ship_id = s.id AND scn.is_current = TRUE
+       AND scn.status IN ('active','conditional')
+       AND ng.group_code = 'TYPE'
+    ) AS ship_type_notation,
+
+    (SELECT STRING_AGG(COALESCE(scn.resolved_symbol, cn.notation_symbol), ', ' ORDER BY scn.display_order)
+     FROM iclass.ship_class_notation scn
+     JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+     JOIN iclass.notation_group ng ON ng.id = scn.group_id
+     WHERE scn.ship_id = s.id AND scn.is_current = TRUE
+       AND scn.status IN ('active','conditional')
+       AND ng.group_code = 'AREA'
+    ) AS service_area,
+
+    (SELECT STRING_AGG(COALESCE(scn.resolved_symbol, cn.notation_symbol), ', ' ORDER BY cn.display_order)
+     FROM iclass.ship_class_notation scn
+     JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+     JOIN iclass.notation_group ng ON ng.id = scn.group_id
+     WHERE scn.ship_id = s.id AND scn.is_current = TRUE
+       AND scn.status IN ('active','conditional')
+       AND ng.group_code NOT IN ('SYM','MAIN','TYPE','AREA')
+    ) AS additional_notations
+
+FROM iclass.ship s
+JOIN iclass.classification_society cs ON cs.society_id = s.current_society_id
+WHERE s.is_active = TRUE;
+
+
+-- ============================================================
+-- DETAIL VIEW: All notations per ship, grouped
+-- ============================================================
+
+CREATE VIEW api.vw_ship_notations_grouped AS
+SELECT
+    s.ship_id,
+    s.imo_number,
+    s.ship_name,
+    ng.group_code,
+    ng.group_name,
+    ng.display_order AS group_order,
+    cn.notation_code,
+    COALESCE(scn.resolved_symbol, cn.notation_symbol) AS display_symbol,
+    cn.notation_name,
+    scn.status,
+    scn.assigned_date,
+    scn.effective_date,
+    scn.expiry_date,
+    scn.display_order AS notation_order,
+    scn.parameter_values,
+    scn.remarks
+FROM iclass.ship_class_notation scn
+JOIN iclass.ship s ON s.id = scn.ship_id
+JOIN iclass.class_notation cn ON cn.id = scn.notation_id
+JOIN iclass.notation_group ng ON ng.id = scn.group_id
+WHERE scn.is_current = TRUE
+ORDER BY s.ship_name, ng.display_order, scn.display_order, cn.display_order;
+
+
+-- ============================================================
+-- VALIDATION FUNCTION
+--     Checks notation compatibility rules before assignment
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION api.fn_validate_notation_assignment(
+    p_ship_id integer,
+    p_notation_id integer
+)
+RETURNS TABLE (
+    is_valid        BOOLEAN,
+    rule_type       TEXT,
+    message         TEXT
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+    -- Check 1: Group cardinality (max notations in group)
+    RETURN QUERY
+    SELECT
+        FALSE,
+        'MAX_CARDINALITY'::TEXT,
+        FORMAT('Group "%s" already has maximum %s notation(s) for this ship',
+               ng.group_name, ng.max_notations)
+    FROM iclass.class_notation cn_new
+    JOIN iclass.notation_group ng ON ng.group_id = cn_new.group_id
+    WHERE cn_new.notation_id = p_notation_id
+      AND ng.max_notations IS NOT NULL
+      AND (
+          SELECT COUNT(*)
+          FROM iclass.ship_class_notation scn
+          WHERE scn.ship_id = p_ship_id
+            AND scn.group_id = cn_new.group_id
+            AND scn.is_current = TRUE
+            AND scn.status IN ('active', 'conditional', 'pending')
+      ) >= ng.max_notations;
+
+    -- Check 2: Incompatible notations
+    RETURN QUERY
+    SELECT
+        FALSE,
+        'INCOMPATIBLE'::TEXT,
+        FORMAT('Notation "%s" is incompatible with existing notation "%s"',
+               cn_new.notation_symbol, cn_existing.notation_symbol)
+    FROM iclass.notation_compatibility nc
+    JOIN iclass.class_notation cn_new ON cn_new.notation_id = nc.notation_id
+    JOIN iclass.class_notation cn_existing ON cn_existing.notation_id = nc.related_notation_id
+    JOIN iclass.ship_class_notation scn ON scn.notation_id = nc.related_notation_id
+        AND scn.ship_id = p_ship_id
+        AND scn.is_current = TRUE
+        AND scn.status IN ('active', 'conditional')
+    WHERE nc.notation_id = p_notation_id
+      AND nc.compatibility_type = 'incompatible'
+      AND nc.is_active = TRUE;
+
+    -- Check 3: Missing prerequisites
+    RETURN QUERY
+    SELECT
+        FALSE,
+        'MISSING_PREREQUISITE'::TEXT,
+        FORMAT('Notation "%s" requires prerequisite "%s" which is not assigned',
+               cn_new.notation_symbol, cn_req.notation_symbol)
+    FROM iclass.notation_compatibility nc
+    JOIN iclass.class_notation cn_new ON cn_new.notation_id = nc.notation_id
+    JOIN iclass.class_notation cn_req ON cn_req.notation_id = nc.related_notation_id
+    WHERE nc.notation_id = p_notation_id
+      AND nc.compatibility_type = 'requires'
+      AND nc.is_active = TRUE
+      AND NOT EXISTS (
+          SELECT 1
+          FROM ship_class_notation scn
+          WHERE scn.ship_id = p_ship_id
+            AND scn.notation_id = nc.related_notation_id
+            AND scn.is_current = TRUE
+            AND scn.status IN ('active', 'conditional')
+      );
+
+    -- Check 4: Duplicate notation
+    RETURN QUERY
+    SELECT
+        FALSE,
+        'DUPLICATE'::TEXT,
+        FORMAT('Notation "%s" is already assigned to this ship',
+               cn_new.notation_symbol)
+    FROM iclass.class_notation cn_new
+    WHERE cn_new.notation_id = p_notation_id
+      AND EXISTS (
+          SELECT 1
+          FROM iclass.ship_class_notation scn
+          WHERE scn.ship_id = p_ship_id
+            AND scn.notation_id = p_notation_id
+            AND scn.is_current = TRUE
+            AND scn.status IN ('active', 'conditional', 'pending')
+      );
+
+    -- If no violations found, return valid
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT TRUE, 'OK'::TEXT, 'Notation assignment is valid'::TEXT;
+    END IF;
+END;
+$$;
+
+

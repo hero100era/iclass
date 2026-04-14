@@ -366,6 +366,20 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notation_status_enum') THEN
+  CREATE TYPE iclass.notation_status_enum AS ENUM (
+    'active',           -- Notation is currently active/valid
+    'suspended',        -- Temporarily suspended (conditions not met, overdue survey)
+    'withdrawn',        -- Permanently withdrawn
+    'reinstated',       -- Was suspended/withdrawn, now reinstated (maps back to ACTIVE)
+    'expired',          -- Time-limited notation that has expired
+    'pending',          -- Applied for but not yet confirmed
+    'conditional'       -- Active but with conditions of class
+  );
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS iclass.flag(
   code varchar(3) PRIMARY KEY,
   name varchar(20) NOT NULL,
@@ -453,52 +467,52 @@ ON CONFLICT
   DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template (
-  id              SERIAL PRIMARY KEY,
-  code            VARCHAR(50)  NOT NULL UNIQUE,       -- e.g., 'TMPL-BULK-001'
-  name            VARCHAR(200) NOT NULL,               -- e.g., 'Bulk Carrier Standard Breakdown'
-  description     TEXT,
-  vessel_type     VARCHAR(100),                        -- e.g., 'Bulk Carrier', 'Tanker', 'Container'
-  version         VARCHAR(20)      NOT NULL DEFAULT '1.0',
-  is_active       BOOLEAN   NOT NULL DEFAULT TRUE,
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,       -- e.g., 'TMPL-BULK-001'
+  name VARCHAR(200) NOT NULL,               -- e.g., 'Bulk Carrier Standard Breakdown'
+  description TEXT,
+  vessel_type VARCHAR(100),                        -- e.g., 'Bulk Carrier', 'Tanker', 'Container'
+  version VARCHAR(20) NOT NULL DEFAULT '1.0',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   -- Versioning / lineage
   parent_template_id integer REFERENCES iclass.breakdown_template(id) ON DELETE SET NULL,  -- if cloned from another template
 
-  created_by      VARCHAR(100),
-  updated_by      VARCHAR(100),
-  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by VARCHAR(100),
+  updated_by VARCHAR(100),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_template_code_version UNIQUE (code, version)
 );
 
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template_node(
-  id              SERIAL PRIMARY KEY,
-  template_id     integer  NOT NULL REFERENCES iclass.breakdown_template(id) ON DELETE CASCADE,
-  parent_node_id  integer  REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
+  id SERIAL PRIMARY KEY,
+  template_id integer NOT NULL REFERENCES iclass.breakdown_template(id) ON DELETE CASCADE,
+  parent_node_id integer REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
 
   -- Identification
-  code            VARCHAR(50)  NOT NULL,                -- e.g., 'TK-001', 'ME-001'
-  name            VARCHAR(200) NOT NULL,                -- e.g., 'No.1 Port Ballast Tank'
-  description     TEXT,
+  code VARCHAR(50) NOT NULL,                -- e.g., 'TK-001', 'ME-001'
+  name VARCHAR(200) NOT NULL,                -- e.g., 'No.1 Port Ballast Tank'
+  description TEXT,
 
   -- Classification
-  category        VARCHAR(100),  -- e.g., 'tank', 'cargo_space', 'equipment', 'system',
-  node_type       VARCHAR(50),   -- more granular: 'fuel_oil_tank', 'main_engine', etc.
+  category VARCHAR(100),  -- e.g., 'tank', 'cargo_space', 'equipment', 'system',
+  node_type VARCHAR(50),   -- more granular: 'fuel_oil_tank', 'main_engine', etc.
 
   -- Hierarchy & ordering
-  level           INTEGER      NOT NULL DEFAULT 0,      -- depth in tree (0 = root)
-  sort_order      INTEGER      NOT NULL DEFAULT 0,      -- sibling ordering
-  is_instantiable     BOOLEAN         NOT NULL DEFAULT TRUE,
-  default_quantity    INTEGER         NOT NULL DEFAULT 1,  -- how many to create by default
+  level INTEGER NOT NULL DEFAULT 0,      -- depth in tree (0 = root)
+  sort_order INTEGER NOT NULL DEFAULT 0,      -- sibling ordering
+  is_instantiable BOOLEAN NOT NULL DEFAULT TRUE,
+  default_quantity INTEGER NOT NULL DEFAULT 1,  -- how many to create by default
   -- path      LTREE,                                 -- materialized path for fast queries
-  is_active BOOLEAN  NOT NULL DEFAULT TRUE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
   -- Metadata as JSONB for flexible template properties
-  metadata        JSONB        DEFAULT '{}',  -- metadata for flexible template properties
-  is_mandatory     BOOLEAN     NOT NULL DEFAULT TRUE,    -- must this node exist when applied?
-  is_leaf          BOOLEAN     NOT NULL DEFAULT FALSE,   -- hint: no children expected
-  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  metadata JSONB DEFAULT '{}',  -- metadata for flexible template properties
+  is_mandatory BOOLEAN NOT NULL DEFAULT TRUE,    -- must this node exist when applied?
+  is_leaf BOOLEAN NOT NULL DEFAULT FALSE,   -- hint: no children expected
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_template_node_code UNIQUE (template_id, code),
   CONSTRAINT chk_no_self_parent CHECK (id != parent_node_id)
@@ -507,20 +521,20 @@ CREATE TABLE IF NOT EXISTS iclass.breakdown_template_node(
 --Breakdown Template Item Particulars (key-value specs)
 -- ---------------------------------------------
 CREATE TABLE IF NOT EXISTS iclass.breakdown_template_node_particular (
-  id              SERIAL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   template_node_id integer NOT NULL REFERENCES iclass.breakdown_template_node(id) ON DELETE CASCADE,
 
-  attr_key   VARCHAR(20) NOT NULL,               -- e.g., 'material', 'coating_type'
+  attr_key VARCHAR(20) NOT NULL,               -- e.g., 'material', 'coating_type'
   attr_title VARCHAR(200) NOT NULL,
-  data_type   iclass.data_type_enum NOT NULL,         -- TEXT, NUMBER, BOOLEAN, DATE, JSON
+  data_type iclass.data_type_enum NOT NULL,         -- TEXT, NUMBER, BOOLEAN, DATE, JSON
   default_value TEXT,                                  -- default value
-  selection_options    JSONB,                          -- for selection/multi_select types
+  selection_options JSONB,                          -- for selection/multi_select types
                                                         -- e.g., ["good","fair","poor"]
-  unit            VARCHAR(20),
-  is_required     BOOLEAN      NOT NULL DEFAULT FALSE,
-  sort_order      INTEGER      NOT NULL DEFAULT 0,
-  created_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  unit VARCHAR(20),
+  is_required BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_tnode_attr UNIQUE (template_node_id, attr_key)
 );
@@ -554,18 +568,18 @@ CREATE TABLE IF NOT EXISTS iclass.checklist_item (
 
 CREATE TABLE IF NOT EXISTS iclass.checklist_item_particular (
   id SERIAL PRIMARY KEY,
-  checklist_item_id   BIGINT NOT NULL REFERENCES iclass.checklist_item(id) ON DELETE CASCADE,
-  attr_key            VARCHAR(100)    NOT NULL,
-  attr_title          VARCHAR(300)    NOT NULL,
-  data_type           iclass.data_type_enum  NOT NULL DEFAULT 'text',
-  unit                VARCHAR(50),
-  default_value       TEXT,
-  selection_options    JSONB,                            -- for selection/multi_select
-  is_required         BOOLEAN         NOT NULL DEFAULT TRUE,
-  sort_order          INTEGER         NOT NULL DEFAULT 0,
-  description         TEXT,
-  created_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at          TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  checklist_item_id BIGINT NOT NULL REFERENCES iclass.checklist_item(id) ON DELETE CASCADE,
+  attr_key VARCHAR(100) NOT NULL,
+  attr_title VARCHAR(300) NOT NULL,
+  data_type iclass.data_type_enum NOT NULL DEFAULT 'text',
+  unit VARCHAR(50),
+  default_value TEXT,
+  selection_options JSONB,                            -- for selection/multi_select
+  is_required BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE (checklist_item_id, attr_key)
 );
@@ -631,4 +645,116 @@ CREATE TABLE IF NOT EXISTS iclass.survey_documentation(
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS iclass.notation_group (
+    id SERIAL PRIMARY KEY,
+    group_code VARCHAR(50) NOT NULL UNIQUE,
+    group_name VARCHAR(200) NOT NULL,
+    description TEXT,
+    display_order INT NOT NULL DEFAULT 1,
+    separator_before varchar(3) DEFAULT '.',
+    separator_within varchar(3) DEFAULT ',',
+    -- Cardinality rules (single source of truth)
+    min_notations INT NOT NULL DEFAULT 0,   -- 0=optional, >=1 means mandatory
+    max_notations INT,                      -- NULL=unlimited, 1=single, N=up to N
+    is_mandatory BOOLEAN GENERATED ALWAYS AS (min_notations >= 1) STORED,
+    allows_multiple BOOLEAN GENERATED ALWAYS AS (max_notations IS NULL OR max_notations > 1) STORED,
+    is_prefix BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO iclass.notation_group (group_code, group_name, description, display_order, is_prefix, min_notations, max_notations, is_active)
+VALUES
+('SYM', 'Construction Symbol', 'Construction Symbol', 1, TRUE, 1, 1, TRUE),
+('MAIN', 'Main Class Notation', 'Main Class Notation', 2, FALSE, 1, 1, TRUE),
+('TYPE', 'Ship Type Notation', 'Ship Type Notation', 3, FALSE, 1, NULL, TRUE),
+('AREA', 'Sevice Area Notation', 'Navigation and service area notation', 4, FALSE, 1, 1, TRUE),
+('ADD', 'Additional Notation', 'Additional Notation', 5, FALSE, 0, NULL, TRUE),
+('STR', 'Structural Strength and Integrity', 'Related to structural strength and integrity', 6, FALSE, 0, NULL, TRUE),
+('EFF', 'Energy Efficiency', 'Related to propulsion, power eneration and auxiliary systems', 7, FALSE, 0, NULL, TRUE),
+('NAV', 'Navigation', 'Related to navigation and manoeuvring', 8, FALSE, 0, NULL, TRUE),
+('CARGO', 'Cargo Operation', 'Related to cargo operation', 9, FALSE, 0, NULL, TRUE),
+('EQU', 'Equipment and Design Features', 'Related to equipment and design feature', 10, FALSE, 0, NULL, TRUE),
+('CLIMA', 'Climate', 'Related to climate', 11, FALSE, 0, NULL, TRUE),
+('ENV', 'Environment', 'Related to environmental protection and pollution control', 12, FALSE, 0, NULL, TRUE),
+('SURV', 'Survey', 'Related to survey arrangement', 13, FALSE, 0, NULL, TRUE)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- 6. GROUP-LEVEL RENDERING RULES (per society)
+--    Controls how groups are separated and rendered
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS iclass.society_group_rendering (
+    id SERIAL PRIMARY KEY,
+    society_code VARCHAR(2) NOT NULL REFERENCES iclass.classification_society(code),
+    group_id INT NOT NULL REFERENCES iclass.notation_group(id),
+
+    -- Override rendering for this society+group
+    separator_before VARCHAR(20),                      -- Override group default
+    separator_within VARCHAR(10),                      -- Override group default
+    prefix VARCHAR(20),                      -- e.g., wrapping brackets
+    suffix VARCHAR(20),
+    display_order INT NOT NULL,                     -- Society-specific ordering
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT uq_society_group_render UNIQUE (society_code, group_id)
+);
+
+-- Master catalog of all possible class notations
+CREATE TABLE IF NOT EXISTS iclass.class_notation (
+    id SERIAL PRIMARY KEY,
+    society_code VARCHAR(2) NOT NULL REFERENCES iclass.classification_society(code),
+    group_id integer REFERENCES iclass.notation_group(id),
+    notation_code VARCHAR(100)  NOT NULL,           -- Internal code: 'COAT-1', 'BWM-T', 'EO'
+    notation_symbol VARCHAR(200),                    -- Display symbol: 'COAT-1', 'BWM(T)', 'EO'
+    notation_name VARCHAR(300)  NOT NULL,           -- Full name: 'Coating Standard 1'
+    description TEXT,
+    -- Classification
+    is_parameterized BOOLEAN NOT NULL DEFAULT FALSE,  -- Does it accept parameters? e.g., BWM(T), BWM(E)
+    parameter_template VARCHAR(200),                    -- Template: 'BWM({type})' where {type} is T or E
+    allowed_parameters JSONB,                           -- {"type": ["T", "E"]} or NULL
+    -- Rules & applicability
+    applicable_ship_types TEXT[],                      -- Ship types this notation applies to (NULL = all)
+    applicable_rules VARCHAR(500),                     -- Reference to rule chapter/section
+    incompatible_notations INT[],                       -- Notation IDs that conflict with this one
+    -- Lifecycle
+    effective_from DATE,
+    superseded_date DATE,
+    superseded_by integer REFERENCES class_notation(notation_id),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- Display ordering within its group
+    display_order integer NOT NULL DEFAULT 0,
+
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_notation_per_society UNIQUE (society_code, notation_code)
+);
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'compatibility_type_enum') THEN
+  CREATE TYPE iclass.compatibility_type_enum AS ENUM (
+    'requires',          -- Notation A requires Notation B
+    'incompatible',      -- Notation A cannot coexist with Notation B
+    'supersedes',        -- Notation A supersedes B (if A assigned, B should be removed)
+    'recommended'        -- Notation A recommends also having Notation B
+  );
+  END IF;
+END $$;
+
+CREATE TABLE iclass.notation_compatibility (
+    id SERIAL PRIMARY KEY,
+    notation_id integer NOT NULL REFERENCES iclass.class_notation(id),
+    related_notation_id integer NOT NULL REFERENCES iclass.class_notation(id),
+    compatibility_type  iclass.compatibility_type_enum NOT NULL,
+    description  TEXT,
+    is_active BOOLEAN       NOT NULL DEFAULT TRUE,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_notation_compat UNIQUE (notation_id, related_notation_id, compatibility_type),
+    CONSTRAINT chk_no_self_prereq CHECK (notation_id != related_notation_id)
 );
