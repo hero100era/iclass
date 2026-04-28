@@ -25,21 +25,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   const offset = (page - 1) * limit;
 
   const db = await getDb(request);
-  const { data: requests, count } = await db.get<SurveyRequest[]>(
-    "/survey_requests",
-    {
-      select: "*,ships(name)",
-      limit,
-      offset,
-      order: "created_at.desc",
-      prefer: { count: "exact" },
-    },
-  );
+  const { data: requests, count } = await db.get<SurveyRequest[]>("/survey_requests", {
+    select: "*,ships(name)",
+    limit,
+    offset,
+    order: "created_at.desc",
+    prefer: { count: "exact" },
+  });
 
   const totalPages = Math.ceil((count || 0) / limit);
   return { requests: requests || [], totalPages, currentPage: page };
 }
-
 
 export default function RequestList() {
   const { requests, totalPages, currentPage } = useLoaderData<typeof loader>();
@@ -96,27 +92,19 @@ export default function RequestList() {
           <tbody className="divide-y">
             {requests.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-6 py-12 text-center text-muted-foreground"
-                >
+                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                   No survey requests found.
                 </td>
               </tr>
             ) : (
               requests.map((req: SurveyRequest) => (
-                <tr
-                  key={req.id}
-                  className="hover:bg-muted/30 transition-colors group"
-                >
+                <tr key={req.id} className="hover:bg-muted/30 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="font-medium text-primary">
                       {req.ships?.name || "Unknown Vessel"}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {req.location}
-                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">{req.location}</td>
                   <td className="px-6 py-4">{req.estimated_date}</td>
                   <td className="px-6 py-4">
                     <StatusBadge status={req.status || "pending"} />

@@ -6,7 +6,6 @@ import { getEnvOrDie } from "~/.server/lib/env";
 import { createServerApi } from "~/.server/lib/api";
 import type { Route } from "./+types/forgot-password";
 
-
 // Schema for validation
 const ForgotPasswordSchema = z.object({
   email: z.email("Invalid email address"),
@@ -31,12 +30,9 @@ export async function action({ request }: Route.ActionArgs) {
   // 2. Call the RPC to get the reset token
   try {
     const db = createServerApi(adminToken);
-    const { data, status } = await db.rpc<{ token: string }>(
-      "request_password_reset",
-      {
-        body: { email },
-      },
-    );
+    const { data, status } = await db.rpc<{ token: string }>("request_password_reset", {
+      body: { email },
+    });
 
     if (status !== 200 || !data) {
       // If the RPC returns null or error, we still probably want to show a success message
@@ -50,7 +46,6 @@ export async function action({ request }: Route.ActionArgs) {
       // Should have been handled above if null
       return { success: true };
     }
-
 
     // 3. Send Email using Resend
     const resendApiKey = getEnvOrDie("RESEND_API_KEY");
@@ -101,8 +96,7 @@ export default function ForgotPassword() {
         <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
           <h1 className="text-2xl font-bold mb-4">Check your email</h1>
           <p className="mb-4">
-            If an account exists with that email, we have sent instructions to
-            reset your password.
+            If an account exists with that email, we have sent instructions to reset your password.
           </p>
           <Link to="/login" className="text-blue-500 hover:underline">
             Back to Login
@@ -118,10 +112,7 @@ export default function ForgotPassword() {
         <h1 className="text-2xl font-bold mb-6 text-center">Forgot Password</h1>
         <Form method="post" className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input

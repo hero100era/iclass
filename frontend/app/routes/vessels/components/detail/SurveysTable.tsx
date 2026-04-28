@@ -1,9 +1,5 @@
 import { Plus, Minus, Activity } from "lucide-react";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/Accordion";
+import { AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/Accordion";
 import { StatusBadge } from "~/components/ui/DetailHelpers";
 import { useState } from "react";
 
@@ -28,14 +24,8 @@ interface OtherSurvey {
 interface SurveysTableProps {
   surveys: Survey[];
   otherSurveys: OtherSurvey[];
-  isItemSelected: (
-    id: number | string,
-    type: "survey" | "finding" | "other",
-  ) => boolean;
-  onToggleItem: (
-    item: Survey | OtherSurvey,
-    type: "survey" | "finding" | "other",
-  ) => void;
+  isItemSelected: (id: number | string, type: "survey" | "finding" | "other") => boolean;
+  onToggleItem: (item: Survey | OtherSurvey, type: "survey" | "finding" | "other") => void;
 }
 
 export function SurveysTable({
@@ -50,8 +40,7 @@ export function SurveysTable({
     <AccordionItem value="surveys" className="overflow-visible">
       <AccordionTrigger>
         <span className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-slate-400" /> Surveys & Audits (
-          {surveys.length})
+          <Activity className="w-5 h-5 text-slate-400" /> Surveys & Audits ({surveys.length})
         </span>
       </AccordionTrigger>
       <AccordionContent className="overflow-visible">
@@ -69,23 +58,14 @@ export function SurveysTable({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {surveys.map((survey) => (
-                <tr
-                  key={survey.id}
-                  className="hover:bg-slate-50/50 transition-colors"
-                >
+                <tr key={survey.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 py-3 text-slate-600">{survey.code}</td>
-                  <td className="px-4 py-3 text-slate-600 font-medium">
-                    {survey.description}
-                  </td>
+                  <td className="px-4 py-3 text-slate-600 font-medium">{survey.description}</td>
                   <td className="px-4 py-3 text-slate-600">
                     <div>{survey.last_held_date}</div>
-                    <div className="text-xs text-slate-400">
-                      {survey.place_held}
-                    </div>
+                    <div className="text-xs text-slate-400">{survey.place_held}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {survey.next_due_date || "-"}
-                  </td>
+                  <td className="px-4 py-3 text-slate-600">{survey.next_due_date || "-"}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={survey.status || "--"} />
                   </td>
@@ -123,10 +103,7 @@ export function SurveysTable({
             </button>
             {showOtherSelector && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowOtherSelector(false)}
-                />
+                <div className="fixed inset-0 z-10" onClick={() => setShowOtherSelector(false)} />
                 <div className="absolute right-0 bottom-full mb-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2">
                   <div className="px-4 py-2 border-b border-slate-100 mb-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -154,10 +131,7 @@ export function SurveysTable({
                         {isItemSelected(item.id, "other") ? (
                           <Minus size={16} className="text-amber-500" />
                         ) : (
-                          <Plus
-                            size={16}
-                            className="text-slate-300 group-hover:text-[#005EAA]"
-                          />
+                          <Plus size={16} className="text-slate-300 group-hover:text-[#005EAA]" />
                         )}
                       </button>
                     ))}

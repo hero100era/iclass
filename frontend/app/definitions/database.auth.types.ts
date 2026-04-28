@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 
-
 /**
  * AUTO-GENERATED FILE - DO NOT EDIT!
  *
@@ -9,7 +8,6 @@
  * $ pg-to-ts generate -c postgres://username:password@localhost:5432/mydb -t oauth_account -t reset_token -t user -s auth
  *
  */
-
 
 export type Json = unknown;
 
@@ -43,13 +41,26 @@ export interface OauthAccountInput {
   updated_at?: Date | null;
 }
 const oauth_account = {
-  tableName: 'oauth_account',
-  columns: ['id', 'user_id', 'provider', 'provider_user_id', 'provider_username', 'provider_email', 'access_token', 'refresh_token', 'token_expires_at', 'scope', 'created_at', 'updated_at'],
-  requiredForInsert: ['user_id', 'provider', 'provider_user_id'],
-  primaryKey: 'id',
-  foreignKeys: { user_id: { table: 'user', column: 'id', $type: null as unknown as User }, },
+  tableName: "oauth_account",
+  columns: [
+    "id",
+    "user_id",
+    "provider",
+    "provider_user_id",
+    "provider_username",
+    "provider_email",
+    "access_token",
+    "refresh_token",
+    "token_expires_at",
+    "scope",
+    "created_at",
+    "updated_at",
+  ],
+  requiredForInsert: ["user_id", "provider", "provider_user_id"],
+  primaryKey: "id",
+  foreignKeys: { user_id: { table: "user", column: "id", $type: null as unknown as User } },
   $type: null as unknown as OauthAccount,
-  $input: null as unknown as OauthAccountInput
+  $input: null as unknown as OauthAccountInput,
 } as const;
 
 // Table reset_token
@@ -70,13 +81,13 @@ export interface ResetTokenInput {
   used?: boolean | null;
 }
 const reset_token = {
-  tableName: 'reset_token',
-  columns: ['id', 'token', 'email', 'created_at', 'expires_at', 'used'],
-  requiredForInsert: ['email'],
-  primaryKey: 'id',
+  tableName: "reset_token",
+  columns: ["id", "token", "email", "created_at", "expires_at", "used"],
+  requiredForInsert: ["email"],
+  primaryKey: "id",
   foreignKeys: {},
   $type: null as unknown as ResetToken,
-  $input: null as unknown as ResetTokenInput
+  $input: null as unknown as ResetTokenInput,
 } as const;
 
 // Table user
@@ -103,15 +114,24 @@ export interface UserInput {
   last_active?: Date | null;
 }
 const user = {
-  tableName: 'user',
-  columns: ['id', 'email', 'password_hash', 'role', 'category', 'is_active', 'created_at', 'updated_at', 'last_active'],
-  requiredForInsert: ['email', 'password_hash', 'role', 'category'],
-  primaryKey: 'id',
+  tableName: "user",
+  columns: [
+    "id",
+    "email",
+    "password_hash",
+    "role",
+    "category",
+    "is_active",
+    "created_at",
+    "updated_at",
+    "last_active",
+  ],
+  requiredForInsert: ["email", "password_hash", "role", "category"],
+  primaryKey: "id",
   foreignKeys: {},
   $type: null as unknown as User,
-  $input: null as unknown as UserInput
+  $input: null as unknown as UserInput,
 } as const;
-
 
 export interface TableTypes {
   oauth_account: {
@@ -132,4 +152,4 @@ export const tables = {
   oauth_account,
   reset_token,
   user,
-}
+};

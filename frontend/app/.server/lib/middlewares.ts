@@ -26,12 +26,7 @@ export const sessionMiddleware = async (
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  const whitelist = [
-    "/login",
-    "/forgot-password",
-    "/reset-password",
-    "/logout",
-  ];
+  const whitelist = ["/login", "/forgot-password", "/reset-password", "/logout"];
 
   const isWhitelisted =
     whitelist.includes(pathname) ||

@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Search,
-  Filter,
-  MoreVertical,
-  Briefcase,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Search, Filter, MoreVertical, Briefcase, ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { Pagination } from "~/components/Pagination";
 import { getDb } from "~/.server/lib/api";
@@ -69,9 +62,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function JobList() {
   const { jobs, totalPages, currentPage } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
-  const [expandedJobs, setExpandedJobs] = React.useState<
-    Record<number, boolean>
-  >({});
+  const [expandedJobs, setExpandedJobs] = React.useState<Record<number, boolean>>({});
 
   const handlePageChange = (page: number) => {
     setSearchParams((prev) => {
@@ -93,9 +84,7 @@ export default function JobList() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Jobs</h2>
-          <p className="text-muted-foreground">
-            View and manage assigned jobs and their parts.
-          </p>
+          <p className="text-muted-foreground">View and manage assigned jobs and their parts.</p>
         </div>
       </div>
 
@@ -145,10 +134,7 @@ export default function JobList() {
           <tbody className="divide-y relative">
             {jobs.length === 0 ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-4 py-8 text-center text-muted-foreground"
-                >
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   No jobs found.
                 </td>
               </tr>
@@ -156,9 +142,9 @@ export default function JobList() {
               jobs.map((job: Job) => {
                 const isExpanded = !!expandedJobs[job.id];
                 const hasSubJobs =
-                  (job.survey_jobs?.length ?? 0 > 0) ||
-                  (job.audit_jobs?.length ?? 0 > 0) ||
-                  (job.ms_jobs?.length ?? 0 > 0);
+                  (job.survey_jobs?.length ?? 0) > 0 ||
+                  (job.audit_jobs?.length ?? 0) > 0 ||
+                  (job.ms_jobs?.length ?? 0) > 0;
                 return (
                   <React.Fragment key={job.id}>
                     <tr
@@ -171,11 +157,7 @@ export default function JobList() {
                             className="p-0.5 rounded hover:bg-muted-foreground/10 text-muted-foreground"
                             onClick={(e) => toggleExpand(job.id, e)}
                           >
-                            {isExpanded ? (
-                              <ChevronDown size={14} />
-                            ) : (
-                              <ChevronRight size={14} />
-                            )}
+                            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                           </button>
                         ) : (
                           <div className="w-4" />
@@ -186,9 +168,7 @@ export default function JobList() {
                         Parent Job
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground">-</td>
-                      <td className="px-4 py-2.5 font-medium">
-                        {job.location || "-"}
-                      </td>
+                      <td className="px-4 py-2.5 font-medium">{job.location || "-"}</td>
                       <td className="px-4 py-2.5">
                         <span
                           className={cn(
@@ -202,10 +182,7 @@ export default function JobList() {
                       <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                         {job.created_at ? new Date(job.created_at).toLocaleDateString() : "-"}
                       </td>
-                      <td
-                        className="px-4 py-2.5 text-right"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="relative inline-block text-left group/dropdown">
                           <button className="p-1 hover:bg-muted rounded text-muted-foreground outline-none">
                             <MoreVertical size={16} />
@@ -236,14 +213,9 @@ export default function JobList() {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-[13px]">
-                            <div className="font-medium">
-                              {sj.ships?.[0]?.name || "No Ship"}
-                            </div>
+                            <div className="font-medium">{sj.ships?.[0]?.name || "No Ship"}</div>
                           </td>
-                          <td
-                            className="px-4 py-2 text-[13px] text-muted-foreground"
-                            colSpan={3}
-                          >
+                          <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
                             {sj.description || "No Description"}
                           </td>
                           <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
@@ -271,17 +243,12 @@ export default function JobList() {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-[13px]">
-                            <div className="font-medium">
-                              {aj.ships?.[0]?.name || "No Ship"}
-                            </div>
+                            <div className="font-medium">{aj.ships?.[0]?.name || "No Ship"}</div>
                             <div className="text-[11px] text-muted-foreground leading-tight">
                               {aj.organizations?.[0]?.name || "No Company"}
                             </div>
                           </td>
-                          <td
-                            className="px-4 py-2 text-[13px] text-muted-foreground"
-                            colSpan={3}
-                          >
+                          <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
                             {aj.description || "No Description"}
                           </td>
                           <td className="px-4 py-2 text-right hover:bg-muted/10"></td>
@@ -309,17 +276,12 @@ export default function JobList() {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-[13px]">
-                            <div className="font-medium">
-                              {mj.ships?.[0]?.name || "No Ship"}
-                            </div>
+                            <div className="font-medium">{mj.ships?.[0]?.name || "No Ship"}</div>
                             <div className="text-[11px] text-muted-foreground leading-tight">
                               {mj.organizations?.[0]?.name || "No Company"}
                             </div>
                           </td>
-                          <td
-                            className="px-4 py-2 text-[13px] text-muted-foreground"
-                            colSpan={3}
-                          >
+                          <td className="px-4 py-2 text-[13px] text-muted-foreground" colSpan={3}>
                             -
                           </td>
                           <td className="px-4 py-2 text-right hover:bg-muted/10"></td>

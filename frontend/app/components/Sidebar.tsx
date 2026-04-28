@@ -7,7 +7,7 @@ import {
   LogOut,
   User,
   ShieldAlert,
-  Briefcase
+  Briefcase,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -16,37 +16,37 @@ const navItems = [
     icon: LayoutDashboard,
     label: "Dashboard",
     to: "/",
-    roles: ["admingrp", "employees", "customers", "administrations"]
+    roles: ["admingrp", "employees", "customers", "administrations"],
   },
   {
     icon: Ship,
     label: "Vessels",
     to: "/vessels",
-    roles: ["admingrp", "employees", "customers", "administrations"]
+    roles: ["admingrp", "employees", "customers", "administrations"],
   },
   {
     icon: Calendar,
     label: "Surveys",
     to: "/surveys",
-    roles: ["admingrp", "employees", "administrations"]
+    roles: ["admingrp", "employees", "administrations"],
   },
   {
     icon: ClipboardList,
     label: "Requests",
     to: "/requests",
-    roles: ["admingrp", "employees", "administrations"]
+    roles: ["admingrp", "employees", "administrations"],
   },
   {
     icon: Briefcase,
     label: "Jobs",
     to: "/jobs",
-    roles: ["admingrp", "employees"]
+    roles: ["admingrp", "employees"],
   },
   {
     icon: ShieldAlert,
     label: "Admin",
     to: "/admin",
-    roles: ["admingrp"]
+    roles: ["admingrp"],
   },
 ];
 
@@ -58,9 +58,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ user }: SidebarProps) {
-  const filteredItems = navItems.filter(item =>
-    !user || item.roles.includes(user.role)
-  );
+  const filteredItems = navItems.filter((item) => !user || item.roles.includes(user.role));
 
   return (
     <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0">
@@ -76,12 +74,14 @@ export function Sidebar({ user }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) => cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-              isActive
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            )}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+              )
+            }
           >
             <item.icon size={20} />
             <span className="font-medium">{item.label}</span>

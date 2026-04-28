@@ -21,16 +21,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     filters: { id: `eq.${id}` },
     select: "*,ships(name)",
   });
-  if (!surveyJobs || surveyJobs.length === 0)
-    throw new Response("Job not found", { status: 404 });
+  if (!surveyJobs || surveyJobs.length === 0) throw new Response("Job not found", { status: 404 });
   const surveyJob = surveyJobs[0];
 
   // 2. Load the parent job using surveyJob.job_id
   const { data: jobs } = await db.get<Job[]>("/jobs", {
     filters: { id: `eq.${surveyJob.job_id}` },
   });
-  if (!jobs || jobs.length === 0)
-    throw new Response("Job not found", { status: 404 });
+  if (!jobs || jobs.length === 0) throw new Response("Job not found", { status: 404 });
   const job = jobs[0];
 
   return { job, surveyJob };
@@ -100,9 +98,7 @@ export default function JobLayout() {
             </h2>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold text-slate-700">
-              #{job.id}
-            </span>
+            <span className="text-xs font-mono font-bold text-slate-700">#{job.id}</span>
             <span
               className={cn(
                 "px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
@@ -118,12 +114,7 @@ export default function JobLayout() {
         <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar">
           <Accordion
             type="multiple"
-            defaultValue={[
-              "planning",
-              "reporting",
-              "verification",
-              "conclusion",
-            ]}
+            defaultValue={["planning", "reporting", "verification", "conclusion"]}
           >
             {manual.map((section) => (
               <AccordionItem

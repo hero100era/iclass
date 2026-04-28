@@ -17,7 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const offset = (page - 1) * limit;
 
   const db = await getDb(request);
-  
+
   const filters: Record<string, FilterOperator> = {};
   if (search) {
     filters.name = filter.ilike(`*${search}*`);
@@ -34,7 +34,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   return { ships: ships || [], totalPages, currentPage: page, search };
 }
-
 
 export default function VesselList() {
   const { ships, totalPages, currentPage, search } = useLoaderData<typeof loader>();
@@ -98,10 +97,7 @@ export default function VesselList() {
           </thead>
           <tbody className="divide-y">
             {ships.map((vessel: Ship) => (
-              <tr
-                key={vessel.id}
-                className="hover:bg-muted/30 transition-colors"
-              >
+              <tr key={vessel.id} className="hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-2">
                   <Link
                     to={`/vessels/${vessel.id}`}

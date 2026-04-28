@@ -50,13 +50,10 @@ const generateCertificateXML = (cert) => {
   certAttrs += attr("cFlag", cert.cFlag);
 
   if (cert.cTypeCertificate === "SMC") {
-    certAttrs +=
-      attr("cConvOrVol", cert.cConvOrVol) + attr("idCompany", cert.idCompany);
+    certAttrs += attr("cConvOrVol", cert.cConvOrVol) + attr("idCompany", cert.idCompany);
   } else if (cert.cTypeCertificate === "DOC" || !cert.cTypeCertificate) {
     // ShipType for DOC is a space-separated string of codes
-    const shipTypeString = Array.isArray(cert.shipType)
-      ? cert.shipType.join(" ")
-      : cert.shipType;
+    const shipTypeString = Array.isArray(cert.shipType) ? cert.shipType.join(" ") : cert.shipType;
     certAttrs += attr("shipType", shipTypeString);
   }
 
@@ -74,10 +71,7 @@ ${INDENT}</certificate>`;
  * Generates the XML string for a single <ship> element.
  */
 const generateShipXML = (ship) => {
-  const allCertificates = [
-    ...(ship.certificates || []),
-    ...(ship.mmsCertificates || []),
-  ];
+  const allCertificates = [...(ship.certificates || []), ...(ship.mmsCertificates || [])];
 
   if (allCertificates.length === 0) return "";
 
@@ -114,9 +108,7 @@ const generateCompanyXML = (company) => {
     cTypeCertificate: "DOC",
   }));
 
-  const certsXML = certificatesWithDocType
-    .map(generateCertificateXML)
-    .join("\n");
+  const certsXML = certificatesWithDocType.map(generateCertificateXML).join("\n");
 
   return `<company ID_COMPANY="${company.idCompany}">
 ${certsXML}
@@ -152,9 +144,7 @@ const generateIACSExchangeXML = (data) => {
     .join("\n\n");
 
   // 3. Combine XML parts
-  const bodyXML = [shipsXML, companiesXML]
-    .filter((xml) => xml.length > 0)
-    .join("\n\n");
+  const bodyXML = [shipsXML, companiesXML].filter((xml) => xml.length > 0).join("\n\n");
 
   // 4. Final Document Structure
   return `<?xml version="1.0" encoding="utf-8"?>

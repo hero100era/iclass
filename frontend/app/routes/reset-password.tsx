@@ -10,7 +10,6 @@ import {
 import { publicApi } from "~/.server/lib/api";
 import type { Route } from "./+types/reset-password";
 
-
 const ResetPasswordSchema = z
   .object({
     password: z.string().min(6, "Password must be at least 6 characters"),
@@ -39,15 +38,12 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { password } = result.data;
   try {
-    const { data: success, status } = await publicApi.rpc<boolean>(
-      "reset_password",
-      {
-        body: {
-          token: token,
-          new_password: password,
-        },
+    const { data: success, status } = await publicApi.rpc<boolean>("reset_password", {
+      body: {
+        token: token,
+        new_password: password,
       },
-    );
+    });
 
     if (status !== 200 || success !== true) {
       return {
@@ -60,7 +56,6 @@ export async function action({ request }: Route.ActionArgs) {
     // Success
     return redirect("/login");
   } catch (err) {
-
     console.error("Reset Password Error:", err);
     return { errors: { form: ["An unexpected error occurred."] } };
   }
@@ -90,15 +85,10 @@ export default function ResetPassword() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Set New Password
-        </h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Set New Password</h1>
         <Form method="post" className="space-y-4">
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               New Password
             </label>
             <input
@@ -113,10 +103,7 @@ export default function ResetPassword() {
                         )} */}
           </div>
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirm Password
             </label>
             <input

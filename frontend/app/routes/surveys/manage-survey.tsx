@@ -7,13 +7,7 @@ import {
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
-import {
-  useLoaderData,
-  useActionData,
-  useNavigation,
-  Form,
-  useFetcher,
-} from "react-router";
+import { useLoaderData, useActionData, useNavigation, Form, useFetcher } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import type { Route } from "./+types/manage-survey";
 import { formatDate } from "~/lib/format";
@@ -23,13 +17,7 @@ import { useState } from "react";
 export interface SurveyLineProps {
   id: number;
   survey_audit_id?: number;
-  survey_status?:
-    | "partial"
-    | "scheduled"
-    | "executing"
-    | "completed"
-    | "postponed"
-    | null;
+  survey_status?: "partial" | "scheduled" | "executing" | "completed" | "postponed" | null;
   postponement_date?: string | null;
   survey_audits?: {
     id: number;
@@ -105,12 +93,8 @@ export async function action({ request }: Route.ActionArgs) {
 
 function SurveyLineRow({ line }: { line: SurveyLineProps }) {
   const fetcher = useFetcher();
-  const [status, setStatus] = useState<string>(
-    line.survey_status || "scheduled",
-  );
-  const [postponedDate, setPostponedDate] = useState(
-    line.postponement_date || "",
-  );
+  const [status, setStatus] = useState<string>(line.survey_status || "scheduled");
+  const [postponedDate, setPostponedDate] = useState(line.postponement_date || "");
   const isUpdating = fetcher.state !== "idle";
 
   const handleStatusChange = (newStatus: string) => {
@@ -148,9 +132,7 @@ function SurveyLineRow({ line }: { line: SurveyLineProps }) {
       case "postponed":
         return <Clock size={12} className="text-blue-500" />;
       case "executing":
-        return (
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-        );
+        return <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />;
       default:
         return <div className="w-2 h-2 rounded-full bg-slate-300" />;
     }
@@ -191,9 +173,7 @@ function SurveyLineRow({ line }: { line: SurveyLineProps }) {
             {isUpdating && (
               <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             )}
-            <div className="flex items-center gap-1.5 mr-1">
-              {getStatusIcon(status)}
-            </div>
+            <div className="flex items-center gap-1.5 mr-1">{getStatusIcon(status)}</div>
             <select
               value={status}
               onChange={(e) => handleStatusChange(e.target.value)}
@@ -246,9 +226,7 @@ export default function ManageSurvey() {
             <ClipboardList size={20} className="text-primary" /> Manage Survey
           </h2>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">
-              Job Status:
-            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Job Status:</span>
             <span
               className={cn(
                 "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
@@ -261,9 +239,7 @@ export default function ManageSurvey() {
             </span>
           </div>
         </div>
-        <p className="text-sm text-slate-500">
-          Manage the survey lines and updates for this job.
-        </p>
+        <p className="text-sm text-slate-500">Manage the survey lines and updates for this job.</p>
       </div>
 
       {actionData?.error && (
@@ -298,17 +274,12 @@ export default function ManageSurvey() {
           <tbody className="divide-y divide-slate-100">
             {surveyLines.length === 0 ? (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-8 text-center text-slate-400 italic"
-                >
+                <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">
                   No lines registered in the scope.
                 </td>
               </tr>
             ) : (
-              surveyLines.map((line) => (
-                <SurveyLineRow key={line.id} line={line} />
-              ))
+              surveyLines.map((line) => <SurveyLineRow key={line.id} line={line} />)
             )}
           </tbody>
         </table>

@@ -26,21 +26,20 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { id } = params;
   const db = await getDb(request);
 
-  const [{ data: surveyJobs }, { data: employees }, { data: participants }] =
-    await Promise.all([
-      db.get<SurveyJob[]>("/survey_jobs", {
-        filters: { id: `eq.${id}` },
-        select: "id,job_id",
-      }),
-      db.get<Employee[]>("/employees", {
-        filters: { is_active: "eq.true" },
-        order: "display_name.asc",
-      }),
-      db.get<Participant[]>("/job_participants", {
-        filters: { survey_job_id: `eq.${id}` },
-        select: "*,employees(*)",
-      }),
-    ]);
+  const [{ data: surveyJobs }, { data: employees }, { data: participants }] = await Promise.all([
+    db.get<SurveyJob[]>("/survey_jobs", {
+      filters: { id: `eq.${id}` },
+      select: "id,job_id",
+    }),
+    db.get<Employee[]>("/employees", {
+      filters: { is_active: "eq.true" },
+      order: "display_name.asc",
+    }),
+    db.get<Participant[]>("/job_participants", {
+      filters: { survey_job_id: `eq.${id}` },
+      select: "*,employees(*)",
+    }),
+  ]);
 
   const surveyJobId = surveyJobs?.[0]?.id || null;
 
@@ -50,7 +49,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     employees: employees || [],
   };
 }
-
 
 export async function action({ request, params: _params }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -89,7 +87,6 @@ export async function action({ request, params: _params }: Route.ActionArgs) {
   return { error: "Unknown action" };
 }
 
-
 export default function RegisterScope() {
   const { surveyJobId, participants, employees } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -101,7 +98,9 @@ export default function RegisterScope() {
           <Users size={20} className="text-primary" />
           Job Participants
         </h2>
-        <p className="text-sm text-slate-500">Manage Team Members, Trainees, and Monitors for this job.</p>
+        <p className="text-sm text-slate-500">
+          Manage Team Members, Trainees, and Monitors for this job.
+        </p>
       </div>
 
       {actionData?.error && (
@@ -184,7 +183,9 @@ export default function RegisterScope() {
           <input type="hidden" name="survey_job_id" value={surveyJobId || ""} />
 
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Select Employee</label>
+            <label className="text-[11px] font-bold text-slate-500 uppercase">
+              Select Employee
+            </label>
             <select
               name="employee_id"
               required
@@ -192,13 +193,17 @@ export default function RegisterScope() {
             >
               <option value="">-- Choose Employee --</option>
               {employees.map((e: Employee) => (
-                <option key={e.id} value={e.id}>{e.display_name} ({e.email})</option>
+                <option key={e.id} value={e.id}>
+                  {e.display_name} ({e.email})
+                </option>
               ))}
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Participant Type</label>
+            <label className="text-[11px] font-bold text-slate-500 uppercase">
+              Participant Type
+            </label>
             <select
               name="participant_type"
               className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"

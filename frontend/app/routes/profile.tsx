@@ -30,19 +30,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { user: users[0] };
 }
 
-
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          My Profile
-        </h2>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences.
-        </p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">My Profile</h2>
+        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -57,24 +52,19 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             </div>
             <div>
               <h3 className="text-xl font-bold text-foreground">
-                {user.display_name ||
-                  (user.email as string).split("@")[0].toUpperCase()}
+                {user.display_name || (user.email as string).split("@")[0].toUpperCase()}
               </h3>
-              <p className="text-sm text-muted-foreground">{user.job_title || user.job_title_custom || "Employee"}</p>
+              <p className="text-sm text-muted-foreground">
+                {user.job_title || user.job_title_custom || "Employee"}
+              </p>
             </div>
-              <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
+            <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase font-semibold">
-                  Department
-                </p>
-                <p className="text-sm font-medium">
-                  {user.department_name || "Standard"}
-                </p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Department</p>
+                <p className="text-sm font-medium">{user.department_name || "Standard"}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase font-semibold">
-                  Status
-                </p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Status</p>
                 <p className="text-sm font-medium text-green-600">
                   {user.is_active ? "Active" : "Inactive"}
                 </p>
@@ -101,21 +91,13 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             </div>
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoItem
-                  icon={Mail}
-                  label="Email Address"
-                  value={user.email as string}
-                />
+                <InfoItem icon={Mail} label="Email Address" value={user.email as string} />
                 <InfoItem
                   icon={Shield}
                   label="Job Title"
                   value={user.job_title || user.job_title_custom || "Not assigned"}
                 />
-                <InfoItem
-                  icon={Key}
-                  label="User ID"
-                  value={String(user.id)}
-                />
+                <InfoItem icon={Key} label="User ID" value={String(user.id)} />
                 <InfoItem
                   icon={MapPin}
                   label="Location"

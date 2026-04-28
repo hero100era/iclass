@@ -9,8 +9,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const provider = params.provider as OAuthProvider;
   const oAuthClient = getOAuthClient(provider);
 
-  const { redirectUrl, oAuthState, codeVerifier } =
-    await oAuthClient.createAuthData();
+  const { redirectUrl, oAuthState, codeVerifier } = await oAuthClient.createAuthData();
   session.set("oAuthState", oAuthState);
   session.set("codeVerifier", codeVerifier);
   return redirect(redirectUrl, {

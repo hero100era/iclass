@@ -98,10 +98,7 @@ export class OAuthClient<T> {
     const isValidState = validateState(state, session);
     if (!isValidState) throw new InvalidStateError();
 
-    const { accessToken, tokenType } = await this.fetchToken(
-      code,
-      getCodeVerifier(session),
-    );
+    const { accessToken, tokenType } = await this.fetchToken(code, getCodeVerifier(session));
 
     const res = await fetch(this.urls.user, {
       headers: {
@@ -197,9 +194,5 @@ function getCodeVerifier(session: Session) {
 }
 
 function base64UrlEncode(buf: Buffer) {
-  return buf
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }

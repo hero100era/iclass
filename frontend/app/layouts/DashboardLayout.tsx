@@ -19,7 +19,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar user={user as { role: string;[key: string]: unknown } | null} />
+      <Sidebar user={user as { role: string; [key: string]: unknown } | null} />
       <main className="pl-64 transition-all duration-300">
         <div className={cn("p-8 mx-auto", isFluid ? "px-6" : "max-w-7xl")}>
           <Outlet />

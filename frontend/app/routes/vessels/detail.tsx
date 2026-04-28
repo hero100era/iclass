@@ -2,10 +2,7 @@ import { useLoaderData } from "react-router";
 import { getDb } from "~/.server/lib/api";
 import type { Route } from "./+types/detail";
 import { Accordion } from "~/components/ui/Accordion";
-import {
-  SurveyRequestProvider,
-  useSurveyRequest,
-} from "~/components/SurveyRequestCart";
+import { SurveyRequestProvider, useSurveyRequest } from "~/components/SurveyRequestCart";
 import { CartDrawer, FloatingCartButton } from "~/components/CartDrawer";
 import { getSession } from "~/.server/lib/sessions";
 import { decrypt } from "~/.server/lib/jwt";
@@ -54,9 +51,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   if (!vessels?.[0]) throw new Response("Vessel not found.", { status: 404 });
 
-  const usedPoolIds = new Set(
-    (surveys || []).map((s) => s.pool_id).filter(Boolean),
-  );
+  const usedPoolIds = new Set((surveys || []).map((s) => s.pool_id).filter(Boolean));
   const otherSurveys = (allPool || []).filter((s) => !usedPoolIds.has(s.id));
 
   return {
@@ -76,16 +71,11 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
 
   if (formData.get("intent") === "submit_survey_request") {
-    const { requestData, cartItems } = JSON.parse(
-      formData.get("payload") as string,
-    );
-    const { data: newReqs } = await db.post<SurveyRequest[]>(
-      "/survey_requests",
-      {
-        body: { ...requestData, ordered_by_id: user?.id },
-        prefer: { return: "representation" },
-      },
-    );
+    const { requestData, cartItems } = JSON.parse(formData.get("payload") as string);
+    const { data: newReqs } = await db.post<SurveyRequest[]>("/survey_requests", {
+      body: { ...requestData, ordered_by_id: user?.id },
+      prefer: { return: "representation" },
+    });
     if (newReqs?.[0]) {
       await db.post("/survey_request_carts", {
         body: (cartItems as SurveyRequestCartInput[]).map((i) => ({
@@ -108,8 +98,7 @@ export default function VesselDetail() {
 }
 
 function VesselDetailContent() {
-  const { vessel, certificates, surveys, findings, otherSurveys } =
-    useLoaderData<typeof loader>();
+  const { vessel, certificates, surveys, findings, otherSurveys } = useLoaderData<typeof loader>();
   const { addItem, removeItem, isItemSelected } = useSurveyRequest();
 
   const handleToggle = (
@@ -139,12 +128,7 @@ function VesselDetailContent() {
             : type === "finding"
               ? item.text || ""
               : item.name || "",
-        code:
-          type === "survey"
-            ? item.code
-            : type === "finding"
-              ? item.comment_type
-              : item.code,
+        code: type === "survey" ? item.code : type === "finding" ? item.comment_type : item.code,
         date:
           type === "survey"
             ? item.next_due_date
@@ -167,9 +151,7 @@ function VesselDetailContent() {
     breadth_moulded: vessel.moulded_breadth,
     depth_moulded: vessel.moulded_depth,
     draught: vessel.moulded_draft,
-    owner_name: (vessel as unknown as Record<string, unknown>).owner_name as
-      | string
-      | null, // Use unknown intermediate to cast
+    owner_name: (vessel as unknown as Record<string, unknown>).owner_name as string | null, // Use unknown intermediate to cast
   };
 
   const mappedCertificates = certificates.map((c) => ({
@@ -177,9 +159,7 @@ function VesselDetailContent() {
     description: c.description || undefined,
     certificate_id: String(c.certificate_id),
     issue_date:
-      c.issue_date instanceof Date
-        ? c.issue_date.toLocaleDateString()
-        : String(c.issue_date),
+      c.issue_date instanceof Date ? c.issue_date.toLocaleDateString() : String(c.issue_date),
     expiry_date: c.expiry_date
       ? c.expiry_date instanceof Date
         ? c.expiry_date.toLocaleDateString()
@@ -218,9 +198,7 @@ function VesselDetailContent() {
     id: f.id,
     comment_type: f.comment_type,
     date_issued:
-      f.date_issued instanceof Date
-        ? f.date_issued.toLocaleDateString()
-        : String(f.date_issued),
+      f.date_issued instanceof Date ? f.date_issued.toLocaleDateString() : String(f.date_issued),
     due_date: f.due_date
       ? f.due_date instanceof Date
         ? f.due_date.toLocaleDateString()

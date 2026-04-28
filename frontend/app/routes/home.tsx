@@ -65,30 +65,16 @@ export default function Home() {
               date="2024-04-02"
               status="Normal"
             />
-            <ExpiryItem
-              vessel="ARCTIC STAR"
-              cert="Load Line"
-              date="2024-04-20"
-              status="Normal"
-            />
+            <ExpiryItem vessel="ARCTIC STAR" cert="Load Line" date="2024-04-20" status="Normal" />
           </div>
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
           <h3 className="font-semibold text-lg">Recent Activity</h3>
           <div className="space-y-4">
-            <ActivityItem
-              text="Certificate 'LL' issued for OCEAN WARRIOR"
-              time="2 hours ago"
-            />
-            <ActivityItem
-              text="Survey report uploaded for SEA GUARDIAN"
-              time="5 hours ago"
-            />
-            <ActivityItem
-              text="New vessel 'PACIFIC BREEZE' registered"
-              time="Yesterday"
-            />
+            <ActivityItem text="Certificate 'LL' issued for OCEAN WARRIOR" time="2 hours ago" />
+            <ActivityItem text="Survey report uploaded for SEA GUARDIAN" time="5 hours ago" />
+            <ActivityItem text="New vessel 'PACIFIC BREEZE' registered" time="Yesterday" />
           </div>
         </div>
       </div>
@@ -139,13 +125,7 @@ function ExpiryItem({
         <p className="text-sm text-muted-foreground">{cert}</p>
       </div>
       <div className="text-right">
-        <p
-          className={
-            status === "Warning" ? "text-orange-600 font-semibold" : ""
-          }
-        >
-          {date}
-        </p>
+        <p className={status === "Warning" ? "text-orange-600 font-semibold" : ""}>{date}</p>
         <p className="text-xs text-muted-foreground">Expiry Date</p>
       </div>
     </div>

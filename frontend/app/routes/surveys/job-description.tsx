@@ -1,10 +1,5 @@
 import { Info, Save, AlertCircle, CheckCircle2 } from "lucide-react";
-import {
-  useLoaderData,
-  Form,
-  useActionData,
-  useNavigation,
-} from "react-router";
+import { useLoaderData, Form, useActionData, useNavigation } from "react-router";
 import { getDb } from "~/.server/lib/api";
 
 import type { Route } from "./+types/job-description";
@@ -18,8 +13,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { data: jobs } = await db.get<SurveyJob[]>("/survey_jobs", {
     filters: { id: `eq.${id}` },
   });
-  if (!jobs || jobs.length === 0)
-    throw new Response("Job not found", { status: 404 });
+  if (!jobs || jobs.length === 0) throw new Response("Job not found", { status: 404 });
   return { job: jobs[0] };
 }
 
@@ -39,10 +33,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return { success: "Job description updated successfully" };
   } catch (error: unknown) {
     return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to update job description",
+      error: error instanceof Error ? error.message : "Failed to update job description",
     };
   }
 }
@@ -61,8 +52,7 @@ export default function JobDescription() {
           Job Description
         </h2>
         <p className="text-sm text-slate-500">
-          Update the main purpose and objective of this job for future
-          reference.
+          Update the main purpose and objective of this job for future reference.
         </p>
       </div>
 
@@ -87,10 +77,7 @@ export default function JobDescription() {
         </div>
         <Form method="post" className="p-6 space-y-4">
           <div className="space-y-2">
-            <label
-              htmlFor="description"
-              className="text-xs font-bold text-slate-600 px-1"
-            >
+            <label htmlFor="description" className="text-xs font-bold text-slate-600 px-1">
               Description
             </label>
             <textarea
@@ -128,8 +115,8 @@ export default function JobDescription() {
         <div className="space-y-1">
           <h4 className="text-xs font-bold text-blue-900">Information</h4>
           <p className="text-[11px] text-blue-700 leading-relaxed">
-            This description will be saved as the primary metadata for the job.
-            It is intended for future reference and internal reporting purposes.
+            This description will be saved as the primary metadata for the job. It is intended for
+            future reference and internal reporting purposes.
           </p>
         </div>
       </div>

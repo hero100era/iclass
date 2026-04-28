@@ -21,7 +21,9 @@ export interface BreakdownTemplateData {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb(request);
-  const { data: templates } = await db.get<BreakdownTemplateData[]>("/breakdown_templates", { order: "name.asc" });
+  const { data: templates } = await db.get<BreakdownTemplateData[]>("/breakdown_templates", {
+    order: "name.asc",
+  });
   return { templates: templates || [] };
 }
 
@@ -31,7 +33,13 @@ export async function action({ request }: Route.ActionArgs) {
   const db = await getDb(request);
   if (intent === "save_template") {
     const id = formData.get("id");
-    const data = { code: formData.get("code"), name: formData.get("name"), vessel_type: formData.get("vessel_type"), version: formData.get("version") || "1.0", description: formData.get("description") };
+    const data = {
+      code: formData.get("code"),
+      name: formData.get("name"),
+      vessel_type: formData.get("vessel_type"),
+      version: formData.get("version") || "1.0",
+      description: formData.get("description"),
+    };
     if (id) await db.patch("/breakdown_templates", { filters: { id: `eq.${id}` }, body: data });
     else await db.post("/breakdown_templates", { body: data });
     return { success: true };
@@ -53,25 +61,61 @@ export default function BreakdownTemplatesAdmin() {
   const navigation = useNavigation();
   const actionData = useActionData<{ error?: string }>();
 
-  const handleNew = () => { setSelectedTemplate(null); setEditForm({ code: "", name: "", vessel_type: "", version: "1.0", description: "" }); setIsEditing(true); };
-  const handleEdit = () => { if (selectedTemplate) setEditForm(selectedTemplate); setIsEditing(true); };
-  const handleSave = () => { submit({ intent: "save_template", ...editForm, id: selectedTemplate?.id || "" }, { method: "post" }); setIsEditing(false); };
-  const handleDelete = (id: number) => { if (confirm("Delete template?")) { submit({ intent: "delete_template", id: id.toString() }, { method: "post" }); setSelectedTemplate(null); } };
+  const handleNew = () => {
+    setSelectedTemplate(null);
+    setEditForm({ code: "", name: "", vessel_type: "", version: "1.0", description: "" });
+    setIsEditing(true);
+  };
+  const handleEdit = () => {
+    if (selectedTemplate) setEditForm(selectedTemplate);
+    setIsEditing(true);
+  };
+  const handleSave = () => {
+    submit(
+      { intent: "save_template", ...editForm, id: selectedTemplate?.id || "" },
+      { method: "post" },
+    );
+    setIsEditing(false);
+  };
+  const handleDelete = (id: number) => {
+    if (confirm("Delete template?")) {
+      submit({ intent: "delete_template", id: id.toString() }, { method: "post" });
+      setSelectedTemplate(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2"><Network size={18} className="text-emerald-600" /> Breakdown Templates</h1>
-          <p className="text-xs text-slate-500">Manage hierarchical breakdown structures for ships.</p>
+          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Network size={18} className="text-emerald-600" /> Breakdown Templates
+          </h1>
+          <p className="text-xs text-slate-500">
+            Manage hierarchical breakdown structures for ships.
+          </p>
         </div>
-        <button onClick={handleNew} className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg flex items-center gap-2"><Plus size={14} /> Create Template</button>
+        <button
+          onClick={handleNew}
+          className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg flex items-center gap-2"
+        >
+          <Plus size={14} /> Create Template
+        </button>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-4"><TemplateList templates={templates} selectedId={selectedTemplate?.id} onSelect={(t) => { setSelectedTemplate(t); setIsEditing(false); }} /></div>
+        <div className="col-span-4">
+          <TemplateList
+            templates={templates}
+            selectedId={selectedTemplate?.id}
+            onSelect={(t) => {
+              setSelectedTemplate(t);
+              setIsEditing(false);
+            }}
+          />
+        </div>
         <div className="col-span-8">
-          {(isEditing || selectedTemplate) ? (
+          {isEditing || selectedTemplate ? (
             <TemplateDetails
               template={selectedTemplate}
               editForm={editForm}

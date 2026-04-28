@@ -15,8 +15,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const limit = 20;
 
   const { data: surveys } = await db.get<SurveyJobItem[]>("/survey_jobs", {
-
-    select: "*,ships(*),jobs(*,ms_jobs(*,ships(*),organizations(*)),survey_jobs(*,ships(*))),survey_jobs(*,ships(*))",
+    select:
+      "*,ships(*),jobs(*,ms_jobs(*,ships(*),organizations(*)),survey_jobs(*,ships(*))),survey_jobs(*,ships(*))",
     filters: { parent_id: "is.null" },
     order: "id.desc",
     limit,
@@ -43,15 +43,23 @@ export default function SurveyDashboard() {
   const submit = useSubmit();
 
   const handleSearch = (query: string) => {
-    setSearchParams(prev => { if (query) prev.set("q", query); else prev.delete("q"); return prev; });
+    setSearchParams((prev) => {
+      if (query) prev.set("q", query);
+      else prev.delete("q");
+      return prev;
+    });
   };
 
   const statusColor = (status?: string | null) => {
     switch (status?.toLowerCase()) {
-      case "active": return "bg-emerald-50 text-emerald-700 border-emerald-100";
-      case "completed": return "bg-blue-50 text-blue-700 border-blue-100";
-      case "cancelled": return "bg-red-50 text-red-700 border-red-100";
-      default: return "bg-slate-50 text-slate-600 border-slate-200";
+      case "active":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "completed":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      case "cancelled":
+        return "bg-red-50 text-red-700 border-red-100";
+      default:
+        return "bg-slate-50 text-slate-600 border-slate-200";
     }
   };
 
@@ -78,7 +86,6 @@ export default function SurveyDashboard() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {surveys.map((survey: SurveyJobItem) => (
-
               <SurveyJobRow
                 key={survey.id}
                 survey={survey}
@@ -90,7 +97,9 @@ export default function SurveyDashboard() {
                   setExpandedIds(next);
                 }}
                 statusColor={statusColor}
-                onCreateAttached={(type, s) => submit({ intent: "create_attached", type, id: s.id }, { method: "post" })}
+                onCreateAttached={(type, s) =>
+                  submit({ intent: "create_attached", type, id: s.id }, { method: "post" })
+                }
               />
             ))}
           </tbody>

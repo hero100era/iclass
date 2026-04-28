@@ -32,23 +32,23 @@ export type FilterOperator =
   | `is.false`
   | `is.unknown`
   | `isdistinct.${string}`
-  | `cs.{${string}}`      // contains (array/range)
-  | `cd.{${string}}`      // contained in
-  | `ov.{${string}}`      // overlaps
-  | `sl.(${string})`      // strictly left of (range)
-  | `sr.(${string})`      // strictly right of (range)
-  | `nxr.(${string})`     // does not extend right
-  | `nxl.(${string})`     // does not extend left
-  | `adj.(${string})`     // adjacent (range)
-  | `fts.${string}`       // full-text search using to_tsquery
-  | `plfts.${string}`     // full-text search using plainto_tsquery
-  | `phfts.${string}`     // full-text search using phraseto_tsquery
-  | `wfts.${string}`      // full-text search using websearch_to_tsquery
-  | `fts(${string}).${string}`    // fts with language config
+  | `cs.{${string}}` // contains (array/range)
+  | `cd.{${string}}` // contained in
+  | `ov.{${string}}` // overlaps
+  | `sl.(${string})` // strictly left of (range)
+  | `sr.(${string})` // strictly right of (range)
+  | `nxr.(${string})` // does not extend right
+  | `nxl.(${string})` // does not extend left
+  | `adj.(${string})` // adjacent (range)
+  | `fts.${string}` // full-text search using to_tsquery
+  | `plfts.${string}` // full-text search using plainto_tsquery
+  | `phfts.${string}` // full-text search using phraseto_tsquery
+  | `wfts.${string}` // full-text search using websearch_to_tsquery
+  | `fts(${string}).${string}` // fts with language config
   | `plfts(${string}).${string}`
   | `phfts(${string}).${string}`
   | `wfts(${string}).${string}`
-  | `not.eq.${string}`    // negated operators
+  | `not.eq.${string}` // negated operators
   | `not.neq.${string}`
   | `not.gt.${string}`
   | `not.gte.${string}`
@@ -123,12 +123,12 @@ export type OrderDirection =
 // Ref: https://docs.postgrest.org/en/v14/references/api/tables_views.html#response-format
 
 export type AcceptFormat =
-  | 'json'
-  | 'csv'
-  | 'geojson'
-  | 'octet-stream'
-  | 'single-json'   // application/vnd.pgrst.object+json
-  | 'text/plain';   // for scalar RPC results
+  | "json"
+  | "csv"
+  | "geojson"
+  | "octet-stream"
+  | "single-json" // application/vnd.pgrst.object+json
+  | "text/plain"; // for scalar RPC results
 
 // ─── Prefer Header Options ──────────────────────────────────────────
 // Ref: https://docs.postgrest.org/en/v14/references/api/preferences.html
@@ -138,37 +138,37 @@ export interface PreferOptions {
    * return=representation | return=minimal | return=headers-only
    * Controls what is returned after INSERT/UPDATE/DELETE.
    */
-  return?: 'representation' | 'minimal' | 'headers-only';
+  return?: "representation" | "minimal" | "headers-only";
 
   /**
    * count=exact | count=planned | count=estimated
    * Controls row count in Content-Range header.
    */
-  count?: 'exact' | 'planned' | 'estimated';
+  count?: "exact" | "planned" | "estimated";
 
   /**
    * resolution=merge-duplicates | resolution=ignore-duplicates
    * For upsert via POST.
    */
-  resolution?: 'merge-duplicates' | 'ignore-duplicates';
+  resolution?: "merge-duplicates" | "ignore-duplicates";
 
   /**
    * handling=lenient | handling=strict
    * Controls how PostgREST treats invalid preferences/filters.
    */
-  handling?: 'lenient' | 'strict';
+  handling?: "lenient" | "strict";
 
   /**
    * params=single-object
    * For RPC: pass the JSON body as a single argument.
    */
-  params?: 'single-object' | 'multiple-objects';
+  params?: "single-object" | "multiple-objects";
 
   /**
    * tx=commit | tx=rollback
    * Controls transaction behavior (useful for dry-runs with rollback).
    */
-  tx?: 'commit' | 'rollback';
+  tx?: "commit" | "rollback";
 
   /**
    * max-affected=N
@@ -181,7 +181,7 @@ export interface PreferOptions {
    * missing=default
    * Use column defaults for missing fields in bulk inserts.
    */
-  missing?: 'default';
+  missing?: "default";
 }
 
 // ─── Request Options ─────────────────────────────────────────────────
@@ -360,12 +360,12 @@ export class PostgRESTError extends Error {
   constructor(
     message: string,
     status: number,
-    code: string = '',
+    code: string = "",
     details: string | null = null,
-    hint: string | null = null
+    hint: string | null = null,
   ) {
     super(message);
-    this.name = 'PostgRESTError';
+    this.name = "PostgRESTError";
     this.status = status;
     this.code = code;
     this.details = details;
@@ -386,55 +386,47 @@ function buildPreferHeader(prefer?: PreferOptions): string | undefined {
   if (prefer.handling) parts.push(`handling=${prefer.handling}`);
   if (prefer.params) parts.push(`params=${prefer.params}`);
   if (prefer.tx) parts.push(`tx=${prefer.tx}`);
-  if (prefer.maxAffected !== undefined)
-    parts.push(`max-affected=${prefer.maxAffected}`);
+  if (prefer.maxAffected !== undefined) parts.push(`max-affected=${prefer.maxAffected}`);
   if (prefer.missing) parts.push(`missing=${prefer.missing}`);
 
-  return parts.length > 0 ? parts.join(', ') : undefined;
+  return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
 // ─── Build Accept Header ────────────────────────────────────────────
 
 function buildAcceptHeader(accept?: AcceptFormat, isSingle?: boolean): string {
-  if (isSingle || accept === 'single-json') {
-    return 'application/vnd.pgrst.object+json';
+  if (isSingle || accept === "single-json") {
+    return "application/vnd.pgrst.object+json";
   }
   switch (accept) {
-    case 'csv':
-      return 'text/csv';
-    case 'geojson':
-      return 'application/geo+json';
-    case 'octet-stream':
-      return 'application/octet-stream';
-    case 'text/plain':
-      return 'text/plain';
-    case 'json':
+    case "csv":
+      return "text/csv";
+    case "geojson":
+      return "application/geo+json";
+    case "octet-stream":
+      return "application/octet-stream";
+    case "text/plain":
+      return "text/plain";
+    case "json":
     default:
-      return 'application/json';
+      return "application/json";
   }
 }
 
 // ─── Build URL with Query Parameters ────────────────────────────────
 
 function buildQueryUrl(path: string, options: ServerApiOptions): URL {
-  const url = new URL(
-    path.startsWith('/') ? path : `/${path}`,
-    POSTGREST_URL
-  );
+  const url = new URL(path.startsWith("/") ? path : `/${path}`, POSTGREST_URL);
 
-  if (options.select) url.searchParams.set('select', options.select);
+  if (options.select) url.searchParams.set("select", options.select);
 
   if (options.order) {
-    const orderStr = Array.isArray(options.order)
-      ? options.order.join(',')
-      : options.order;
-    url.searchParams.set('order', orderStr);
+    const orderStr = Array.isArray(options.order) ? options.order.join(",") : options.order;
+    url.searchParams.set("order", orderStr);
   }
 
-  if (options.limit !== undefined)
-    url.searchParams.set('limit', String(options.limit));
-  if (options.offset !== undefined)
-    url.searchParams.set('offset', String(options.offset));
+  if (options.limit !== undefined) url.searchParams.set("limit", String(options.limit));
+  if (options.offset !== undefined) url.searchParams.set("offset", String(options.offset));
 
   // Column-level filters
   if (options.filters) {
@@ -444,18 +436,18 @@ function buildQueryUrl(path: string, options: ServerApiOptions): URL {
   }
 
   // Logical operators
-  if (options.or) url.searchParams.set('or', options.or);
-  if (options.and) url.searchParams.set('and', options.and);
+  if (options.or) url.searchParams.set("or", options.or);
+  if (options.and) url.searchParams.set("and", options.and);
 
   // Negated logical operators
-  if (options.not?.or) url.searchParams.set('not.or', options.not.or);
-  if (options.not?.and) url.searchParams.set('not.and', options.not.and);
+  if (options.not?.or) url.searchParams.set("not.or", options.not.or);
+  if (options.not?.and) url.searchParams.set("not.and", options.not.and);
 
   // Columns for bulk insert
-  if (options.columns) url.searchParams.set('columns', options.columns);
+  if (options.columns) url.searchParams.set("columns", options.columns);
 
   // On-conflict for upsert
-  if (options.onConflict) url.searchParams.set('on_conflict', options.onConflict);
+  if (options.onConflict) url.searchParams.set("on_conflict", options.onConflict);
 
   return url;
 }
@@ -466,7 +458,7 @@ async function request<T>(
   jwt: string,
   method: string,
   path: string,
-  options: ServerApiOptions = {}
+  options: ServerApiOptions = {},
 ): Promise<ServerApiResponse<T>> {
   const url = buildQueryUrl(path, options);
 
@@ -487,32 +479,31 @@ async function request<T>(
   // Accept header
   headers["Accept"] = buildAcceptHeader(options.accept);
 
-
   // Schema selection
   // Ref: https://docs.postgrest.org/en/v14/references/api/schemas.html
   if (options.schema) {
-    if (method === 'GET' || method === 'HEAD') {
-      headers['Accept-Profile'] = options.schema;
+    if (method === "GET" || method === "HEAD") {
+      headers["Accept-Profile"] = options.schema;
     } else {
-      headers['Content-Profile'] = options.schema;
+      headers["Content-Profile"] = options.schema;
     }
   }
 
   // Prefer header
   const preferValue = buildPreferHeader(options.prefer);
   if (preferValue) {
-    headers['Prefer'] = preferValue;
+    headers["Prefer"] = preferValue;
   }
 
   // Range header (alternative to limit/offset)
   // Ref: https://docs.postgrest.org/en/v14/references/api/pagination_count.html
   if (options.range) {
-    headers['Range'] = `${options.range[0]}-${options.range[1]}`;
-    headers['Range-Unit'] = 'items';
+    headers["Range"] = `${options.range[0]}-${options.range[1]}`;
+    headers["Range-Unit"] = "items";
   }
 
   const fetchOptions: RequestInit = {
-    method: options.head ? 'HEAD' : method,
+    method: options.head ? "HEAD" : method,
     headers,
     signal: options.signal,
   };
@@ -520,8 +511,8 @@ async function request<T>(
   if (
     options.body !== undefined &&
     options.body !== null &&
-    method !== 'GET' &&
-    method !== 'HEAD'
+    method !== "GET" &&
+    method !== "HEAD"
   ) {
     fetchOptions.body = JSON.stringify(options.body);
   }
@@ -547,9 +538,9 @@ async function request<T>(
     throw new PostgRESTError(
       errorBody.message || `PostgREST request failed: ${response.status} ${response.statusText}`,
       response.status,
-      errorBody.code || '',
+      errorBody.code || "",
       errorBody.details || null,
-      errorBody.hint || null
+      errorBody.hint || null,
     );
   }
 
@@ -559,10 +550,13 @@ async function request<T>(
   if (response.status === 204 || options.head) {
     data = null as T;
   } else {
-    const contentType = response.headers.get('Content-Type') || '';
-    if (contentType.includes('application/json') || contentType.includes('application/vnd.pgrst.object+json')) {
+    const contentType = response.headers.get("Content-Type") || "";
+    if (
+      contentType.includes("application/json") ||
+      contentType.includes("application/vnd.pgrst.object+json")
+    ) {
       data = await response.json();
-    } else if (contentType.includes('text/')) {
+    } else if (contentType.includes("text/")) {
       data = (await response.text()) as T;
     } else {
       // Binary or other — return as-is or as ArrayBuffer
@@ -573,7 +567,7 @@ async function request<T>(
   // Parse count from Content-Range header
   // Ref: https://docs.postgrest.org/en/v14/references/api/pagination_count.html
   let count: number | undefined;
-  const contentRange = response.headers.get('Content-Range');
+  const contentRange = response.headers.get("Content-Range");
   if (contentRange) {
     // Format: "0-24/100" or "*/100" or "0-24/*"
     const match = contentRange.match(/\/(\d+)/);
@@ -655,7 +649,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     get<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'GET', path, options);
+      return request<T>(jwt, "GET", path, options);
     },
 
     /**
@@ -669,9 +663,9 @@ export function createServerApi(jwt: string) {
      * });
      */
     getOne<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'GET', path, {
+      return request<T>(jwt, "GET", path, {
         ...options,
-        accept: 'single-json',
+        accept: "single-json",
       });
     },
 
@@ -686,7 +680,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     head(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<null>> {
-      return request<null>(jwt, 'HEAD', path, { ...options, head: true });
+      return request<null>(jwt, "HEAD", path, { ...options, head: true });
     },
 
     /**
@@ -721,7 +715,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     post<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'POST', path, options);
+      return request<T>(jwt, "POST", path, options);
     },
 
     /**
@@ -752,10 +746,10 @@ export function createServerApi(jwt: string) {
      * });
      */
     upsert<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'POST', path, {
+      return request<T>(jwt, "POST", path, {
         ...options,
         prefer: {
-          resolution: 'merge-duplicates',
+          resolution: "merge-duplicates",
           ...options?.prefer,
         },
       });
@@ -773,7 +767,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     put<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'PUT', path, options);
+      return request<T>(jwt, "PUT", path, options);
     },
 
     /**
@@ -813,7 +807,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     patch<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'PATCH', path, options);
+      return request<T>(jwt, "PATCH", path, options);
     },
 
     /**
@@ -842,7 +836,7 @@ export function createServerApi(jwt: string) {
      * });
      */
     delete<T>(path: string, options?: ServerApiOptions): Promise<ServerApiResponse<T>> {
-      return request<T>(jwt, 'DELETE', path, options);
+      return request<T>(jwt, "DELETE", path, options);
     },
 
     /**
@@ -888,13 +882,13 @@ export function createServerApi(jwt: string) {
     rpc<T>(functionName: string, options?: RpcOptions): Promise<ServerApiResponse<T>> {
       const { get: useGet, scalar, body, ...restOptions } = options || {};
 
-      let method = 'POST';
+      let method = "POST";
       let rpcOptions: ServerApiOptions = { ...restOptions };
 
       // GET RPC: parameters passed as query params
       // Ref: https://docs.postgrest.org/en/v14/references/api/functions.html#calling-with-get
-      if (useGet && body && typeof body === 'object' && !Array.isArray(body)) {
-        method = 'GET';
+      if (useGet && body && typeof body === "object" && !Array.isArray(body)) {
+        method = "GET";
         const rpcFilters: Record<string, string> = {};
         for (const [key, value] of Object.entries(body)) {
           rpcFilters[key] = String(value);
@@ -906,7 +900,7 @@ export function createServerApi(jwt: string) {
 
       // Scalar return type
       if (scalar) {
-        rpcOptions.accept = 'text/plain';
+        rpcOptions.accept = "text/plain";
       }
 
       return request<T>(jwt, method, `/rpc/${functionName}`, rpcOptions);
@@ -929,12 +923,12 @@ export const filter = {
   ilike: (pattern: string): FilterOperator => `ilike.${pattern}`,
   match: (pattern: string): FilterOperator => `match.${pattern}`,
   imatch: (pattern: string): FilterOperator => `imatch.${pattern}`,
-  is: (value: 'null' | 'true' | 'false' | 'unknown'): FilterOperator => `is.${value}`,
+  is: (value: "null" | "true" | "false" | "unknown"): FilterOperator => `is.${value}`,
   isdistinct: (value: string): FilterOperator => `isdistinct.${value}`,
-  in: (values: (string | number)[]): FilterOperator => `in.(${values.join(',')})`,
-  cs: (values: (string | number)[]): FilterOperator => `cs.{${values.join(',')}}`,
-  cd: (values: (string | number)[]): FilterOperator => `cd.{${values.join(',')}}`,
-  ov: (values: (string | number)[]): FilterOperator => `ov.{${values.join(',')}}`,
+  in: (values: (string | number)[]): FilterOperator => `in.(${values.join(",")})`,
+  cs: (values: (string | number)[]): FilterOperator => `cs.{${values.join(",")}}`,
+  cd: (values: (string | number)[]): FilterOperator => `cd.{${values.join(",")}}`,
+  ov: (values: (string | number)[]): FilterOperator => `ov.{${values.join(",")}}`,
   sl: (range: string): FilterOperator => `sl.(${range})`,
   sr: (range: string): FilterOperator => `sr.(${range})`,
   nxr: (range: string): FilterOperator => `nxr.(${range})`,
@@ -953,7 +947,7 @@ export const filter = {
   not: (op: FilterOperator): FilterOperator => `not.${op}`,
 
   /** Build OR expression for use in `or` parameter */
-  or: (...conditions: string[]): string => `(${conditions.join(',')})`,
+  or: (...conditions: string[]): string => `(${conditions.join(",")})`,
 
   /** Build AND expression for use in `and` parameter */
   and: (...conditions: string[]): string => `(${conditions.join(",")})`,
@@ -985,20 +979,20 @@ export const filter = {
    * order: filter.jsonPath('json_data', 'age') + '.desc'
    * // → json_data->>age.desc
    */
-  jsonPath: (column: string, path: string, cast: 'text' | 'json' = 'text'): string => {
+  jsonPath: (column: string, path: string, cast: "text" | "json" = "text"): string => {
     // Split on dots to build arrow chain; last segment uses ->> for text, -> for JSON
-    const segments = path.split('.');
-    if (segments.length === 1 && !path.includes('->')) {
+    const segments = path.split(".");
+    if (segments.length === 1 && !path.includes("->")) {
       // Simple single-key path
-      const arrow = cast === 'text' ? '->>' : '->';
+      const arrow = cast === "text" ? "->>" : "->";
       return `${column}${arrow}${path}`;
     }
     // Multi-segment or already arrow-separated: build chain
     // Intermediate segments always use ->, last uses ->> (text) or -> (json)
-    const parts = path.split('.');
+    const parts = path.split(".");
     const last = parts.pop()!;
-    const middle = parts.map(p => `->${p}`).join('');
-    const lastArrow = cast === 'text' ? '->>' : '->';
+    const middle = parts.map((p) => `->${p}`).join("");
+    const lastArrow = cast === "text" ? "->>" : "->";
     return `${column}${middle}${lastArrow}${last}`;
   },
 } as const;

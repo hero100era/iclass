@@ -121,9 +121,7 @@ export function CartDrawer({ vesselId, companyId }: CartDrawerProps) {
             {hasError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-800">
-                  {fetcher.data.error}
-                </span>
+                <span className="text-sm text-red-800">{fetcher.data.error}</span>
               </div>
             )}
 
@@ -156,9 +154,7 @@ export function CartDrawer({ vesselId, companyId }: CartDrawerProps) {
                           >
                             {item.type}
                           </span>
-                          <span className="text-xs text-slate-500 font-mono">
-                            {item.code}
-                          </span>
+                          <span className="text-xs text-slate-500 font-mono">{item.code}</span>
                         </div>
                         <p className="mt-1 text-sm font-medium text-slate-900 truncate">
                           {item.description}
@@ -190,9 +186,7 @@ export function CartDrawer({ vesselId, companyId }: CartDrawerProps) {
                     type="text"
                     required
                     value={formData.location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="e.g. Singapore Port"
                     className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-[#005EAA] focus:ring-1 focus:ring-[#005EAA] outline-none"
                   />
@@ -275,9 +269,7 @@ export function CartDrawer({ vesselId, companyId }: CartDrawerProps) {
                   <textarea
                     rows={3}
                     value={formData.comments}
-                    onChange={(e) =>
-                      setFormData({ ...formData, comments: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
                     placeholder="Additional notes..."
                     className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-[#005EAA] focus:ring-1 focus:ring-[#005EAA] outline-none resize-none"
                   />
